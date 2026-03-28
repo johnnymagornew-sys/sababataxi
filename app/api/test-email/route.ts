@@ -23,7 +23,7 @@ export async function GET() {
 
     await transporter.sendMail({
       from: process.env.SMTP_FROM,
-      to: 'dandjdrop@gmail.com',
+      to: 'eden280406@gmail.com',
       subject: 'בדיקת אימייל – מוניות סבבה',
       html: '<p dir="rtl">זהו מייל בדיקה ממוניות סבבה ✅</p>',
     })

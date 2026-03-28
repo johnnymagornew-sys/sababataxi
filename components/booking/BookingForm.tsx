@@ -2,7 +2,8 @@
 
 import { useState, useEffect } from 'react'
 import AddressAutocomplete from './AddressAutocomplete'
-import { calculatePrice, getPassengerTier } from '@/lib/pricing'
+import { calculatePrice } from '@/lib/pricing'
+import { getTierIndex, getTierBasePrice, TIER_LABELS } from '@/lib/tierPrices'
 import type { BookingExtras } from '@/types/database'
 
 // Normalize Nominatim city names to match our price table
@@ -137,30 +138,36 @@ const initialForm: FormData = {
 export default function BookingForm() {
   const [form, setForm] = useState<FormData>(initialForm)
   const [addressDisplay, setAddressDisplay] = useState('')
-  const [price, setPrice] = useState<{ total: number; base: number; tier: string; multiplier: number } | null>(null)
+  const [price, setPrice] = useState<{ total: number; tierBase: number; vehicle: string; range: string; inTable: boolean } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
 
-  // Live price calculation
+  // Live price calculation using exact tier table
   useEffect(() => {
-    const base = CITY_PRICES[form.pickup_city]
-    if (!base) { setPrice(null); return }
-    const { label: tier, multiplier } = getPassengerTier(form.passengers)
+    const fallbackBase = CITY_PRICES[form.pickup_city]
+    if (!fallbackBase && !form.pickup_city) { setPrice(null); return }
+    if (!fallbackBase) { setPrice(null); return }
+
+    const idx = getTierIndex(form.passengers)
+    const tierBase = getTierBasePrice(form.pickup_city, form.passengers, fallbackBase)
+    const { vehicle, range } = TIER_LABELS[idx]
+    const inTable = !!(require('@/lib/tierPrices').TIER_PRICES[form.pickup_city])
+
     if (!form.travel_date || !form.travel_time) {
-      const adjustedBase = Math.round(base * multiplier)
-      setPrice({ total: adjustedBase, base, tier, multiplier })
+      setPrice({ total: tierBase, tierBase, vehicle, range, inTable })
       return
     }
     const { total } = calculatePrice({
-      basePrice: base,
+      city: form.pickup_city,
+      basePrice: fallbackBase,
       passengers: form.passengers,
       travelDate: form.travel_date,
       travelTime: form.travel_time,
       extras: form.extras,
       paymentMethod: form.payment_method,
     })
-    setPrice({ total, base, tier, multiplier })
+    setPrice({ total, tierBase, vehicle, range, inTable })
   }, [form.pickup_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
 
   function handleAddressSelect(parsed: { city: string; street: string; houseNumber: string; displayName: string }) {
@@ -251,7 +258,7 @@ export default function BookingForm() {
           padding: '16px 20px',
           marginBottom: 20,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: price.multiplier > 1 ? 10 : 0 }}>
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
             <div>
               <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(0,0,0,0.6)', marginBottom: 2 }}>
                 מחיר משוער
@@ -263,21 +270,21 @@ export default function BookingForm() {
             <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.55)', textAlign: 'left' }}>
               {form.pickup_city && <div>{form.pickup_city} → בן גוריון</div>}
               <div style={{ fontWeight: 700, color: 'rgba(0,0,0,0.7)', marginTop: 2 }}>
-                🚗 {price.tier}
+                🚗 {price.vehicle}
+              </div>
+              <div style={{ fontSize: 11, color: 'rgba(0,0,0,0.45)', marginTop: 1 }}>
+                {price.range}
               </div>
             </div>
           </div>
-          {price.multiplier > 1 && (
+          {form.passengers > 4 && (
             <div style={{
-              display: 'flex', gap: 8, fontSize: 12,
-              borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: 8,
+              display: 'flex', gap: 6, fontSize: 12, flexWrap: 'wrap',
+              borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: 8, marginTop: 8,
               color: 'rgba(0,0,0,0.6)',
             }}>
-              <span>בסיס: ₪{price.base}</span>
-              <span>×</span>
-              <span style={{ fontWeight: 700 }}>{price.multiplier} ({form.passengers} נוסעים)</span>
-              <span>=</span>
-              <span style={{ fontWeight: 700 }}>₪{Math.round(price.base * price.multiplier)}</span>
+              <span>מחיר עבור {price.vehicle} ({price.range}): ₪{price.tierBase}</span>
+              {!price.inTable && <span style={{ color: '#c0392b' }}>· הערכה</span>}
             </div>
           )}
         </div>

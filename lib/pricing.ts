@@ -1,22 +1,16 @@
 import type { BookingExtras } from '@/types/database'
+import { getTierIndex, getTierBasePrice, TIER_LABELS } from './tierPrices'
 
 // Ben Gurion Airport coordinates for suncalc (server-side only)
 export const BEN_GURION_LAT = 31.9997
 export const BEN_GURION_LNG = 34.8854
 
-/**
- * Passenger-based vehicle tier & price multiplier
- * 1-4  → מונית רגילה  × 1.0
- * 5-7  → ואן           × 1.5
- * 8+   → מיניבוס       × 2.0
- */
 export function getPassengerTier(passengers: number): {
   label: string
   multiplier: number
 } {
-  if (passengers <= 4) return { label: 'מונית רגילה', multiplier: 1.0 }
-  if (passengers <= 7) return { label: 'ואן', multiplier: 1.5 }
-  return { label: 'מיניבוס', multiplier: 2.0 }
+  const idx = getTierIndex(passengers)
+  return { label: TIER_LABELS[idx].vehicle, multiplier: 1.0 }
 }
 
 /**
@@ -46,20 +40,20 @@ export function getTimeSurcharges(date: Date): { night: boolean; peak: boolean; 
 }
 
 /**
- * Calculate total price from base + passengers + time + extras
+ * Calculate total price from city + passengers + time + extras
  */
 export function calculatePrice(params: {
-  basePrice: number
+  city: string
+  basePrice: number   // fallback if city not in tier table
   passengers: number
   travelDate: string
   travelTime: string
   extras: BookingExtras
   paymentMethod: 'cash' | 'bit'
 }): { total: number; breakdown: PriceBreakdown } {
-  const { basePrice, passengers, travelDate, travelTime, extras, paymentMethod } = params
+  const { city, basePrice, passengers, travelDate, travelTime, extras, paymentMethod } = params
 
-  const { multiplier } = getPassengerTier(passengers)
-  const adjustedBase = Math.round(basePrice * multiplier)
+  const adjustedBase = getTierBasePrice(city, passengers, basePrice)
 
   const dateTime = new Date(`${travelDate}T${travelTime}`)
   const surcharges = getTimeSurcharges(dateTime)

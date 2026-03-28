@@ -17,16 +17,16 @@ export default function HomePage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           height: 60,
         }}>
-          <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', height: 60, overflow: 'hidden', padding: 0 }}>
             <Image
               src="/sababa_logo.png"
               alt="מוניות סבבה"
-              width={140}
-              height={56}
-              style={{ objectFit: 'contain' }}
+              width={160}
+              height={60}
+              style={{ objectFit: 'contain', height: 60, width: 'auto' }}
               priority
             />
-          </Link>
+          </button>
           <Link href="/login" style={{
             background: 'var(--card)',
             color: 'var(--txt2)',

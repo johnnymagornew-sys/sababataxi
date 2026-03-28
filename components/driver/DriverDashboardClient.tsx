@@ -97,9 +97,9 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
-          <Image src="/sababa_logo.png" alt="מוניות סבבה" width={110} height={44} style={{ objectFit: 'contain' }} />
-        </Link>
+        <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', height: 52, overflow: 'hidden', padding: 0 }}>
+          <Image src="/sababa_logo.png" alt="מוניות סבבה" width={130} height={52} style={{ objectFit: 'contain', height: 52, width: 'auto' }} />
+        </button>
         <button
           onClick={handleLogout}
           style={{ background: 'none', border: 'none', color: 'var(--txt2)', cursor: 'pointer', fontSize: 14 }}

@@ -90,9 +90,9 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <Link href="/" style={{ display: 'inline-block', marginBottom: 16 }}>
-            <Image src="/sababa_logo.png" alt="מוניות סבבה" width={180} height={72} style={{ objectFit: 'contain' }} priority />
-          </Link>
+          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'inline-block', marginBottom: 16, padding: 0 }}>
+            <Image src="/sababa_logo.png" alt="מוניות סבבה" width={200} height={80} style={{ objectFit: 'contain' }} priority />
+          </button>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--txt)' }}>
             כניסה לנהגים
           </h1>

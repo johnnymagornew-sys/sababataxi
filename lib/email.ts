@@ -87,7 +87,7 @@ export async function sendDriverAssigned(opts: {
 
   await sendMail(
     opts.to,
-    `🚕 נהג שויין לנסיעתך – ${opts.travelDate} ${time}`,
+    `🚕 נהג קיבל את הנסיעה – ${opts.travelDate} ${time}`,
     `
     <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; color: #1a1a1a;">
       <div style="background: #0E0E0E; padding: 24px; text-align: center; border-radius: 12px 12px 0 0;">
@@ -95,7 +95,7 @@ export async function sendDriverAssigned(opts: {
       </div>
       <div style="background: #f9f9f9; padding: 28px; border-radius: 0 0 12px 12px; border: 1px solid #eee;">
         <h2 style="margin: 0 0 16px;">שלום ${opts.customerName} 👋</h2>
-        <p style="color: #555; margin: 0 0 20px;">נהג שויין לנסיעתך מ-<strong>${opts.pickupCity}</strong> בתאריך <strong>${opts.travelDate}</strong> בשעה <strong>${time}</strong>.</p>
+        <p style="color: #555; margin: 0 0 20px;">נהג קיבל את הנסיעה שלך מ-<strong>${opts.pickupCity}</strong> בתאריך <strong>${opts.travelDate}</strong> בשעה <strong>${time}</strong>.</p>
         <div style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
           <h3 style="margin: 0 0 14px; font-size: 15px; color: #444;">פרטי הנהג</h3>
           <table style="width: 100%; border-collapse: collapse; font-size: 15px;">

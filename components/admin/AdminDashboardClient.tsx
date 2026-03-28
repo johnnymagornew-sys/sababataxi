@@ -345,10 +345,44 @@ export default function AdminDashboardClient({
           color: #E74C3C; border-radius: 10px; padding: 10px 16px;
           font-size: 14px; font-weight: 600; margin-bottom: 20px;
         }
+        .bottom-nav {
+          display: none;
+          position: fixed; bottom: 0; right: 0; left: 0; z-index: 200;
+          background: rgba(14,14,14,0.97); backdrop-filter: blur(16px);
+          border-top: 1px solid rgba(255,255,255,0.08);
+          padding: 6px 0 env(safe-area-inset-bottom, 6px);
+        }
+        .bottom-nav-inner {
+          display: flex; justify-content: space-around; align-items: center;
+        }
+        .bottom-nav-btn {
+          display: flex; flex-direction: column; align-items: center; gap: 3px;
+          padding: 6px 16px; border: none; background: none; cursor: pointer;
+          color: #555; transition: color 0.15s; font-family: 'Heebo', sans-serif;
+          position: relative; min-width: 60px;
+        }
+        .bottom-nav-btn.active { color: #FFD100; }
+        .bottom-nav-btn .nav-icon { font-size: 20px; line-height: 1; }
+        .bottom-nav-btn .nav-label { font-size: 10px; font-weight: 700; }
+        .bottom-nav-btn .nav-badge {
+          position: absolute; top: 2px; right: 8px;
+          background: #FFD100; color: #0E0E0E;
+          font-size: 9px; font-weight: 900;
+          width: 16px; height: 16px; border-radius: 50%;
+          display: flex; align-items: center; justify-content: center;
+        }
+        .stat-card { cursor: pointer; }
         @media (max-width: 768px) {
           .admin-sidebar { display: none; }
-          .stats-row { grid-template-columns: 1fr 1fr; }
+          .bottom-nav { display: block; }
+          .admin-main { padding: 16px 14px 90px; }
+          .stats-row { grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 16px; }
+          .stat-card { padding: 14px; }
+          .stat-num { font-size: 28px !important; }
+          .admin-page-title { font-size: 22px; margin-bottom: 16px; }
           .credit-form { flex-wrap: wrap; }
+          .tbl th, .tbl td { padding: 10px 10px; font-size: 12px; }
+          .table-card { overflow-x: auto; }
         }
       `}</style>
 
@@ -397,22 +431,22 @@ export default function AdminDashboardClient({
               <>
                 <div className="admin-page-title">דשבורד ניהול</div>
                 <div className="stats-row">
-                  <div className="stat-card">
+                  <div className="stat-card" onClick={() => { setStatusFilter('pending'); setTab('bookings') }}>
                     <div className="stat-icon y">⏳</div>
                     <div className="stat-num" style={{ color: '#FFD100' }}>{pendingCount}</div>
                     <div className="stat-label">הזמנות ממתינות</div>
                   </div>
-                  <div className="stat-card">
+                  <div className="stat-card" onClick={() => setTab('drivers')}>
                     <div className="stat-icon g">🚕</div>
                     <div className="stat-num">{activeDrivers}</div>
                     <div className="stat-label">נהגים פעילים</div>
                   </div>
-                  <div className="stat-card">
+                  <div className="stat-card" onClick={() => { setStatusFilter('all'); setTab('bookings') }}>
                     <div className="stat-icon b">✅</div>
                     <div className="stat-num">{todayRides}</div>
                     <div className="stat-label">נסיעות היום</div>
                   </div>
-                  <div className="stat-card">
+                  <div className="stat-card" onClick={() => { setStatusFilter('all'); setTab('bookings') }}>
                     <div className="stat-icon r">💰</div>
                     <div className="stat-num" style={{ fontSize: monthRevenue > 9999 ? 26 : 36 }}>
                       {monthRevenue.toLocaleString('he-IL')}
@@ -692,6 +726,28 @@ export default function AdminDashboardClient({
             )}
           </main>
         </div>
+
+        {/* Bottom nav — mobile only */}
+        <nav className="bottom-nav">
+          <div className="bottom-nav-inner">
+            {([
+              ['dashboard', '📊', 'דשבורד', 0],
+              ['bookings',  '🗂',  'הזמנות', pendingCount],
+              ['drivers',   '👥',  'נהגים',  0],
+              ['credits',   '💳',  'קרדיט',  0],
+            ] as const).map(([key, icon, label, badge]) => (
+              <button
+                key={key}
+                className={`bottom-nav-btn${tab === key ? ' active' : ''}`}
+                onClick={() => setTab(key)}
+              >
+                <span className="nav-icon">{icon}</span>
+                <span className="nav-label">{label}</span>
+                {badge > 0 && <span className="nav-badge">{badge}</span>}
+              </button>
+            ))}
+          </div>
+        </nav>
       </div>
     </>
   )

@@ -497,6 +497,7 @@ export default function AdminDashboardClient({
                           onApprove={() => updateBookingStatus(b.id, 'approved')}
                           onReject={() => updateBookingStatus(b.id, 'rejected')}
                           onComplete={() => updateBookingStatus(b.id, 'completed')}
+                          drivers={drivers}
                         />
                       ))}
                     </div>
@@ -532,6 +533,7 @@ export default function AdminDashboardClient({
                         onApprove={() => updateBookingStatus(b.id, 'approved')}
                         onReject={() => updateBookingStatus(b.id, 'rejected')}
                         onComplete={() => updateBookingStatus(b.id, 'completed')}
+                        drivers={drivers}
                       />
                     ))}
                     {filteredBookings.length === 0 && (
@@ -821,16 +823,18 @@ const STATUS_COLORS_CARD: Record<string, string> = {
   completed: '#6B7280', rejected: '#EF4444', cancelled: '#6B7280',
 }
 
-function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onComplete }: {
+function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onComplete, drivers }: {
   booking: Booking
   expanded: boolean
   onToggle: () => void
   onApprove: () => void
   onReject: () => void
   onComplete: () => void
+  drivers: Driver[]
 }) {
   const extras = (b.extras as Record<string, boolean>) ?? {}
   const activeExtras = Object.entries(extras).filter(([, v]) => v).map(([k]) => EXTRAS_LABELS[k] ?? k)
+  const claimedDriver = b.driver_id ? drivers.find(d => d.id === b.driver_id) : null
 
   return (
     <div style={{
@@ -866,6 +870,14 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
             {b.pickup_city} → בן גוריון &nbsp;•&nbsp; {b.travel_date} &nbsp;<strong style={{ color: '#aaa' }}>{b.travel_time?.slice(0, 5)}</strong>
             &nbsp;•&nbsp; {b.passengers} נוסעים
           </div>
+          {claimedDriver && (
+            <div style={{ marginTop: 5, display: 'flex', alignItems: 'center', gap: 6 }}>
+              <span style={{ fontSize: 11, background: 'rgba(59,130,246,0.15)', color: '#3B82F6', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                🚕 {claimedDriver.full_name}
+              </span>
+              <span style={{ fontSize: 11, color: '#555', direction: 'ltr' }}>{claimedDriver.phone}</span>
+            </div>
+          )}
         </div>
 
         {/* Price */}

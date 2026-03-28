@@ -51,6 +51,7 @@ export interface Driver {
   phone: string
   vehicle_type: VehicleType
   vehicle_number?: string | null
+  vehicle_model?: string | null
   subscription_active: boolean
   subscription_expires_at?: string | null
   credits: number

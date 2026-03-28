@@ -24,7 +24,7 @@ export async function POST(request: NextRequest) {
   if (!adminRow) return NextResponse.json({ error: 'אין הרשאת אדמין' }, { status: 403 })
 
   // 2. Parse body
-  const { email, password, full_name, phone, vehicle_type, vehicle_number } = await request.json()
+  const { email, password, full_name, phone, vehicle_type, vehicle_number, vehicle_model } = await request.json()
 
   if (!email || !password || !full_name || !phone) {
     return NextResponse.json({ error: 'שדות חובה חסרים' }, { status: 400 })
@@ -72,6 +72,7 @@ export async function POST(request: NextRequest) {
       phone,
       vehicle_type: vehicle_type || 'regular',
       vehicle_number: vehicle_number || null,
+      vehicle_model: vehicle_model || null,
       is_active: true,
       subscription_active: false,
       credits: 0,

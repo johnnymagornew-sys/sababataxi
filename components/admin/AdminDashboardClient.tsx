@@ -32,9 +32,9 @@ export default function AdminDashboardClient({
   const [actionMsg, setActionMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null)
   const [creditInputs, setCreditInputs] = useState<{ driverId: string; amount: string; notes: string }>({ driverId: '', amount: '', notes: '' })
   const [loadingCredit, setLoadingCredit] = useState(false)
-  const [newDriver, setNewDriver] = useState({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular', vehicle_number: '' })
+  const [newDriver, setNewDriver] = useState({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular', vehicle_number: '', vehicle_model: '' })
   const [editingDriver, setEditingDriver] = useState<string | null>(null)
-  const [editDriverData, setEditDriverData] = useState<{ vehicle_type: string; vehicle_number: string }>({ vehicle_type: 'regular', vehicle_number: '' })
+  const [editDriverData, setEditDriverData] = useState<{ vehicle_type: string; vehicle_number: string; vehicle_model: string }>({ vehicle_type: 'regular', vehicle_number: '', vehicle_model: '' })
   const [creatingDriver, setCreatingDriver] = useState(false)
   const [showNewDriverForm, setShowNewDriverForm] = useState(false)
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
@@ -78,9 +78,10 @@ export default function AdminDashboardClient({
     const { error } = await supabase.from('drivers').update({
       vehicle_type: editDriverData.vehicle_type as Driver['vehicle_type'],
       vehicle_number: editDriverData.vehicle_number || null,
+      vehicle_model: editDriverData.vehicle_model || null,
     }).eq('id', driverId)
     if (error) { showMsg('שגיאה בעדכון', 'err'); return }
-    setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, vehicle_type: editDriverData.vehicle_type as Driver['vehicle_type'], vehicle_number: editDriverData.vehicle_number } : d))
+    setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, vehicle_type: editDriverData.vehicle_type as Driver['vehicle_type'], vehicle_number: editDriverData.vehicle_number, vehicle_model: editDriverData.vehicle_model } : d))
     setEditingDriver(null)
     showMsg('פרטי רכב עודכנו', 'ok')
   }
@@ -122,14 +123,14 @@ export default function AdminDashboardClient({
       const res = await fetch('/api/admin/create-driver', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name, phone, vehicle_type, vehicle_number: newDriver.vehicle_number }),
+        body: JSON.stringify({ email, password, full_name, phone, vehicle_type, vehicle_number: newDriver.vehicle_number, vehicle_model: newDriver.vehicle_model }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       // Reload drivers list
       const { data: updated } = await supabase.from('drivers').select('*').order('full_name')
       if (updated) setDrivers(updated as Driver[])
-      setNewDriver({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular', vehicle_number: '' })
+      setNewDriver({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular', vehicle_number: '', vehicle_model: '' })
       setShowNewDriverForm(false)
       showMsg(`נהג ${full_name} נוצר בהצלחה!`, 'ok')
     } catch (err: unknown) {
@@ -619,6 +620,15 @@ export default function AdminDashboardClient({
                           style={{ height: 40, padding: '0 13px', fontSize: 13, background: '#212121', color: '#F2F2F2', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, width: '100%', fontFamily: 'Heebo, sans-serif', direction: 'ltr' }}
                         />
                       </div>
+                      <div>
+                        <label style={{ color: '#444', fontSize: '10.5px', display: 'block', marginBottom: 5 }}>דגם רכב</label>
+                        <input
+                          type="text" placeholder="טויוטה קורולה"
+                          value={newDriver.vehicle_model}
+                          onChange={e => setNewDriver(p => ({ ...p, vehicle_model: e.target.value }))}
+                          style={{ height: 40, padding: '0 13px', fontSize: 13, background: '#212121', color: '#F2F2F2', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, width: '100%', fontFamily: 'Heebo, sans-serif' }}
+                        />
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                         <button
                           className="btn-load"
@@ -648,7 +658,7 @@ export default function AdminDashboardClient({
                           <div>
                             <div className="driver-name">{d.full_name}</div>
                             <div className="driver-meta">
-                              {d.vehicle_type} • {d.vehicle_number ?? 'אין מספר רכב'} • {d.phone}
+                              {d.vehicle_type} • {d.vehicle_model ?? ''}{d.vehicle_model && d.vehicle_number ? ' ' : ''}{d.vehicle_number ?? 'אין מספר רכב'} • {d.phone}
                               {d.subscription_expires_at && (
                                 <span> • פג: {new Date(d.subscription_expires_at).toLocaleDateString('he-IL')}</span>
                               )}
@@ -661,7 +671,7 @@ export default function AdminDashboardClient({
                             className="btn-ghost-sm"
                             onClick={() => {
                               setEditingDriver(editingDriver === d.id ? null : d.id)
-                              setEditDriverData({ vehicle_type: d.vehicle_type, vehicle_number: d.vehicle_number ?? '' })
+                              setEditDriverData({ vehicle_type: d.vehicle_type, vehicle_number: d.vehicle_number ?? '', vehicle_model: d.vehicle_model ?? '' })
                             }}
                           >✏️ עריכה</button>
                           <div>
@@ -699,6 +709,15 @@ export default function AdminDashboardClient({
                               value={editDriverData.vehicle_number}
                               onChange={e => setEditDriverData(p => ({ ...p, vehicle_number: e.target.value }))}
                               style={{ height: 36, padding: '0 10px', fontSize: 13, background: '#212121', color: '#F2F2F2', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, width: 120, fontFamily: 'Heebo, sans-serif', direction: 'ltr' }}
+                            />
+                          </div>
+                          <div>
+                            <label style={{ color: '#444', fontSize: '10.5px', display: 'block', marginBottom: 5 }}>דגם רכב</label>
+                            <input
+                              type="text" placeholder="טויוטה קורולה"
+                              value={editDriverData.vehicle_model}
+                              onChange={e => setEditDriverData(p => ({ ...p, vehicle_model: e.target.value }))}
+                              style={{ height: 36, padding: '0 10px', fontSize: 13, background: '#212121', color: '#F2F2F2', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, width: 140, fontFamily: 'Heebo, sans-serif' }}
                             />
                           </div>
                           <button className="btn-approve" onClick={() => saveDriverEdit(d.id)}>שמור</button>

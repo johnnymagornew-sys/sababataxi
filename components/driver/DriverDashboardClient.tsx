@@ -76,6 +76,12 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
       setMsg({ text: `הנסיעה שורינה! עמלה: ₪${data.commission ?? 0}`, type: 'ok' })
       await Promise.all([loadRides(), refreshDriver()])
       setTab('mine')
+      // Notify customer by email
+      fetch('/api/driver/notify-customer', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId, driverId: driver.id }),
+      }).catch(() => {})
     }
     setTimeout(() => setMsg(null), 4000)
   }

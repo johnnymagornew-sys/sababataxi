@@ -32,7 +32,9 @@ export default function AdminDashboardClient({
   const [actionMsg, setActionMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null)
   const [creditInputs, setCreditInputs] = useState<{ driverId: string; amount: string; notes: string }>({ driverId: '', amount: '', notes: '' })
   const [loadingCredit, setLoadingCredit] = useState(false)
-  const [newDriver, setNewDriver] = useState({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular' })
+  const [newDriver, setNewDriver] = useState({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular', vehicle_number: '' })
+  const [editingDriver, setEditingDriver] = useState<string | null>(null)
+  const [editDriverData, setEditDriverData] = useState<{ vehicle_type: string; vehicle_number: string }>({ vehicle_type: 'regular', vehicle_number: '' })
   const [creatingDriver, setCreatingDriver] = useState(false)
   const [showNewDriverForm, setShowNewDriverForm] = useState(false)
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
@@ -72,6 +74,17 @@ export default function AdminDashboardClient({
     showMsg(`סטטוס עודכן: ${STATUS_LABELS[status]}`, 'ok')
   }
 
+  async function saveDriverEdit(driverId: string) {
+    const { error } = await supabase.from('drivers').update({
+      vehicle_type: editDriverData.vehicle_type as Driver['vehicle_type'],
+      vehicle_number: editDriverData.vehicle_number || null,
+    }).eq('id', driverId)
+    if (error) { showMsg('שגיאה בעדכון', 'err'); return }
+    setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, vehicle_type: editDriverData.vehicle_type as Driver['vehicle_type'], vehicle_number: editDriverData.vehicle_number } : d))
+    setEditingDriver(null)
+    showMsg('פרטי רכב עודכנו', 'ok')
+  }
+
   async function toggleSubscription(driver: Driver) {
     const newVal = !driver.subscription_active
     const expires = newVal ? new Date(Date.now() + 30 * 24 * 60 * 60 * 1000).toISOString() : null
@@ -109,14 +122,14 @@ export default function AdminDashboardClient({
       const res = await fetch('/api/admin/create-driver', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ email, password, full_name, phone, vehicle_type }),
+        body: JSON.stringify({ email, password, full_name, phone, vehicle_type, vehicle_number: newDriver.vehicle_number }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error)
       // Reload drivers list
       const { data: updated } = await supabase.from('drivers').select('*').order('full_name')
       if (updated) setDrivers(updated as Driver[])
-      setNewDriver({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular' })
+      setNewDriver({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular', vehicle_number: '' })
       setShowNewDriverForm(false)
       showMsg(`נהג ${full_name} נוצר בהצלחה!`, 'ok')
     } catch (err: unknown) {
@@ -595,6 +608,15 @@ export default function AdminDashboardClient({
                           <option value="luxury">יוקרה</option>
                         </select>
                       </div>
+                      <div>
+                        <label style={{ color: '#444', fontSize: '10.5px', display: 'block', marginBottom: 5 }}>מספר רכב</label>
+                        <input
+                          type="text" placeholder="12-345-67"
+                          value={newDriver.vehicle_number}
+                          onChange={e => setNewDriver(p => ({ ...p, vehicle_number: e.target.value }))}
+                          style={{ height: 40, padding: '0 13px', fontSize: 13, background: '#212121', color: '#F2F2F2', border: '1px solid rgba(255,255,255,0.07)', borderRadius: 8, width: '100%', fontFamily: 'Heebo, sans-serif', direction: 'ltr' }}
+                        />
+                      </div>
                       <div style={{ display: 'flex', alignItems: 'flex-end' }}>
                         <button
                           className="btn-load"
@@ -617,34 +639,70 @@ export default function AdminDashboardClient({
                     </div>
                   </div>
                   {drivers.map(d => (
-                    <div key={d.id} className="driver-row">
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
-                        <div className={`driver-av${!d.is_active ? ' inactive' : ''}`}>{d.full_name[0]}</div>
-                        <div>
-                          <div className="driver-name">{d.full_name}</div>
-                          <div className="driver-meta">
-                            {d.vehicle_type} • {d.phone}
-                            {d.subscription_expires_at && (
-                              <span> • פג: {new Date(d.subscription_expires_at).toLocaleDateString('he-IL')}</span>
-                            )}
-                            {!d.subscription_active && <span style={{ color: '#E74C3C' }}> • מנוי לא פעיל</span>}
+                    <div key={d.id} style={{ borderBottom: '1px solid rgba(255,255,255,0.05)' }}>
+                      <div className="driver-row">
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <div className={`driver-av${!d.is_active ? ' inactive' : ''}`}>{d.full_name[0]}</div>
+                          <div>
+                            <div className="driver-name">{d.full_name}</div>
+                            <div className="driver-meta">
+                              {d.vehicle_type} • {d.vehicle_number ?? 'אין מספר רכב'} • {d.phone}
+                              {d.subscription_expires_at && (
+                                <span> • פג: {new Date(d.subscription_expires_at).toLocaleDateString('he-IL')}</span>
+                              )}
+                              {!d.subscription_active && <span style={{ color: '#E74C3C' }}> • מנוי לא פעיל</span>}
+                            </div>
+                          </div>
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
+                          <button
+                            className="btn-ghost-sm"
+                            onClick={() => {
+                              setEditingDriver(editingDriver === d.id ? null : d.id)
+                              setEditDriverData({ vehicle_type: d.vehicle_type, vehicle_number: d.vehicle_number ?? '' })
+                            }}
+                          >✏️ עריכה</button>
+                          <div>
+                            <span className="driver-credit-val">{d.credits} ₪</span>
+                            <span className="driver-credit-lbl">קרדיט</span>
+                          </div>
+                          <div style={{ textAlign: 'center' }}>
+                            <div style={{ fontSize: '9.5px', color: '#444', marginBottom: 4 }}>מנוי</div>
+                            <button
+                              className={`mini-toggle${d.subscription_active ? ' on' : ''}`}
+                              onClick={() => toggleSubscription(d)}
+                              title={d.subscription_active ? 'השבת מנוי' : 'הפעל מנוי'}
+                            />
                           </div>
                         </div>
                       </div>
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 20 }}>
-                        <div>
-                          <span className="driver-credit-val">{d.credits} ₪</span>
-                          <span className="driver-credit-lbl">קרדיט</span>
+                      {editingDriver === d.id && (
+                        <div style={{ padding: '12px 20px 16px', background: '#141414', display: 'flex', gap: 12, alignItems: 'flex-end', flexWrap: 'wrap' }}>
+                          <div>
+                            <label style={{ color: '#444', fontSize: '10.5px', display: 'block', marginBottom: 5 }}>סוג רכב</label>
+                            <select
+                              value={editDriverData.vehicle_type}
+                              onChange={e => setEditDriverData(p => ({ ...p, vehicle_type: e.target.value }))}
+                              style={{ height: 36, padding: '0 10px', fontSize: 13, background: '#212121', color: '#F2F2F2', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, fontFamily: 'Heebo, sans-serif' }}
+                            >
+                              <option value="regular">מונית רגילה</option>
+                              <option value="minivan">ואן / מיניבוס</option>
+                              <option value="luxury">יוקרה</option>
+                            </select>
+                          </div>
+                          <div>
+                            <label style={{ color: '#444', fontSize: '10.5px', display: 'block', marginBottom: 5 }}>מספר רכב</label>
+                            <input
+                              type="text" placeholder="12-345-67"
+                              value={editDriverData.vehicle_number}
+                              onChange={e => setEditDriverData(p => ({ ...p, vehicle_number: e.target.value }))}
+                              style={{ height: 36, padding: '0 10px', fontSize: 13, background: '#212121', color: '#F2F2F2', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, width: 120, fontFamily: 'Heebo, sans-serif', direction: 'ltr' }}
+                            />
+                          </div>
+                          <button className="btn-approve" onClick={() => saveDriverEdit(d.id)}>שמור</button>
+                          <button className="btn-ghost-sm" onClick={() => setEditingDriver(null)}>ביטול</button>
                         </div>
-                        <div style={{ textAlign: 'center' }}>
-                          <div style={{ fontSize: '9.5px', color: '#444', marginBottom: 4 }}>מנוי</div>
-                          <button
-                            className={`mini-toggle${d.subscription_active ? ' on' : ''}`}
-                            onClick={() => toggleSubscription(d)}
-                            title={d.subscription_active ? 'השבת מנוי' : 'הפעל מנוי'}
-                          />
-                        </div>
-                      </div>
+                      )}
                     </div>
                   ))}
                   {drivers.length === 0 && (

@@ -60,6 +60,52 @@ export async function sendBookingConfirmation(opts: {
   })
 }
 
+export async function sendDriverAssigned(opts: {
+  to: string
+  customerName: string
+  travelDate: string
+  travelTime: string
+  pickupCity: string
+  driverName: string
+  driverPhone: string
+  vehicleType: string
+  vehicleNumber: string
+}) {
+  const time = opts.travelTime?.slice(0, 5) ?? ''
+  const vehicleLabels: Record<string, string> = {
+    regular: 'מונית רגילה', minivan: 'ואן / מיניבוס', luxury: 'יוקרה',
+  }
+  const vehicleLabel = vehicleLabels[opts.vehicleType] ?? opts.vehicleType
+
+  await resend.emails.send({
+    from: FROM,
+    to: opts.to,
+    subject: `🚕 נהג שויין לנסיעתך – ${opts.travelDate} ${time}`,
+    html: `
+      <div dir="rtl" style="font-family: Arial, sans-serif; max-width: 520px; margin: 0 auto; color: #1a1a1a;">
+        <div style="background: #0E0E0E; padding: 24px; text-align: center; border-radius: 12px 12px 0 0;">
+          <h1 style="color: #FFD100; margin: 0; font-size: 22px;">מוניות סבבה</h1>
+        </div>
+        <div style="background: #f9f9f9; padding: 28px; border-radius: 0 0 12px 12px; border: 1px solid #eee;">
+          <h2 style="margin: 0 0 16px;">שלום ${opts.customerName} 👋</h2>
+          <p style="color: #555; margin: 0 0 20px;">נהג שויין לנסיעתך מ-<strong>${opts.pickupCity}</strong> בתאריך <strong>${opts.travelDate}</strong> בשעה <strong>${time}</strong>.</p>
+
+          <div style="background: #fff; border: 1px solid #e5e5e5; border-radius: 8px; padding: 20px; margin-bottom: 20px;">
+            <h3 style="margin: 0 0 14px; font-size: 15px; color: #444;">פרטי הנהג</h3>
+            <table style="width: 100%; border-collapse: collapse; font-size: 15px;">
+              <tr><td style="padding: 6px 0; color: #888;">שם</td><td style="font-weight: bold;">${opts.driverName}</td></tr>
+              <tr><td style="padding: 6px 0; color: #888;">טלפון</td><td style="font-weight: bold; direction: ltr;">${opts.driverPhone}</td></tr>
+              <tr><td style="padding: 6px 0; color: #888;">סוג רכב</td><td style="font-weight: bold;">${vehicleLabel}</td></tr>
+              <tr><td style="padding: 6px 0; color: #888;">מספר רכב</td><td style="font-weight: bold; direction: ltr;">${opts.vehicleNumber}</td></tr>
+            </table>
+          </div>
+          <p style="color: #888; font-size: 13px;">הנהג ייצור איתך קשר לפני הנסיעה.</p>
+        </div>
+      </div>
+    `,
+  })
+}
+
 export async function sendBookingApproved(opts: {
   to: string
   customerName: string

@@ -24,10 +24,9 @@ export async function middleware(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-
   const path = request.nextUrl.pathname
 
-  // Protect /driver/* and /admin/*
+  // Not logged in → redirect to login
   if ((path.startsWith('/driver') || path.startsWith('/admin')) && !user) {
     return NextResponse.redirect(new URL('/login', request.url))
   }
@@ -36,5 +35,5 @@ export async function middleware(request: NextRequest) {
 }
 
 export const config = {
-  matcher: ['/driver/:path*', '/admin/:path*'],
+  matcher: ['/driver/:path*', '/admin/:path*', '/login'],
 }

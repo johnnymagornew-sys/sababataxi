@@ -104,19 +104,24 @@ export async function POST(request: NextRequest) {
 
     // Send confirmation email if customer provided email
     if (customer_email) {
-      sendBookingConfirmation({
-        to: customer_email,
-        customerName: customer_name,
-        pickupCity: pickup_city,
-        pickupStreet: pickup_street,
-        pickupHouseNumber: pickup_house_number,
-        travelDate: travel_date,
-        travelTime: travel_time,
-        passengers: passengers ?? 1,
-        price,
-        paymentMethod: payment_method ?? 'cash',
-        returnTrip: return_trip ?? false,
-      }).catch(err => console.error('Email error:', err))
+      try {
+        await sendBookingConfirmation({
+          to: customer_email,
+          customerName: customer_name,
+          pickupCity: pickup_city,
+          pickupStreet: pickup_street,
+          pickupHouseNumber: pickup_house_number,
+          travelDate: travel_date,
+          travelTime: travel_time,
+          passengers: passengers ?? 1,
+          price,
+          paymentMethod: payment_method ?? 'cash',
+          returnTrip: return_trip ?? false,
+        })
+        console.log('Confirmation email sent to', customer_email)
+      } catch (err) {
+        console.error('Email error:', err)
+      }
     }
 
     return NextResponse.json({ success: true, id: data.id, price })

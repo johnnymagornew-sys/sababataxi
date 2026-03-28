@@ -241,7 +241,13 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
             {availableRides.length === 0 ? (
               <EmptyState icon="🔍" text="אין נסיעות זמינות כרגע" />
             ) : (
-              availableRides.map(ride => (
+              availableRides.map(ride => {
+                const conflict = myRides.filter(r => r.status === 'claimed').some(r => {
+                  const existing = new Date(`${r.travel_date}T${r.travel_time}`)
+                  const candidate = new Date(`${ride.travel_date}T${ride.travel_time}`)
+                  return Math.abs(existing.getTime() - candidate.getTime()) < 60 * 60 * 1000
+                })
+                return (
                 <RideCard
                   key={ride.id}
                   ride={ride}
@@ -249,8 +255,10 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   driverCredits={driver.credits}
                   isSubscribed={isSubActive}
                   claiming={claiming === ride.id}
+                  timeConflict={conflict}
                   onClaim={() => claimRide(ride.id)}
                 />
+              )})
               ))
             )}
           </div>
@@ -283,7 +291,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
 // ─── RideCard ─────────────────────────────────────────────────────
 
-function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus }: {
+function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus, timeConflict }: {
   ride: Booking
   driverId: string
   driverCredits: number
@@ -292,9 +300,10 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
   onClaim?: () => void
   onCancel?: () => void
   showStatus?: boolean
+  timeConflict?: boolean
 }) {
   const commission = getCommission(ride.price)
-  const canClaim = isSubscribed && driverCredits >= commission && ride.status === 'approved'
+  const canClaim = isSubscribed && driverCredits >= commission && ride.status === 'approved' && !timeConflict
 
   const isClaimed = !!showStatus // after claiming → show full details
 
@@ -393,25 +402,33 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
 
       {/* Claim section */}
       {onClaim && (
-        <div style={{
-          borderTop: '1px solid var(--border)',
-          paddingTop: 12,
-          display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-        }}>
-          <div style={{ fontSize: 13 }}>
-            <span style={{ color: 'var(--txt2)' }}>עמלה: </span>
-            <span style={{ color: commission > 0 ? 'var(--red)' : 'var(--green)', fontWeight: 700 }}>
-              {commission > 0 ? `−₪${commission}` : 'ללא עמלה'}
-            </span>
-          </div>
-          <button
-            className="btn-yellow"
-            style={{ padding: '8px 20px', fontSize: 14, borderRadius: 8 }}
-            disabled={!canClaim || claiming}
-            onClick={onClaim}
-          >
-            {claiming ? '...' : 'שריין נסיעה'}
-          </button>
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12 }}>
+          {timeConflict ? (
+            <div style={{
+              background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.25)',
+              borderRadius: 8, padding: '10px 12px',
+              color: '#E74C3C', fontSize: 13, fontWeight: 600, textAlign: 'center',
+            }}>
+              ⏱ יש לך נסיעה בהפרש של פחות משעה
+            </div>
+          ) : (
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 13 }}>
+                <span style={{ color: 'var(--txt2)' }}>עמלה: </span>
+                <span style={{ color: commission > 0 ? 'var(--red)' : 'var(--green)', fontWeight: 700 }}>
+                  {commission > 0 ? `−₪${commission}` : 'ללא עמלה'}
+                </span>
+              </div>
+              <button
+                className="btn-yellow"
+                style={{ padding: '8px 20px', fontSize: 14, borderRadius: 8 }}
+                disabled={!canClaim || claiming}
+                onClick={onClaim}
+              >
+                {claiming ? '...' : 'שריין נסיעה'}
+              </button>
+            </div>
+          )}
         </div>
       )}
     </div>

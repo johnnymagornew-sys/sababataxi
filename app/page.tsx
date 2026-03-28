@@ -1,8 +1,12 @@
+'use client'
+
 import BookingForm from '@/components/booking/BookingForm'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useRouter } from 'next/navigation'
 
 export default function HomePage() {
+  const router = useRouter()
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
       {/* Header */}
@@ -17,7 +21,7 @@ export default function HomePage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           height: 60,
         }}>
-          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+          <button onClick={() => router.refresh()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
             <Image
               src="/sababa_logo.png"
               alt="מוניות סבבה"

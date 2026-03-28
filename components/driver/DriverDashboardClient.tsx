@@ -248,18 +248,18 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   return Math.abs(existing.getTime() - candidate.getTime()) < 60 * 60 * 1000
                 })
                 return (
-                <RideCard
-                  key={ride.id}
-                  ride={ride}
-                  driverId={driver.id}
-                  driverCredits={driver.credits}
-                  isSubscribed={isSubActive}
-                  claiming={claiming === ride.id}
-                  timeConflict={conflict}
-                  onClaim={() => claimRide(ride.id)}
-                />
-              )})
-              ))
+                  <RideCard
+                    key={ride.id}
+                    ride={ride}
+                    driverId={driver.id}
+                    driverCredits={driver.credits}
+                    isSubscribed={isSubActive}
+                    claiming={claiming === ride.id}
+                    timeConflict={conflict}
+                    onClaim={() => claimRide(ride.id)}
+                  />
+                )
+              })
             )}
           </div>
         )}

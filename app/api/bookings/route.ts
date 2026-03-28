@@ -94,7 +94,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase insert error:', error)
-      return NextResponse.json({ error: error.message, details: error }, { status: 500 })
+      return NextResponse.json({ error: 'שגיאה בשמירת ההזמנה' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, id: data.id, price })

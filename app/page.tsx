@@ -1,5 +1,6 @@
 import BookingForm from '@/components/booking/BookingForm'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function HomePage() {
   return (
@@ -16,16 +17,16 @@ export default function HomePage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           height: 60,
         }}>
-          <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-            <div style={{
-              background: 'var(--y)', color: 'var(--black)',
-              fontWeight: 800, fontSize: 18,
-              padding: '4px 12px', borderRadius: 8,
-            }}>🚕</div>
-            <span style={{ fontWeight: 800, fontSize: 20, color: 'var(--txt)', letterSpacing: '-0.5px' }}>
-              סבבה טקסי
-            </span>
-          </div>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+            <Image
+              src="/sababa_logo.png"
+              alt="מוניות סבבה"
+              width={140}
+              height={56}
+              style={{ objectFit: 'contain' }}
+              priority
+            />
+          </Link>
           <Link href="/login" style={{
             background: 'var(--card)',
             color: 'var(--txt2)',

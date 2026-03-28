@@ -2,7 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import { CITIES } from '@/lib/cities'
-import { calculatePrice } from '@/lib/pricing'
+import { calculatePrice, getPassengerTier } from '@/lib/pricing'
 import type { BookingExtras } from '@/types/database'
 
 const CITY_PRICES: Record<string, number> = {
@@ -80,7 +80,7 @@ export default function BookingForm() {
   const [form, setForm] = useState<FormData>(initialForm)
   const [cityQuery, setCityQuery] = useState('')
   const [showCityDropdown, setShowCityDropdown] = useState(false)
-  const [price, setPrice] = useState<{ total: number; base: number } | null>(null)
+  const [price, setPrice] = useState<{ total: number; base: number; tier: string; multiplier: number } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -93,19 +93,23 @@ export default function BookingForm() {
   // Live price calculation
   useEffect(() => {
     const base = CITY_PRICES[form.pickup_city]
-    if (!base || !form.travel_date || !form.travel_time) {
-      setPrice(base ? { total: base, base } : null)
+    if (!base) { setPrice(null); return }
+    const { label: tier, multiplier } = getPassengerTier(form.passengers)
+    if (!form.travel_date || !form.travel_time) {
+      const adjustedBase = Math.round(base * multiplier)
+      setPrice({ total: adjustedBase, base, tier, multiplier })
       return
     }
     const { total } = calculatePrice({
       basePrice: base,
+      passengers: form.passengers,
       travelDate: form.travel_date,
       travelTime: form.travel_time,
       extras: form.extras,
       paymentMethod: form.payment_method,
     })
-    setPrice({ total, base })
-  }, [form.pickup_city, form.travel_date, form.travel_time, form.extras, form.payment_method])
+    setPrice({ total, base, tier, multiplier })
+  }, [form.pickup_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
 
   // Close dropdown on outside click
   useEffect(() => {
@@ -190,26 +194,36 @@ export default function BookingForm() {
           borderRadius: 14,
           padding: '16px 20px',
           marginBottom: 20,
-          display: 'flex',
-          alignItems: 'center',
-          justifyContent: 'space-between',
         }}>
-          <div>
-            <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(0,0,0,0.6)', marginBottom: 2 }}>
-              מחיר משוער
+          <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', marginBottom: price.multiplier > 1 ? 10 : 0 }}>
+            <div>
+              <div style={{ fontSize: 12, fontWeight: 600, color: 'rgba(0,0,0,0.6)', marginBottom: 2 }}>
+                מחיר משוער
+              </div>
+              <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--black)', lineHeight: 1 }}>
+                ₪{price.total}
+              </div>
             </div>
-            <div style={{ fontSize: 32, fontWeight: 800, color: 'var(--black)', lineHeight: 1 }}>
-              ₪{price.total}
+            <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.55)', textAlign: 'left' }}>
+              {form.pickup_city && <div>{form.pickup_city} → בן גוריון</div>}
+              <div style={{ fontWeight: 700, color: 'rgba(0,0,0,0.7)', marginTop: 2 }}>
+                🚗 {price.tier}
+              </div>
             </div>
           </div>
-          <div style={{ fontSize: 13, color: 'rgba(0,0,0,0.55)', textAlign: 'left' }}>
-            {form.pickup_city && (
-              <div>{form.pickup_city} → בן גוריון</div>
-            )}
-            {price.total !== price.base && (
-              <div>בסיס: ₪{price.base}</div>
-            )}
-          </div>
+          {price.multiplier > 1 && (
+            <div style={{
+              display: 'flex', gap: 8, fontSize: 12,
+              borderTop: '1px solid rgba(0,0,0,0.1)', paddingTop: 8,
+              color: 'rgba(0,0,0,0.6)',
+            }}>
+              <span>בסיס: ₪{price.base}</span>
+              <span>×</span>
+              <span style={{ fontWeight: 700 }}>{price.multiplier} ({form.passengers} נוסעים)</span>
+              <span>=</span>
+              <span style={{ fontWeight: 700 }}>₪{Math.round(price.base * price.multiplier)}</span>
+            </div>
+          )}
         </div>
       )}
 

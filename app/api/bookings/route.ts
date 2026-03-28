@@ -54,6 +54,7 @@ export async function POST(request: NextRequest) {
 
     const { total: price } = calculatePrice({
       basePrice,
+      passengers: passengers ?? 1,
       travelDate: travel_date,
       travelTime: travel_time,
       extras: extras ?? {},

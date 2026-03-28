@@ -269,10 +269,12 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
   const commission = getCommission(ride.price)
   const canClaim = isSubscribed && driverCredits >= commission && ride.status === 'approved'
 
+  const isClaimed = !!showStatus // after claiming → show full details
+
   return (
     <div style={{
       background: 'var(--card)',
-      border: '1px solid var(--border)',
+      border: `1px solid ${isClaimed ? 'rgba(255,209,0,0.2)' : 'var(--border)'}`,
       borderRadius: 14,
       padding: '16px',
       transition: 'border-color 0.15s',
@@ -281,15 +283,21 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--txt)' }}>
-            {ride.pickup_city}
+            {ride.pickup_city} ← בן גוריון
           </div>
-          <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 2 }}>
-            {ride.pickup_street} {ride.pickup_house_number}
-          </div>
+          {isClaimed ? (
+            <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 2 }}>
+              {ride.pickup_street} {ride.pickup_house_number}
+            </div>
+          ) : (
+            <div style={{ fontSize: 12, color: 'var(--txt2)', marginTop: 4, opacity: 0.5 }}>
+              🔒 כתובת מלאה תוצג לאחר שריון
+            </div>
+          )}
         </div>
         <div style={{ textAlign: 'left' }}>
           <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--y)' }}>₪{ride.price}</div>
-          {showStatus && (
+          {isClaimed && (
             <StatusBadge
               label={STATUS_LABELS[ride.status] ?? ride.status}
               color={ride.status === 'completed' ? 'var(--green)' : 'var(--blue)'}
@@ -306,8 +314,27 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
         <MetaItem icon="📅" label={formatDate(ride.travel_date)} />
         <MetaItem icon="⏰" label={ride.travel_time.slice(0, 5)} />
         <MetaItem icon="👥" label={`${ride.passengers} נוסעים`} />
-        <MetaItem icon="💼" label={`${ride.large_luggage + ride.trolley} מזוודות`} />
+        <MetaItem icon="💼" label={`${(ride.large_luggage ?? 0) + (ride.trolley ?? 0)} מזוודות`} />
       </div>
+
+      {/* Full details — only after claiming */}
+      {isClaimed && (
+        <div style={{
+          background: 'var(--card2)',
+          border: '1px solid var(--border)',
+          borderRadius: 10,
+          padding: '12px 14px',
+          marginBottom: 12,
+          display: 'flex', flexDirection: 'column', gap: 6,
+        }}>
+          <div style={{ fontSize: 12, color: 'var(--y)', fontWeight: 700, marginBottom: 4 }}>פרטי לקוח</div>
+          <div style={{ fontSize: 14, fontWeight: 700 }}>{ride.customer_name}</div>
+          <div style={{ fontSize: 14, color: 'var(--txt2)', direction: 'ltr', textAlign: 'right' }}>{ride.customer_phone}</div>
+          {ride.customer_email && (
+            <div style={{ fontSize: 13, color: 'var(--txt2)' }}>{ride.customer_email}</div>
+          )}
+        </div>
+      )}
 
       {/* Return trip */}
       {ride.return_trip && (

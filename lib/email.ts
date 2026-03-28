@@ -136,7 +136,8 @@ export async function sendBookingApproved(opts: {
           <div style="font-size: 18px; font-weight: 800; color: #27AE60;">הזמנתך אושרה!</div>
         </div>
         <p style="color: #555;">הנסיעה שלך מ-<strong>${opts.pickupCity}</strong> לנמל תעופה בן גוריון בתאריך <strong>${opts.travelDate}</strong> בשעה <strong>${time}</strong> מאושרת.</p>
-        <p style="color: #888; font-size: 13px;">נהג ייצור איתך קשר לפני הנסיעה.</p>
+        <p style="color: #555;">🔍 אנו מחפשים עבורך נהג — תקבל מייל נוסף ברגע שנהג ישוריין לנסיעה עם פרטיו המלאים.</p>
+        <p style="color: #888; font-size: 13px;">שאלות? צור קשר בטלפון.</p>
       </div>
     </div>
     `

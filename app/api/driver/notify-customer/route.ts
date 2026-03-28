@@ -23,17 +23,22 @@ export async function POST(request: NextRequest) {
     return NextResponse.json({ skipped: true })
   }
 
-  await sendDriverAssigned({
-    to: booking.customer_email,
-    customerName: booking.customer_name,
-    travelDate: booking.travel_date,
-    travelTime: booking.travel_time,
-    pickupCity: booking.pickup_city,
-    driverName: driver.full_name,
-    driverPhone: driver.phone,
-    vehicleType: driver.vehicle_type,
-    vehicleNumber: driver.vehicle_number ?? 'לא צוין',
-  }).catch(err => console.error('Email error:', err))
+  try {
+    await sendDriverAssigned({
+      to: booking.customer_email,
+      customerName: booking.customer_name,
+      travelDate: booking.travel_date,
+      travelTime: booking.travel_time,
+      pickupCity: booking.pickup_city,
+      driverName: driver.full_name,
+      driverPhone: driver.phone,
+      vehicleType: driver.vehicle_type,
+      vehicleNumber: driver.vehicle_number ?? 'לא צוין',
+    })
+    console.log('Driver assigned email sent to', booking.customer_email)
+  } catch (err) {
+    console.error('Email error:', err)
+  }
 
   return NextResponse.json({ success: true })
 }

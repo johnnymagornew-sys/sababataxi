@@ -39,13 +39,18 @@ export async function POST(request: NextRequest) {
       .single()
 
     if (booking?.customer_email) {
-      sendBookingApproved({
-        to: booking.customer_email,
-        customerName: booking.customer_name,
-        travelDate: booking.travel_date,
-        travelTime: booking.travel_time,
-        pickupCity: booking.pickup_city,
-      }).catch(err => console.error('Email error:', err))
+      try {
+        await sendBookingApproved({
+          to: booking.customer_email,
+          customerName: booking.customer_name,
+          travelDate: booking.travel_date,
+          travelTime: booking.travel_time,
+          pickupCity: booking.pickup_city,
+        })
+        console.log('Approval email sent to', booking.customer_email)
+      } catch (err) {
+        console.error('Email error:', err)
+      }
     }
   }
 

@@ -1,9 +1,31 @@
 'use client'
 
-import { useState, useEffect, useRef } from 'react'
-import { CITIES } from '@/lib/cities'
+import { useState, useEffect } from 'react'
+import AddressAutocomplete from './AddressAutocomplete'
 import { calculatePrice, getPassengerTier } from '@/lib/pricing'
 import type { BookingExtras } from '@/types/database'
+
+// Normalize Nominatim city names to match our price table
+const CITY_NAME_MAP: Record<string, string> = {
+  'תל אביב-יפו': 'תל אביב',
+  'תל-אביב-יפו': 'תל אביב',
+  'קרית גת': 'קריית גת',
+  'קרית אונו': 'קריית אונו',
+  'קרית ים': 'קריית ים',
+  'קרית ביאליק': 'קריית ביאליק',
+  'קרית מוצקין': 'קריית מוצקין',
+  'קרית אתא': 'קריית אתא',
+  'קרית מלאכי': 'קריית מלאכי',
+  'ביתר עלית': 'ביתר עילית',
+  'מודיעין-מכבים-רעות': 'מודיעין',
+  'מודיעין מכבים רעות': 'מודיעין',
+  'נצרת עלית': 'נצרת עילית',
+  'נוף הגליל': 'נצרת עילית',
+  'אריאל (עיר)': 'אריאל',
+}
+function normalizeCity(city: string): string {
+  return CITY_NAME_MAP[city] || city
+}
 
 const CITY_PRICES: Record<string, number> = {
   'תל אביב': 145, 'רמת גן': 145, 'גבעתיים': 145, 'בני ברק': 145,
@@ -78,17 +100,11 @@ const initialForm: FormData = {
 
 export default function BookingForm() {
   const [form, setForm] = useState<FormData>(initialForm)
-  const [cityQuery, setCityQuery] = useState('')
-  const [showCityDropdown, setShowCityDropdown] = useState(false)
+  const [addressDisplay, setAddressDisplay] = useState('')
   const [price, setPrice] = useState<{ total: number; base: number; tier: string; multiplier: number } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
-  const cityRef = useRef<HTMLDivElement>(null)
-
-  const filteredCities = CITIES.filter(c =>
-    c.includes(cityQuery) || cityQuery === ''
-  ).slice(0, 8)
 
   // Live price calculation
   useEffect(() => {
@@ -111,16 +127,19 @@ export default function BookingForm() {
     setPrice({ total, base, tier, multiplier })
   }, [form.pickup_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
 
-  // Close dropdown on outside click
-  useEffect(() => {
-    function handleClick(e: MouseEvent) {
-      if (cityRef.current && !cityRef.current.contains(e.target as Node)) {
-        setShowCityDropdown(false)
-      }
-    }
-    document.addEventListener('mousedown', handleClick)
-    return () => document.removeEventListener('mousedown', handleClick)
-  }, [])
+  function handleAddressSelect(parsed: { city: string; street: string; houseNumber: string; displayName: string }) {
+    const city = normalizeCity(parsed.city)
+    setAddressDisplay(parsed.displayName)
+    setField('pickup_city', city)
+    setField('pickup_street', parsed.street)
+    setField('pickup_house_number', parsed.houseNumber)
+  }
+
+  function handleAddressClear() {
+    setField('pickup_city', '')
+    setField('pickup_street', '')
+    setField('pickup_house_number', '')
+  }
 
   function setField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -139,7 +158,8 @@ export default function BookingForm() {
 
   async function handleSubmit(e: React.FormEvent) {
     e.preventDefault()
-    if (!form.pickup_city) { setError('נא לבחור ישוב'); return }
+    if (!form.pickup_city && !addressDisplay) { setError('נא להזין כתובת איסוף'); return }
+    if (!form.pickup_city) { setError('נא לבחור כתובת מהרשימה'); return }
     if (!form.travel_date || !form.travel_time) { setError('נא למלא תאריך ושעה'); return }
     setError('')
     setSubmitting(true)
@@ -177,7 +197,7 @@ export default function BookingForm() {
         <button
           className="btn-yellow"
           style={{ margin: '24px auto 0', maxWidth: 200 }}
-          onClick={() => { setForm(initialForm); setCityQuery(''); setSubmitted(false) }}
+          onClick={() => { setForm(initialForm); setAddressDisplay(''); setSubmitted(false) }}
         >
           הזמנה חדשה
         </button>
@@ -258,79 +278,39 @@ export default function BookingForm() {
 
       {/* Section: פרטי נסיעה */}
       <Section title="פרטי נסיעה">
-        {/* City autocomplete */}
-        <Field label="ישוב / עיר *">
-          <div ref={cityRef} style={{ position: 'relative' }}>
-            <input
-              type="text"
-              placeholder="הקלד שם עיר..."
-              value={cityQuery || form.pickup_city}
-              onChange={e => {
-                setCityQuery(e.target.value)
-                setField('pickup_city', '')
-                setShowCityDropdown(true)
-              }}
-              onFocus={() => setShowCityDropdown(true)}
-              required={!form.pickup_city}
-            />
-            {showCityDropdown && filteredCities.length > 0 && (
-              <div style={{
-                position: 'absolute', top: '100%', right: 0, left: 0,
-                background: 'var(--card2)',
-                border: '1px solid var(--border)',
-                borderRadius: 8,
-                zIndex: 10,
-                overflow: 'hidden',
-                boxShadow: '0 8px 24px rgba(0,0,0,0.4)',
-                marginTop: 4,
-              }}>
-                {filteredCities.map(city => (
-                  <div
-                    key={city}
-                    style={{
-                      padding: '10px 14px',
-                      cursor: 'pointer',
-                      fontSize: 15,
-                      borderBottom: '1px solid var(--border)',
-                      transition: 'background 0.1s',
-                    }}
-                    onMouseDown={() => {
-                      setField('pickup_city', city)
-                      setCityQuery(city)
-                      setShowCityDropdown(false)
-                    }}
-                    onMouseEnter={e => (e.currentTarget.style.background = 'var(--card)')}
-                    onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-                  >
-                    {city}
-                    {CITY_PRICES[city] && (
-                      <span style={{ color: 'var(--y)', fontSize: 13, marginRight: 8 }}>
-                        ₪{CITY_PRICES[city]}
-                      </span>
-                    )}
-                  </div>
-                ))}
-              </div>
+        {/* Address autocomplete (OpenStreetMap) */}
+        <Field label="כתובת איסוף *">
+          <AddressAutocomplete
+            value={addressDisplay}
+            onSelect={handleAddressSelect}
+            onClear={handleAddressClear}
+          />
+        </Field>
+        {/* Show parsed breakdown */}
+        {form.pickup_city && (
+          <div style={{
+            marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap',
+            fontSize: 12, color: 'var(--txt2)',
+          }}>
+            <span style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px' }}>
+              📍 {form.pickup_city}
+            </span>
+            {form.pickup_street && (
+              <span style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px' }}>
+                🛣 {form.pickup_street} {form.pickup_house_number}
+              </span>
+            )}
+            {CITY_PRICES[form.pickup_city] ? (
+              <span style={{ background: 'rgba(255,209,0,0.1)', border: '1px solid rgba(255,209,0,0.3)', borderRadius: 6, padding: '3px 10px', color: 'var(--y)' }}>
+                מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}
+              </span>
+            ) : (
+              <span style={{ background: 'rgba(255,150,0,0.1)', border: '1px solid rgba(255,150,0,0.3)', borderRadius: 6, padding: '3px 10px', color: '#FFA500', fontSize: 11 }}>
+                עיר לא ברשימה — מחיר יתואם בטלפון
+              </span>
             )}
           </div>
-        </Field>
-
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: '2fr 1fr', marginTop: 14 }}>
-          <Field label="רחוב *">
-            <input
-              type="text" required placeholder="שם הרחוב"
-              value={form.pickup_street}
-              onChange={e => setField('pickup_street', e.target.value)}
-            />
-          </Field>
-          <Field label="מספר בית *">
-            <input
-              type="text" required placeholder="5"
-              value={form.pickup_house_number}
-              onChange={e => setField('pickup_house_number', e.target.value)}
-            />
-          </Field>
-        </div>
+        )}
 
         <div style={{ display: 'grid', gap: 14, gridTemplateColumns: '1fr 1fr', marginTop: 14 }}>
           <Field label="תאריך נסיעה *">

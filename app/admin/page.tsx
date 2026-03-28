@@ -11,6 +11,14 @@ export default async function AdminPage() {
   const { data: adminRow } = await supabase.from('admins').select('id').eq('user_id', user.id).single()
   if (!adminRow) redirect('/login')
 
+  // Auto-expire subscriptions
+  const now = new Date().toISOString()
+  await supabase
+    .from('drivers')
+    .update({ subscription_active: false, subscription_expires_at: null })
+    .eq('subscription_active', true)
+    .lt('subscription_expires_at', now)
+
   // Load initial data
   const [bookingsRes, driversRes] = await Promise.all([
     supabase

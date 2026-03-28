@@ -1,9 +1,11 @@
 import { Resend } from 'resend'
 
-const resend = new Resend(process.env.RESEND_API_KEY)
-
 // Sender — change to your verified domain email once added in Resend dashboard
 const FROM = 'מוניות סבבה <onboarding@resend.dev>'
+
+function getResend() {
+  return new Resend(process.env.RESEND_API_KEY)
+}
 
 export async function sendBookingConfirmation(opts: {
   to: string
@@ -21,7 +23,7 @@ export async function sendBookingConfirmation(opts: {
   const payment = opts.paymentMethod === 'bit' ? 'ביט' : 'מזומן'
   const time = opts.travelTime?.slice(0, 5) ?? ''
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: opts.to,
     subject: `✅ הזמנתך התקבלה – ${opts.travelDate} ${time}`,
@@ -77,7 +79,7 @@ export async function sendDriverAssigned(opts: {
   }
   const vehicleLabel = vehicleLabels[opts.vehicleType] ?? opts.vehicleType
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: opts.to,
     subject: `🚕 נהג שויין לנסיעתך – ${opts.travelDate} ${time}`,
@@ -115,7 +117,7 @@ export async function sendBookingApproved(opts: {
 }) {
   const time = opts.travelTime?.slice(0, 5) ?? ''
 
-  await resend.emails.send({
+  await getResend().emails.send({
     from: FROM,
     to: opts.to,
     subject: `🚕 הזמנתך אושרה! – ${opts.travelDate} ${time}`,

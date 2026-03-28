@@ -63,6 +63,31 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
     if (data) setDriver(data as Driver)
   }
 
+  async function cancelRide(bookingId: string, travelDate: string, travelTime: string) {
+    const rideDateTime = new Date(`${travelDate}T${travelTime}`)
+    const diffMs = rideDateTime.getTime() - Date.now()
+    const diffHours = diffMs / (1000 * 60 * 60)
+
+    if (diffHours <= 1) {
+      setMsg({ text: 'לא ניתן לבטל פחות משעה לפני הנסיעה. פנה למנהל.', type: 'err' })
+      setTimeout(() => setMsg(null), 5000)
+      return
+    }
+
+    const { data, error } = await supabase.rpc('release_ride', {
+      p_booking_id: bookingId,
+      p_driver_id: driver.id,
+    })
+    if (error || !data?.success) {
+      setMsg({ text: data?.error ?? 'שגיאה בביטול', type: 'err' })
+    } else {
+      const refund = data.refund ?? 0
+      setMsg({ text: `הנסיעה בוטלה${refund > 0 ? ` • קרדיט הוחזר: ₪${refund}` : ''}`, type: 'ok' })
+      await Promise.all([loadRides(), refreshDriver()])
+    }
+    setTimeout(() => setMsg(null), 5000)
+  }
+
   async function claimRide(bookingId: string) {
     setClaiming(bookingId)
     const { data, error } = await supabase.rpc('reserve_ride', {
@@ -245,6 +270,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   isSubscribed={isSubActive}
                   claiming={false}
                   showStatus
+                  onCancel={ride.status === 'claimed' ? () => cancelRide(ride.id, ride.travel_date, ride.travel_time) : undefined}
                 />
               ))
             )}
@@ -257,13 +283,14 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
 // ─── RideCard ─────────────────────────────────────────────────────
 
-function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, showStatus }: {
+function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus }: {
   ride: Booking
   driverId: string
   driverCredits: number
   isSubscribed: boolean
   claiming: boolean
   onClaim?: () => void
+  onCancel?: () => void
   showStatus?: boolean
 }) {
   const commission = getCommission(ride.price)
@@ -344,6 +371,23 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           fontSize: 13, color: 'var(--y)', marginBottom: 12,
         }}>
           ✈️ כולל חזרה מהשדה
+        </div>
+      )}
+
+      {/* Cancel button — only for claimed rides */}
+      {onCancel && (
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+          <button
+            onClick={onCancel}
+            style={{
+              width: '100%', padding: '10px', borderRadius: 8,
+              background: 'rgba(231,76,60,0.1)', border: '1px solid rgba(231,76,60,0.3)',
+              color: '#E74C3C', fontWeight: 700, fontSize: 14,
+              cursor: 'pointer', fontFamily: 'inherit',
+            }}
+          >
+            ✗ בטל שריון והחזר קרדיט
+          </button>
         </div>
       )}
 

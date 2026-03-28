@@ -7,7 +7,7 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 
-type AdminTab = 'dashboard' | 'bookings' | 'drivers' | 'credits'
+type AdminTab = 'dashboard' | 'bookings' | 'drivers' | 'credits' | 'revenue' | 'history'
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'ממתין', approved: 'מאושר', claimed: 'שורין',
@@ -38,6 +38,8 @@ export default function AdminDashboardClient({
   const [creatingDriver, setCreatingDriver] = useState(false)
   const [showNewDriverForm, setShowNewDriverForm] = useState(false)
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
+  const [revenue, setRevenue] = useState<{ subscriptions: number; credits: number; rides: number } | null>(null)
+  const [loadingRevenue, setLoadingRevenue] = useState(false)
   const supabase = createClient()
   const router = useRouter()
 
@@ -94,7 +96,29 @@ export default function AdminDashboardClient({
       subscription_expires_at: expires,
     }).eq('id', driver.id)
     if (error) { showMsg('שגיאה בעדכון מנוי', 'err'); return }
+    // Log subscription payment when activating
+    if (newVal) {
+      await supabase.from('subscription_payments').insert({ driver_id: driver.id, amount: 300 })
+    }
     setDrivers(prev => prev.map(d => d.id === driver.id ? { ...d, subscription_active: newVal } : d))
+  }
+
+  async function loadRevenue() {
+    setLoadingRevenue(true)
+    const monthStart = new Date().toISOString().slice(0, 7) + '-01'
+    const [subRes, creditRes] = await Promise.all([
+      supabase.from('subscription_payments').select('amount').gte('paid_at', monthStart),
+      supabase.from('credit_transactions').select('amount').eq('type', 'admin_load').gte('created_at', monthStart),
+    ])
+    const subscriptions = (subRes.data ?? []).reduce((s, r) => s + (r.amount ?? 0), 0)
+    const credits = (creditRes.data ?? []).reduce((s, r) => s + (r.amount ?? 0), 0)
+    const rides = bookings.filter(b => {
+      if (b.status !== 'claimed' && b.status !== 'completed') return false
+      const rideTime = new Date(`${b.travel_date}T${b.travel_time}`)
+      return rideTime <= new Date()
+    }).reduce((s, b) => s + (b.price || 0), 0)
+    setRevenue({ subscriptions, credits, rides })
+    setLoadingRevenue(false)
   }
 
   async function loadCredit() {
@@ -152,6 +176,8 @@ export default function AdminDashboardClient({
     { key: 'bookings', icon: '🗂', label: 'הזמנות', badge: pendingCount || undefined },
     { key: 'drivers', icon: '👥', label: 'נהגים' },
     { key: 'credits', icon: '💰', label: 'קרדיטים' },
+    { key: 'revenue', icon: '📈', label: 'רווחים' },
+    { key: 'history', icon: '📋', label: 'היסטוריה' },
   ]
 
   return (
@@ -735,6 +761,99 @@ export default function AdminDashboardClient({
               </>
             )}
 
+            {/* ── Revenue ── */}
+            {tab === 'revenue' && (
+              <>
+                <div className="admin-page-title">רווחים</div>
+                {!revenue && !loadingRevenue && (
+                  <button className="btn-load" onClick={loadRevenue}>טען נתוני רווחים</button>
+                )}
+                {loadingRevenue && <div style={{ color: '#888', padding: 20 }}>טוען...</div>}
+                {revenue && (
+                  <div className="stats-row">
+                    <div className="stat-card">
+                      <div className="stat-icon g">🪙</div>
+                      <div className="stat-num" style={{ color: '#FFD100' }}>₪{revenue.subscriptions.toLocaleString('he-IL')}</div>
+                      <div className="stat-label">הכנסות מנויים החודש</div>
+                      <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>300₪ לכל הפעלת מנוי</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-icon b">💳</div>
+                      <div className="stat-num" style={{ color: '#3B82F6' }}>₪{revenue.credits.toLocaleString('he-IL')}</div>
+                      <div className="stat-label">קרדיטים שנטענו החודש</div>
+                      <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>סך טעינות אדמין</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-icon r">🚕</div>
+                      <div className="stat-num" style={{ color: '#27AE60' }}>₪{revenue.rides.toLocaleString('he-IL')}</div>
+                      <div className="stat-label">שווי נסיעות שבוצעו</div>
+                      <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>נסיעות שזמנן עבר</div>
+                    </div>
+                    <div className="stat-card">
+                      <div className="stat-icon y">📊</div>
+                      <div className="stat-num">₪{(revenue.subscriptions + revenue.credits).toLocaleString('he-IL')}</div>
+                      <div className="stat-label">סה״כ כסף שנכנס החודש</div>
+                      <div style={{ fontSize: 11, color: '#555', marginTop: 4 }}>מנויים + קרדיטים</div>
+                    </div>
+                  </div>
+                )}
+                {revenue && (
+                  <button className="btn-ghost-sm" style={{ marginTop: 8 }} onClick={loadRevenue}>
+                    🔄 רענן נתונים
+                  </button>
+                )}
+              </>
+            )}
+
+            {/* ── History ── */}
+            {tab === 'history' && (() => {
+              const historyBookings = bookings.filter(b => {
+                if (!['claimed', 'completed', 'cancelled', 'rejected'].includes(b.status)) return false
+                if (b.status === 'claimed' || b.status === 'completed') {
+                  const rideTime = new Date(`${b.travel_date}T${b.travel_time}`)
+                  return rideTime <= new Date()
+                }
+                return true
+              }).sort((a, b) => new Date(`${b.travel_date}T${b.travel_time}`).getTime() - new Date(`${a.travel_date}T${a.travel_time}`).getTime())
+              return (
+                <>
+                  <div className="admin-page-title">היסטוריית נסיעות</div>
+                  <div className="table-card">
+                    <div className="table-hdr">
+                      <div className="table-title">כל הנסיעות שבוצעו / בוטלו / נדחו</div>
+                      <div style={{ color: '#666', fontSize: 13 }}>{historyBookings.length} נסיעות</div>
+                    </div>
+                    {historyBookings.length === 0 ? (
+                      <div style={{ padding: '30px 20px', textAlign: 'center', color: '#444' }}>אין היסטוריה עדיין</div>
+                    ) : (
+                      historyBookings.map(b => {
+                        const driver = b.driver_id ? drivers.find(d => d.id === b.driver_id) : null
+                        return (
+                          <div key={b.id} style={{ padding: '14px 20px', borderBottom: '1px solid #1a1a1a', display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap', gap: 8 }}>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 15 }}>{b.customer_name}</div>
+                              <div style={{ fontSize: 13, color: '#666' }}>{b.pickup_city} • {b.travel_date} {b.travel_time?.slice(0,5)}</div>
+                              {driver && <div style={{ fontSize: 12, color: '#3B82F6', marginTop: 2 }}>נהג: {driver.full_name}</div>}
+                            </div>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+                              <span style={{ fontWeight: 800, fontSize: 16, color: '#FFD100' }}>₪{b.price}</span>
+                              <span style={{
+                                fontSize: 11, fontWeight: 700, padding: '3px 8px', borderRadius: 20,
+                                background: b.status === 'completed' ? 'rgba(39,174,96,0.15)' : b.status === 'claimed' ? 'rgba(59,130,246,0.15)' : 'rgba(107,114,128,0.15)',
+                                color: b.status === 'completed' ? '#27AE60' : b.status === 'claimed' ? '#3B82F6' : '#6B7280',
+                              }}>
+                                {STATUS_LABELS[b.status] ?? b.status}
+                              </span>
+                            </div>
+                          </div>
+                        )
+                      })
+                    )}
+                  </div>
+                </>
+              )
+            })()}
+
             {/* ── Credits ── */}
             {tab === 'credits' && (
               <>
@@ -804,6 +923,8 @@ export default function AdminDashboardClient({
               ['bookings',  '🗂',  'הזמנות', pendingCount],
               ['drivers',   '👥',  'נהגים',  0],
               ['credits',   '💳',  'קרדיט',  0],
+              ['revenue',   '📈',  'רווחים', 0],
+              ['history',   '📋',  'היסטוריה', 0],
             ] as const).map(([key, icon, label, badge]) => (
               <button
                 key={key}

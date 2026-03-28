@@ -14,7 +14,7 @@ const STATUS_LABELS: Record<string, string> = {
 
 export default function DriverDashboardClient({ driver: initialDriver }: { driver: Driver }) {
   const [driver, setDriver] = useState<Driver>(initialDriver)
-  const [tab, setTab] = useState<'available' | 'mine'>('available')
+  const [tab, setTab] = useState<'available' | 'mine' | 'history'>('available')
   const [availableRides, setAvailableRides] = useState<Booking[]>([])
   const [myRides, setMyRides] = useState<Booking[]>([])
   const [claiming, setClaiming] = useState<string | null>(null)
@@ -118,6 +118,18 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
   const isSubActive = driver.subscription_active
 
+  // Split my rides: active (< 45 min after ride time) vs history
+  const now = new Date()
+  const HISTORY_CUTOFF_MS = 45 * 60 * 1000
+  const activeMyRides = myRides.filter(r => {
+    const rideTime = new Date(`${r.travel_date}T${r.travel_time}`)
+    return now.getTime() - rideTime.getTime() < HISTORY_CUTOFF_MS
+  })
+  const historyRides = myRides.filter(r => {
+    const rideTime = new Date(`${r.travel_date}T${r.travel_time}`)
+    return now.getTime() - rideTime.getTime() >= HISTORY_CUTOFF_MS
+  })
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 520, margin: '0 auto' }}>
       {/* Header */}
@@ -206,7 +218,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
           marginBottom: 16,
           gap: 4,
         }}>
-          {([['available', 'נסיעות זמינות', availableRides.length], ['mine', 'הנסיעות שלי', myRides.length]] as const).map(([key, label, count]) => (
+          {([['available', 'זמינות', availableRides.length], ['mine', 'שלי', activeMyRides.length], ['history', 'היסטוריה', historyRides.length]] as const).map(([key, label, count]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -266,10 +278,10 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
         {tab === 'mine' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
-            {myRides.length === 0 ? (
-              <EmptyState icon="🚕" text="עוד לא שריינת נסיעות" />
+            {activeMyRides.length === 0 ? (
+              <EmptyState icon="🚕" text="אין נסיעות פעילות" />
             ) : (
-              myRides.map(ride => (
+              activeMyRides.map(ride => (
                 <RideCard
                   key={ride.id}
                   ride={ride}
@@ -279,6 +291,26 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   claiming={false}
                   showStatus
                   onCancel={ride.status === 'claimed' ? () => cancelRide(ride.id, ride.travel_date, ride.travel_time) : undefined}
+                />
+              ))
+            )}
+          </div>
+        )}
+
+        {tab === 'history' && (
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
+            {historyRides.length === 0 ? (
+              <EmptyState icon="📋" text="אין היסטוריית נסיעות" />
+            ) : (
+              historyRides.map(ride => (
+                <RideCard
+                  key={ride.id}
+                  ride={ride}
+                  driverId={driver.id}
+                  driverCredits={driver.credits}
+                  isSubscribed={isSubActive}
+                  claiming={false}
+                  showStatus
                 />
               ))
             )}

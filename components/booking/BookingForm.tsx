@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import AddressAutocomplete from './AddressAutocomplete'
+import AddressAutocomplete, { ParsedAddress } from './AddressAutocomplete'
 import { calculatePrice } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
 import type { BookingExtras } from '@/types/database'
@@ -110,7 +110,9 @@ interface FormData {
   large_luggage: number
   trolley: number
   return_trip: boolean
-  return_address: string
+  return_city: string
+  return_street: string
+  return_house_number: string
   return_flight_number: string
   return_date: string
   return_time: string
@@ -132,7 +134,9 @@ const initialForm: FormData = {
   large_luggage: 0,
   trolley: 0,
   return_trip: false,
-  return_address: '',
+  return_city: '',
+  return_street: '',
+  return_house_number: '',
   return_flight_number: '',
   return_date: '',
   return_time: '',
@@ -144,6 +148,7 @@ const initialForm: FormData = {
 export default function BookingForm() {
   const [form, setForm] = useState<FormData>(initialForm)
   const [addressDisplay, setAddressDisplay] = useState('')
+  const [returnAddressDisplay, setReturnAddressDisplay] = useState('')
   const [price, setPrice] = useState<{ total: number; tierBase: number; vehicle: string; range: string; inTable: boolean } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
@@ -188,6 +193,20 @@ export default function BookingForm() {
     setField('pickup_city', '')
     setField('pickup_street', '')
     setField('pickup_house_number', '')
+  }
+
+  function handleReturnAddressSelect(parsed: ParsedAddress) {
+    const city = normalizeCity(parsed.city)
+    setReturnAddressDisplay(parsed.displayName)
+    setField('return_city', city)
+    setField('return_street', parsed.street)
+    setField('return_house_number', parsed.houseNumber)
+  }
+
+  function handleReturnAddressClear() {
+    setField('return_city', '')
+    setField('return_street', '')
+    setField('return_house_number', '')
   }
 
   function setField<K extends keyof FormData>(key: K, value: FormData[K]) {
@@ -246,7 +265,7 @@ export default function BookingForm() {
         <button
           className="btn-yellow"
           style={{ margin: '24px auto 0', maxWidth: 200 }}
-          onClick={() => { setForm(initialForm); setAddressDisplay(''); setSubmitted(false) }}
+          onClick={() => { setForm(initialForm); setAddressDisplay(''); setReturnAddressDisplay(''); setSubmitted(false) }}
         >
           הזמנה חדשה
         </button>
@@ -455,36 +474,53 @@ export default function BookingForm() {
           </span>
         </label>
         {form.return_trip && (
-          <div style={{ marginTop: 14, display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
-            <Field label="כתובת חזרה">
-              <input
-                type="text" placeholder="רחוב ועיר"
-                value={form.return_address}
-                onChange={e => setField('return_address', e.target.value)}
+          <div style={{ marginTop: 14, display: 'grid', gap: 14 }}>
+            <Field label="כתובת יעד לחזרה (מהשדה אליך) *">
+              <AddressAutocomplete
+                value={returnAddressDisplay}
+                onSelect={handleReturnAddressSelect}
+                onClear={handleReturnAddressClear}
               />
             </Field>
-            <Field label="מספר טיסה">
-              <input
-                type="text" placeholder="LY123"
-                value={form.return_flight_number}
-                onChange={e => setField('return_flight_number', e.target.value)}
-                dir="ltr" style={{ textAlign: 'right' }}
-              />
-            </Field>
-            <Field label="תאריך חזרה">
-              <input
-                type="date"
-                value={form.return_date}
-                onChange={e => setField('return_date', e.target.value)}
-              />
-            </Field>
-            <Field label="שעה משוערת">
-              <input
-                type="time"
-                value={form.return_time}
-                onChange={e => setField('return_time', e.target.value)}
-              />
-            </Field>
+            {form.return_city && (
+              <div style={{
+                display: 'flex', gap: 8, flexWrap: 'wrap',
+                fontSize: 12, color: 'var(--txt2)',
+              }}>
+                <span style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px' }}>
+                  📍 {form.return_city}
+                </span>
+                {form.return_street && (
+                  <span style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px' }}>
+                    🛣 {form.return_street} {form.return_house_number}
+                  </span>
+                )}
+              </div>
+            )}
+            <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit, minmax(180px, 1fr))' }}>
+              <Field label="מספר טיסה">
+                <input
+                  type="text" placeholder="LY123"
+                  value={form.return_flight_number}
+                  onChange={e => setField('return_flight_number', e.target.value)}
+                  dir="ltr" style={{ textAlign: 'right' }}
+                />
+              </Field>
+              <Field label="תאריך חזרה">
+                <input
+                  type="date"
+                  value={form.return_date}
+                  onChange={e => setField('return_date', e.target.value)}
+                />
+              </Field>
+              <Field label="שעה משוערת">
+                <input
+                  type="time"
+                  value={form.return_time}
+                  onChange={e => setField('return_time', e.target.value)}
+                />
+              </Field>
+            </div>
           </div>
         )}
       </Section>

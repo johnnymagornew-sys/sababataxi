@@ -13,9 +13,14 @@ export async function POST(request: NextRequest) {
       pickup_city, pickup_street, pickup_house_number,
       travel_date, travel_time,
       passengers, large_luggage, trolley,
-      return_trip, return_address, return_flight_number, return_date, return_time,
+      return_trip, return_city, return_street, return_house_number, return_flight_number, return_date, return_time,
       extras, special_requests, payment_method,
     } = body
+
+    // Build a display string for return address (stored as reference on outbound booking)
+    const return_address = return_city
+      ? [return_street, return_house_number, return_city].filter(Boolean).join(' ')
+      : null
 
     // Validate required fields (house number optional — Nominatim doesn't always return it)
     if (!customer_name || !customer_phone || !pickup_city || !pickup_street ||
@@ -79,6 +84,55 @@ export async function POST(request: NextRequest) {
       return NextResponse.json({ error: 'שגיאה בשמירת ההזמנה' }, { status: 500 })
     }
 
+    // If return trip — create a second booking (airport → home), so two drivers can claim independently
+    let returnBookingId: string | null = null
+    if (return_trip && return_city && return_date && return_time) {
+      const returnTierRow = TIER_PRICES[return_city]
+      const returnBasePrice = returnTierRow ? returnTierRow[0] : 0
+
+      const { total: returnPrice } = calculatePrice({
+        city: return_city,
+        basePrice: returnBasePrice,
+        passengers: passengers ?? 1,
+        travelDate: return_date,
+        travelTime: return_time,
+        extras: extras ?? {},
+        paymentMethod: payment_method ?? 'cash',
+      })
+
+      const { data: returnData, error: returnError } = await supabase
+        .from('bookings')
+        .insert({
+          customer_name,
+          customer_phone,
+          customer_email: customer_email || null,
+          pickup_city: 'נמל תעופה בן גוריון',
+          pickup_street: '',
+          pickup_house_number: null,
+          destination: return_address,
+          travel_date: return_date,
+          travel_time: return_time,
+          passengers: passengers ?? 1,
+          large_luggage: large_luggage ?? 0,
+          trolley: trolley ?? 0,
+          return_trip: false,
+          return_flight_number: return_flight_number || null,
+          extras: extras ?? {},
+          special_requests: special_requests || null,
+          payment_method: payment_method ?? 'cash',
+          price: returnPrice,
+          status: 'pending',
+        })
+        .select('id')
+        .single()
+
+      if (returnError) {
+        console.error('Return booking insert error:', returnError)
+      } else {
+        returnBookingId = returnData.id
+      }
+    }
+
     // Send confirmation email if customer provided email
     if (customer_email) {
       try {
@@ -101,7 +155,7 @@ export async function POST(request: NextRequest) {
       }
     }
 
-    return NextResponse.json({ success: true, id: data.id, price })
+    return NextResponse.json({ success: true, id: data.id, price, returnId: returnBookingId })
   } catch (err) {
     console.error('Booking API error:', err)
     return NextResponse.json({ error: 'שגיאה פנימית' }, { status: 500 })

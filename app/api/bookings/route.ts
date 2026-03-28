@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { createClient } from '@/lib/supabase/server'
+import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { calculatePrice } from '@/lib/pricing'
 
 const CITY_PRICES: Record<string, number> = {
@@ -61,7 +61,11 @@ export async function POST(request: NextRequest) {
       paymentMethod: payment_method ?? 'cash',
     })
 
-    const supabase = await createClient()
+    const supabase = createAdminClient(
+      process.env.NEXT_PUBLIC_SUPABASE_URL!,
+      process.env.SUPABASE_SERVICE_ROLE_KEY!,
+      { auth: { autoRefreshToken: false, persistSession: false } }
+    )
 
     const { data, error } = await supabase
       .from('bookings')
@@ -94,7 +98,7 @@ export async function POST(request: NextRequest) {
 
     if (error) {
       console.error('Supabase insert error:', error)
-      return NextResponse.json({ error: error.message, code: error.code, details: error.details }, { status: 500 })
+      return NextResponse.json({ error: 'שגיאה בשמירת ההזמנה' }, { status: 500 })
     }
 
     return NextResponse.json({ success: true, id: data.id, price })

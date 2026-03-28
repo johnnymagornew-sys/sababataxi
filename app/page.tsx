@@ -17,13 +17,13 @@ export default function HomePage() {
           display: 'flex', alignItems: 'center', justifyContent: 'space-between',
           height: 60,
         }}>
-          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', height: 60, overflow: 'hidden', padding: 0 }}>
+          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
             <Image
               src="/sababa_logo.png"
               alt="מוניות סבבה"
-              width={160}
-              height={60}
-              style={{ objectFit: 'contain', height: 60, width: 'auto' }}
+              width={200}
+              height={200}
+              style={{ height: 140, width: 'auto', marginTop: -40, marginBottom: -40 }}
               priority
             />
           </button>

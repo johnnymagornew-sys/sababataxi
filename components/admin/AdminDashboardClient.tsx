@@ -391,8 +391,8 @@ export default function AdminDashboardClient({
       <div className="admin-wrap">
         {/* Header */}
         <header className="admin-header">
-          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', height: 62, overflow: 'hidden', padding: 0 }}>
-            <Image src="/sababa_logo.png" alt="מוניות סבבה" width={150} height={62} style={{ objectFit: 'contain', height: 62, width: 'auto' }} />
+          <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, height: 62, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+            <Image src="/sababa_logo.png" alt="מוניות סבבה" width={200} height={200} style={{ height: 145, width: 'auto', marginTop: -41, marginBottom: -41 }} />
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, color: '#888' }}>מנהל ראשי</span>

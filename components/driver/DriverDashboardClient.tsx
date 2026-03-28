@@ -92,13 +92,14 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
       {/* Header */}
       <div style={{
         background: 'var(--black)',
-        padding: '16px 20px',
+        padding: '0 20px',
+        height: 60,
         borderBottom: '1px solid var(--border)',
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', display: 'flex', alignItems: 'center', height: 52, overflow: 'hidden', padding: 0 }}>
-          <Image src="/sababa_logo.png" alt="מוניות סבבה" width={130} height={52} style={{ objectFit: 'contain', height: 52, width: 'auto' }} />
+        <button onClick={() => window.location.reload()} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
+          <Image src="/sababa_logo.png" alt="מוניות סבבה" width={200} height={200} style={{ height: 140, width: 'auto', marginTop: -40, marginBottom: -40 }} />
         </button>
         <button
           onClick={handleLogout}

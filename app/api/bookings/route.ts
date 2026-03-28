@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { calculatePrice } from '@/lib/pricing'
+import { sendBookingConfirmation } from '@/lib/email'
 
 const CITY_PRICES: Record<string, number> = {
   'תל אביב': 145, 'רמת גן': 145, 'גבעתיים': 145, 'בני ברק': 145,
@@ -99,6 +100,23 @@ export async function POST(request: NextRequest) {
     if (error) {
       console.error('Supabase insert error:', error)
       return NextResponse.json({ error: 'שגיאה בשמירת ההזמנה' }, { status: 500 })
+    }
+
+    // Send confirmation email if customer provided email
+    if (customer_email) {
+      sendBookingConfirmation({
+        to: customer_email,
+        customerName: customer_name,
+        pickupCity: pickup_city,
+        pickupStreet: pickup_street,
+        pickupHouseNumber: pickup_house_number,
+        travelDate: travel_date,
+        travelTime: travel_time,
+        passengers: passengers ?? 1,
+        price,
+        paymentMethod: payment_method ?? 'cash',
+        returnTrip: return_trip ?? false,
+      }).catch(err => console.error('Email error:', err))
     }
 
     return NextResponse.json({ success: true, id: data.id, price })

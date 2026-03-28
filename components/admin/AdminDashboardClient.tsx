@@ -62,8 +62,12 @@ export default function AdminDashboardClient({
   }
 
   async function updateBookingStatus(id: string, status: string) {
-    const { error } = await supabase.from('bookings').update({ status }).eq('id', id)
-    if (error) { showMsg('שגיאה בעדכון', 'err'); return }
+    const res = await fetch('/api/admin/update-booking-status', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: id, status }),
+    })
+    if (!res.ok) { showMsg('שגיאה בעדכון', 'err'); return }
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: status as Booking['status'] } : b))
     showMsg(`סטטוס עודכן: ${STATUS_LABELS[status]}`, 'ok')
   }

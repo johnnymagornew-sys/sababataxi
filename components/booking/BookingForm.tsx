@@ -353,10 +353,10 @@ export default function BookingForm() {
 
       {/* Section: נוסעים ומטען */}
       <Section title="נוסעים ומטען">
-        <div style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(3, 1fr)' }}>
+        <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(3, 1fr)' }}>
           <Stepper label="נוסעים" value={form.passengers} min={1}
             onChange={d => stepChange('passengers', d)} />
-          <Stepper label="מזוודות גדולות" value={form.large_luggage} min={0}
+          <Stepper label="מזוודות" value={form.large_luggage} min={0}
             onChange={d => stepChange('large_luggage', d)} />
           <Stepper label="טרולי" value={form.trolley} min={0}
             onChange={d => stepChange('trolley', d)} />
@@ -540,21 +540,22 @@ function Stepper({ label, value, min, onChange }: {
   label: string; value: number; min: number; onChange: (delta: number) => void
 }) {
   return (
-    <div style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 12px' }}>
-      <div style={{ fontSize: 12, color: 'var(--txt2)', marginBottom: 8, fontWeight: 500 }}>{label}</div>
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 8 }}>
+    <div style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 8px', minWidth: 0 }}>
+      <div style={{ fontSize: 11, color: 'var(--txt2)', marginBottom: 8, fontWeight: 500, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
         <button
           type="button"
           onClick={() => onChange(-1)}
           disabled={value <= min}
           style={{
             background: 'var(--card)', border: '1px solid var(--border)',
-            borderRadius: 6, width: 32, height: 32, cursor: 'pointer',
+            borderRadius: 6, width: 30, height: 30, cursor: 'pointer',
             color: 'var(--txt)', fontSize: 18, lineHeight: 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
+            flexShrink: 0,
           }}
         >−</button>
-        <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--txt)', minWidth: 24, textAlign: 'center' }}>
+        <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--txt)', minWidth: 20, textAlign: 'center' }}>
           {value}
         </span>
         <button
@@ -562,10 +563,10 @@ function Stepper({ label, value, min, onChange }: {
           onClick={() => onChange(1)}
           style={{
             background: 'var(--y)', border: 'none',
-            borderRadius: 6, width: 32, height: 32, cursor: 'pointer',
+            borderRadius: 6, width: 30, height: 30, cursor: 'pointer',
             color: 'var(--black)', fontSize: 18, lineHeight: 1,
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontWeight: 700,
+            fontWeight: 700, flexShrink: 0,
           }}
         >+</button>
       </div>

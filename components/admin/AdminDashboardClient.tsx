@@ -35,6 +35,7 @@ export default function AdminDashboardClient({
   const [newDriver, setNewDriver] = useState({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular' })
   const [creatingDriver, setCreatingDriver] = useState(false)
   const [showNewDriverForm, setShowNewDriverForm] = useState(false)
+  const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -47,7 +48,11 @@ export default function AdminDashboardClient({
   const monthRevenue = bookings
     .filter(b => {
       const m = new Date().toISOString().slice(0, 7)
-      return b.created_at?.startsWith(m) && b.status !== 'rejected' && b.status !== 'cancelled'
+      if (!b.created_at?.startsWith(m)) return false
+      if (b.status !== 'claimed' && b.status !== 'completed') return false
+      // Only count if ride time has already passed
+      const rideDateTime = new Date(`${b.travel_date}T${b.travel_time}`)
+      return rideDateTime <= new Date()
     })
     .reduce((s, b) => s + (b.price || 0), 0)
 
@@ -466,16 +471,18 @@ export default function AdminDashboardClient({
                       </div>
                       <button className="btn-ghost-sm" onClick={() => setTab('bookings')}>ראה הכל</button>
                     </div>
-                    <table className="tbl">
-                      <thead>
-                        <tr><th>לקוח</th><th>ישוב</th><th>תאריך ושעה</th><th>נוסעים</th><th>מחיר</th><th>פעולות</th></tr>
-                      </thead>
-                      <tbody>
-                        {bookings.filter(b => b.status === 'pending').slice(0, 5).map(b => (
-                          <BookingRow key={b.id} booking={b} onApprove={() => updateBookingStatus(b.id, 'approved')} onReject={() => updateBookingStatus(b.id, 'rejected')} />
-                        ))}
-                      </tbody>
-                    </table>
+                    <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                      {bookings.filter(b => b.status === 'pending').slice(0, 5).map(b => (
+                        <BookingCard
+                          key={b.id} booking={b}
+                          expanded={expandedBooking === b.id}
+                          onToggle={() => setExpandedBooking(expandedBooking === b.id ? null : b.id)}
+                          onApprove={() => updateBookingStatus(b.id, 'approved')}
+                          onReject={() => updateBookingStatus(b.id, 'rejected')}
+                          onComplete={() => updateBookingStatus(b.id, 'completed')}
+                        />
+                      ))}
+                    </div>
                   </div>
                 )}
               </>
@@ -499,43 +506,21 @@ export default function AdminDashboardClient({
                       <span className="badge-pill badge-pending">{filteredBookings.length}</span>
                     </div>
                   </div>
-                  <table className="tbl">
-                    <thead>
-                      <tr><th>לקוח</th><th>ישוב</th><th>תאריך ושעה</th><th>נוסעים</th><th>מחיר</th><th>סטטוס</th><th>פעולות</th></tr>
-                    </thead>
-                    <tbody>
-                      {filteredBookings.map(b => (
-                        <tr key={b.id}>
-                          <td>
-                            <div className="customer-name">{b.customer_name}</div>
-                            <div className="customer-phone">{b.customer_phone}</div>
-                          </td>
-                          <td>{b.pickup_city}</td>
-                          <td>{b.travel_date} <strong>{b.travel_time?.slice(0, 5)}</strong></td>
-                          <td>{b.passengers}</td>
-                          <td><span className="price-cell">₪{b.price}</span></td>
-                          <td>
-                            <span className={`badge-pill badge-${b.status}`}>
-                              {STATUS_LABELS[b.status]}
-                            </span>
-                          </td>
-                          <td>
-                            <div className="action-btns">
-                              {b.status === 'pending' && <>
-                                <button className="btn-approve" onClick={() => updateBookingStatus(b.id, 'approved')}>✓ אשר</button>
-                                <button className="btn-reject" onClick={() => updateBookingStatus(b.id, 'rejected')}>✗ דחה</button>
-                              </>}
-                              {b.status === 'approved' && <button className="btn-reject" onClick={() => updateBookingStatus(b.id, 'rejected')}>בטל</button>}
-                              {b.status === 'claimed' && <button className="btn-complete" onClick={() => updateBookingStatus(b.id, 'completed')}>סיים</button>}
-                            </div>
-                          </td>
-                        </tr>
-                      ))}
-                    </tbody>
-                  </table>
-                  {filteredBookings.length === 0 && (
-                    <div style={{ textAlign: 'center', padding: '40px 20px', color: '#444' }}>אין הזמנות להצגה</div>
-                  )}
+                  <div style={{ padding: '0 16px 16px', display: 'flex', flexDirection: 'column', gap: 10 }}>
+                    {filteredBookings.map(b => (
+                      <BookingCard
+                        key={b.id} booking={b}
+                        expanded={expandedBooking === b.id}
+                        onToggle={() => setExpandedBooking(expandedBooking === b.id ? null : b.id)}
+                        onApprove={() => updateBookingStatus(b.id, 'approved')}
+                        onReject={() => updateBookingStatus(b.id, 'rejected')}
+                        onComplete={() => updateBookingStatus(b.id, 'completed')}
+                      />
+                    ))}
+                    {filteredBookings.length === 0 && (
+                      <div style={{ textAlign: 'center', padding: '30px 0', color: '#444' }}>אין הזמנות להצגה</div>
+                    )}
+                  </div>
                 </div>
               </>
             )}
@@ -754,29 +739,144 @@ export default function AdminDashboardClient({
   )
 }
 
-// ─── BookingRow ─────────────────────────────────────────────────
+// ─── BookingCard ─────────────────────────────────────────────────
 
-function BookingRow({ booking: b, onApprove, onReject }: {
+const EXTRAS_LABELS: Record<string, string> = {
+  additional_stop: 'נקודה נוספת באותו ישוב (+₪20)',
+  nearby_city_stop: 'נקודה נוספת בישוב סמוך (+₪40)',
+  child_under4: 'ילד עד גיל 4 (+₪10)',
+  safety_seat: 'כיסא בטיחות (+₪40–70)',
+  ski_equipment: 'ציוד סקי/גלישה (+₪20)',
+  bike_rack: 'ארגז אופניים (+₪50)',
+}
+
+const STATUS_LABELS_CARD: Record<string, string> = {
+  pending: 'ממתין', approved: 'מאושר', claimed: 'שורין',
+  completed: 'הושלם', rejected: 'נדחה', cancelled: 'בוטל',
+}
+const STATUS_COLORS_CARD: Record<string, string> = {
+  pending: '#FFD100', approved: '#27AE60', claimed: '#3B82F6',
+  completed: '#6B7280', rejected: '#EF4444', cancelled: '#6B7280',
+}
+
+function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onComplete }: {
   booking: Booking
+  expanded: boolean
+  onToggle: () => void
   onApprove: () => void
   onReject: () => void
+  onComplete: () => void
 }) {
+  const extras = (b.extras as Record<string, boolean>) ?? {}
+  const activeExtras = Object.entries(extras).filter(([, v]) => v).map(([k]) => EXTRAS_LABELS[k] ?? k)
+
   return (
-    <tr>
-      <td>
-        <div style={{ fontWeight: 800, fontSize: 14 }}>{b.customer_name}</div>
-        <div style={{ fontSize: 12, color: '#888', direction: 'ltr', textAlign: 'right' }}>{b.customer_phone}</div>
-      </td>
-      <td>{b.pickup_city}</td>
-      <td>{b.travel_date} <strong>{b.travel_time?.slice(0, 5)}</strong></td>
-      <td>{b.passengers}</td>
-      <td><span style={{ fontSize: 17, fontWeight: 900, color: '#FFD100' }}>₪{b.price}</span></td>
-      <td>
-        <div style={{ display: 'flex', gap: 6 }}>
+    <div style={{
+      background: '#191919',
+      border: `1px solid ${expanded ? 'rgba(255,209,0,0.25)' : 'rgba(255,255,255,0.06)'}`,
+      borderRadius: 12,
+      overflow: 'hidden',
+      transition: 'border-color 0.2s',
+    }}>
+      {/* Summary row — always visible */}
+      <div
+        onClick={onToggle}
+        style={{
+          display: 'grid',
+          gridTemplateColumns: '1fr auto auto',
+          alignItems: 'center',
+          gap: 12,
+          padding: '14px 16px',
+          cursor: 'pointer',
+        }}
+      >
+        {/* Left: customer + city + time */}
+        <div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: 4 }}>
+            <span style={{ fontWeight: 800, fontSize: 15, color: '#F2F2F2' }}>{b.customer_name}</span>
+            <span style={{
+              fontSize: 11, fontWeight: 700, padding: '2px 8px', borderRadius: 20,
+              background: `${STATUS_COLORS_CARD[b.status]}22`,
+              color: STATUS_COLORS_CARD[b.status],
+            }}>{STATUS_LABELS_CARD[b.status]}</span>
+          </div>
+          <div style={{ fontSize: 13, color: '#888' }}>
+            {b.pickup_city} → בן גוריון &nbsp;•&nbsp; {b.travel_date} &nbsp;<strong style={{ color: '#aaa' }}>{b.travel_time?.slice(0, 5)}</strong>
+            &nbsp;•&nbsp; {b.passengers} נוסעים
+          </div>
+        </div>
+
+        {/* Price */}
+        <div style={{ textAlign: 'center', minWidth: 64 }}>
+          <div style={{ fontSize: 20, fontWeight: 900, color: '#FFD100' }}>₪{b.price}</div>
+        </div>
+
+        {/* Expand arrow */}
+        <div style={{ color: '#555', fontSize: 14, transition: 'transform 0.2s', transform: expanded ? 'rotate(180deg)' : 'none' }}>▼</div>
+      </div>
+
+      {/* Action buttons */}
+      <div style={{ padding: '0 16px 14px', display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+        {b.status === 'pending' && <>
           <button className="btn-approve" onClick={onApprove}>✓ אשר</button>
           <button className="btn-reject" onClick={onReject}>✗ דחה</button>
+        </>}
+        {b.status === 'approved' && <button className="btn-reject" onClick={onReject}>בטל</button>}
+        {b.status === 'claimed' && <button className="btn-complete" onClick={onComplete}>✓ סיים נסיעה</button>}
+      </div>
+
+      {/* Expanded details */}
+      {expanded && (
+        <div style={{
+          borderTop: '1px solid rgba(255,255,255,0.06)',
+          padding: '16px',
+          display: 'grid',
+          gridTemplateColumns: 'repeat(auto-fit, minmax(160px, 1fr))',
+          gap: 12,
+          background: '#141414',
+        }}>
+          <Detail label="טלפון" value={b.customer_phone} />
+          {b.customer_email && <Detail label="אימייל" value={b.customer_email} />}
+          <Detail label="כתובת איסוף" value={`${b.pickup_street} ${b.pickup_house_number}, ${b.pickup_city}`} />
+          <Detail label="תאריך ושעה" value={`${b.travel_date} • ${b.travel_time?.slice(0,5)}`} />
+          <Detail label="נוסעים" value={String(b.passengers)} />
+          {(b.large_luggage ?? 0) > 0 && <Detail label="מזוודות גדולות" value={String(b.large_luggage)} />}
+          {(b.trolley ?? 0) > 0 && <Detail label="טרולי" value={String(b.trolley)} />}
+          <Detail label="תשלום" value={b.payment_method === 'bit' ? 'ביט' : 'מזומן'} />
+          {b.return_trip && (
+            <>
+              <Detail label="חזרה מהשדה" value="כן" highlight />
+              {b.return_address && <Detail label="כתובת חזרה" value={b.return_address} />}
+              {b.return_flight_number && <Detail label="מספר טיסה" value={b.return_flight_number} />}
+              {b.return_date && <Detail label="תאריך חזרה" value={`${b.return_date}${b.return_time ? ' • ' + b.return_time.slice(0,5) : ''}`} />}
+            </>
+          )}
+          {activeExtras.length > 0 && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <div style={{ fontSize: 11, color: '#555', marginBottom: 6 }}>תוספות</div>
+              <div style={{ display: 'flex', flexWrap: 'wrap', gap: 6 }}>
+                {activeExtras.map(e => (
+                  <span key={e} style={{ background: 'rgba(255,209,0,0.1)', color: '#FFD100', fontSize: 12, padding: '3px 10px', borderRadius: 20 }}>{e}</span>
+                ))}
+              </div>
+            </div>
+          )}
+          {b.special_requests && (
+            <div style={{ gridColumn: '1 / -1' }}>
+              <Detail label="הערות מיוחדות" value={b.special_requests} />
+            </div>
+          )}
         </div>
-      </td>
-    </tr>
+      )}
+    </div>
+  )
+}
+
+function Detail({ label, value, highlight }: { label: string; value: string; highlight?: boolean }) {
+  return (
+    <div>
+      <div style={{ fontSize: 10, color: '#555', marginBottom: 3, textTransform: 'uppercase', letterSpacing: '0.5px' }}>{label}</div>
+      <div style={{ fontSize: 13, fontWeight: 600, color: highlight ? '#FFD100' : '#C0C0C0' }}>{value}</div>
+    </div>
   )
 }

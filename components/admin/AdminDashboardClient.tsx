@@ -4,6 +4,8 @@ import { useState } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Booking, Driver } from '@/types/database'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
 
 type AdminTab = 'dashboard' | 'bookings' | 'drivers' | 'credits'
 
@@ -389,10 +391,9 @@ export default function AdminDashboardClient({
       <div className="admin-wrap">
         {/* Header */}
         <header className="admin-header">
-          <div className="admin-logo">
-            <div className="admin-logo-mark">⚙️</div>
-            <div className="admin-logo-text">פאנל <span>ניהול</span></div>
-          </div>
+          <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+            <Image src="/sababa_logo.png" alt="מוניות סבבה" width={120} height={48} style={{ objectFit: 'contain' }} />
+          </Link>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, color: '#888' }}>מנהל ראשי</span>
             <button className="btn-ghost-sm btn-ghost-red" onClick={handleLogout}>התנתק</button>

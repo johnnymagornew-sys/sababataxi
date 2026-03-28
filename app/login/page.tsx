@@ -4,6 +4,7 @@ import { useState, useEffect } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
+import Image from 'next/image'
 
 export default function LoginPage() {
   const [email, setEmail] = useState('')
@@ -89,12 +90,9 @@ export default function LoginPage() {
       <div style={{ width: '100%', maxWidth: 400 }}>
         {/* Logo */}
         <div style={{ textAlign: 'center', marginBottom: 32 }}>
-          <div style={{
-            background: 'var(--y)', color: 'var(--black)',
-            fontWeight: 800, fontSize: 24,
-            padding: '8px 16px', borderRadius: 12,
-            display: 'inline-block', marginBottom: 12,
-          }}>🚕</div>
+          <Link href="/" style={{ display: 'inline-block', marginBottom: 16 }}>
+            <Image src="/sababa_logo.png" alt="מוניות סבבה" width={180} height={72} style={{ objectFit: 'contain' }} priority />
+          </Link>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--txt)' }}>
             כניסה לנהגים
           </h1>

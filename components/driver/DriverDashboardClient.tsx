@@ -4,6 +4,8 @@ import { useState, useEffect, useCallback } from 'react'
 import { createClient } from '@/lib/supabase/client'
 import type { Booking, Driver } from '@/types/database'
 import { useRouter } from 'next/navigation'
+import Image from 'next/image'
+import Link from 'next/link'
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'ממתין', approved: 'זמין', claimed: 'שלי',
@@ -95,10 +97,9 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         display: 'flex', alignItems: 'center', justifyContent: 'space-between',
         position: 'sticky', top: 0, zIndex: 50,
       }}>
-        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
-          <div style={{ background: 'var(--y)', color: 'var(--black)', fontWeight: 800, fontSize: 16, padding: '3px 10px', borderRadius: 6 }}>🚕</div>
-          <span style={{ fontWeight: 700, fontSize: 17 }}>פאנל נהג</span>
-        </div>
+        <Link href="/" style={{ display: 'flex', alignItems: 'center' }}>
+          <Image src="/sababa_logo.png" alt="מוניות סבבה" width={110} height={44} style={{ objectFit: 'contain' }} />
+        </Link>
         <button
           onClick={handleLogout}
           style={{ background: 'none', border: 'none', color: 'var(--txt2)', cursor: 'pointer', fontSize: 14 }}

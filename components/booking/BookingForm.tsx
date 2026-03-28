@@ -3,7 +3,7 @@
 import { useState, useEffect } from 'react'
 import AddressAutocomplete from './AddressAutocomplete'
 import { calculatePrice } from '@/lib/pricing'
-import { getTierIndex, getTierBasePrice, TIER_LABELS } from '@/lib/tierPrices'
+import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
 import type { BookingExtras } from '@/types/database'
 
 // Normalize Nominatim city names to match our price table
@@ -25,7 +25,13 @@ const CITY_NAME_MAP: Record<string, string> = {
   'אריאל (עיר)': 'אריאל',
 }
 function normalizeCity(city: string): string {
-  return CITY_NAME_MAP[city] || city
+  // Nominatim uses Hebrew maqaf (U+05BE) and en-dash (U+2013) in city names
+  // Normalize all dash variants to a regular hyphen before lookup
+  const normalized = city
+    .replace(/\u05be/g, '-')   // Hebrew maqaf ‑
+    .replace(/\u2013/g, '-')   // en-dash –
+    .replace(/\u2014/g, '-')   // em-dash —
+  return CITY_NAME_MAP[normalized] || CITY_NAME_MAP[city] || normalized
 }
 
 // Prices based on stars-taxi.co.il 2026 price list
@@ -152,7 +158,7 @@ export default function BookingForm() {
     const idx = getTierIndex(form.passengers)
     const tierBase = getTierBasePrice(form.pickup_city, form.passengers, fallbackBase)
     const { vehicle, range } = TIER_LABELS[idx]
-    const inTable = !!(require('@/lib/tierPrices').TIER_PRICES[form.pickup_city])
+    const inTable = !!(TIER_PRICES[form.pickup_city])
 
     if (!form.travel_date || !form.travel_time) {
       setPrice({ total: tierBase, tierBase, vehicle, range, inTable })

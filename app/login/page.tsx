@@ -7,7 +7,7 @@ import Link from 'next/link'
 import Image from 'next/image'
 
 export default function LoginPage() {
-  const [email, setEmail] = useState('')
+  const [identifier, setIdentifier] = useState('')
   const [password, setPassword] = useState('')
   const [rememberMe, setRememberMe] = useState(true)
   const [loading, setLoading] = useState(false)
@@ -44,13 +44,34 @@ export default function LoginPage() {
     setLoading(true)
     setError('')
 
+    // Determine email: if identifier looks like an email use it directly, otherwise resolve phone → email
+    let email: string
+    const isEmail = identifier.includes('@')
+    if (isEmail) {
+      email = identifier.trim()
+    } else {
+      const res = await fetch('/api/auth/phone-to-email', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ phone: identifier }),
+      })
+      if (!res.ok) {
+        const { error: msg } = await res.json()
+        setError(msg || 'מספר טלפון לא נמצא')
+        setLoading(false)
+        return
+      }
+      const data = await res.json()
+      email = data.email
+    }
+
     const { data, error: authError } = await supabase.auth.signInWithPassword({
       email,
       password,
     })
 
     if (authError) {
-      setError('אימייל או סיסמה שגויים')
+      setError('סיסמה שגויה')
       setLoading(false)
       return
     }
@@ -104,14 +125,16 @@ export default function LoginPage() {
         <div className="card">
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label>אימייל</label>
+              <label>טלפון או אימייל</label>
               <input
-                type="email" required
-                placeholder="driver@example.com"
-                value={email}
-                onChange={e => setEmail(e.target.value)}
+                type="text" required
+                placeholder="050-0000000 או name@example.com"
+                value={identifier}
+                onChange={e => setIdentifier(e.target.value)}
                 dir="ltr"
-                autoComplete="email"
+                style={{ textAlign: 'right' }}
+                autoComplete="username"
+                inputMode="email"
               />
             </div>
             <div>

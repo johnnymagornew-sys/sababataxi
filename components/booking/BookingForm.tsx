@@ -68,6 +68,8 @@ interface FormData {
   customer_name: string; customer_phone: string; customer_email: string
   pickup_city: string; pickup_street: string; pickup_house_number: string
   destination_city: string
+  destination_street: string
+  destination_house_number: string
   travel_date: string; travel_time: string; passengers: number
   large_luggage: number; trolley: number; return_trip: boolean
   return_city: string; return_street: string; return_house_number: string
@@ -79,6 +81,8 @@ const initialForm: FormData = {
   customer_name: '', customer_phone: '', customer_email: '',
   pickup_city: '', pickup_street: '', pickup_house_number: '',
   destination_city: '',
+  destination_street: '',
+  destination_house_number: '',
   travel_date: '', travel_time: '', passengers: 1, large_luggage: 0, trolley: 0,
   return_trip: false, return_city: '', return_street: '', return_house_number: '',
   return_flight_number: '', return_date: '', return_time: '',
@@ -96,6 +100,7 @@ const STEPS = [
 export default function BookingForm() {
   const [form, setForm] = useState<FormData>(initialForm)
   const [addressDisplay, setAddressDisplay] = useState('')
+  const [destinationAddressDisplay, setDestinationAddressDisplay] = useState('')
   const [returnAddressDisplay, setReturnAddressDisplay] = useState('')
   const [price, setPrice] = useState<{ total: number; tierBase: number; vehicle: string; range: string; inTable: boolean } | null>(null)
   const [submitting, setSubmitting] = useState(false)
@@ -180,6 +185,17 @@ export default function BookingForm() {
   function handleAddressClear() {
     setAddressDisplay('')
     setField('pickup_city', ''); setField('pickup_street', ''); setField('pickup_house_number', '')
+  }
+  function handleDestinationAddressSelect(parsed: ParsedAddress) {
+    const city = normalizeCity(parsed.city)
+    setDestinationAddressDisplay(parsed.displayName)
+    setField('destination_city', city)
+    setField('destination_street', parsed.street)
+    setField('destination_house_number', parsed.houseNumber)
+  }
+  function handleDestinationAddressClear() {
+    setDestinationAddressDisplay('')
+    setField('destination_city', ''); setField('destination_street', ''); setField('destination_house_number', '')
   }
   function handleReturnAddressSelect(parsed: ParsedAddress) {
     const city = normalizeCity(parsed.city)
@@ -416,7 +432,7 @@ export default function BookingForm() {
                 <div className="field-enter" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {(['airport', 'intercity'] as const).map(t => (
                     <button key={t} type="button"
-                      onClick={() => { setField('trip_type', t); if (t === 'airport') setField('destination_city', '') }}
+                      onClick={() => { setField('trip_type', t); if (t === 'airport') { setField('destination_city', ''); setField('destination_street', ''); setField('destination_house_number', ''); setDestinationAddressDisplay('') } }}
                       style={{
                         background: form.trip_type === t ? 'var(--y-dim)' : 'var(--card2)',
                         border: `2px solid ${form.trip_type === t ? 'var(--y)' : 'var(--border)'}`,
@@ -465,23 +481,45 @@ export default function BookingForm() {
 
                 {/* Intercity destination */}
                 {form.trip_type === 'intercity' && (
-                  <div className="field-enter">
-                    <label>עיר יעד *</label>
-                    <select
-                      value={form.destination_city}
-                      onChange={e => setField('destination_city', e.target.value)}
-                      style={{ fontSize: 15, height: 48, padding: '0 12px', width: '100%' }}
-                    >
-                      <option value="">— בחר עיר יעד —</option>
-                      {INTERCITY_CITIES.filter(c => c !== form.pickup_city).map(c => (
-                        <option key={c} value={c}>{c}</option>
-                      ))}
-                    </select>
-                    {form.destination_city && form.pickup_city && (
-                      <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
-                        {getIntercityPrice(form.pickup_city, form.destination_city)
+                  <div className="field-enter" style={{ display: 'grid', gap: 10 }}>
+                    <div>
+                      <label>כתובת יעד *</label>
+                      <AddressAutocomplete
+                        value={destinationAddressDisplay}
+                        onSelect={handleDestinationAddressSelect}
+                        onClear={handleDestinationAddressClear}
+                      />
+                    </div>
+                    {!destinationAddressDisplay && (
+                      <div>
+                        <label style={{ fontSize: 12, color: 'var(--txt2)' }}>או בחר עיר יעד מהרשימה</label>
+                        <select
+                          value={form.destination_city}
+                          onChange={e => { setField('destination_city', e.target.value); setField('destination_street', ''); setField('destination_house_number', '') }}
+                          style={{ fontSize: 15, height: 44, padding: '0 12px', width: '100%' }}
+                        >
+                          <option value="">— בחר עיר —</option>
+                          {INTERCITY_CITIES.filter(c => c !== form.pickup_city).map(c => (
+                            <option key={c} value={c}>{c}</option>
+                          ))}
+                        </select>
+                      </div>
+                    )}
+                    {form.destination_city && (
+                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+                        <Chip>📍 {form.destination_city}</Chip>
+                        {form.destination_street && <Chip>🛣 {form.destination_street} {form.destination_house_number}</Chip>}
+                        {form.pickup_city && (getIntercityPrice(form.pickup_city, form.destination_city)
                           ? <Chip yellow>מחיר בסיס: ₪{getIntercityPrice(form.pickup_city, form.destination_city)}</Chip>
-                          : <ChipOrange>מסלול לא נמצא — מחיר יתואם</ChipOrange>}
+                          : <ChipOrange>מסלול לא ברשימה — מחיר יתואם</ChipOrange>)}
+                      </div>
+                    )}
+                    {form.destination_city && form.destination_street && (
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                        <label style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 12 }}>מספר בית:</label>
+                        <input type="text" placeholder="7" value={form.destination_house_number}
+                          onChange={e => setField('destination_house_number', e.target.value)}
+                          style={{ width: 80, padding: '6px 10px', fontSize: 14 }} />
                       </div>
                     )}
                   </div>

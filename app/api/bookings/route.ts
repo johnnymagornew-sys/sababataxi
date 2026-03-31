@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
 
     const trip_type = body.trip_type === 'intercity' ? 'intercity' : 'airport'
     const destination_city = sanitizeString(body.destination_city ?? '', 100)
+    const destination_street = sanitizeString(body.destination_street ?? '', 200)
+    const destination_house_number = sanitizeString(body.destination_house_number ?? '', 20)
     const return_trip = !!body.return_trip
     const return_city = sanitizeString(body.return_city, 100)
     const return_street = sanitizeString(body.return_street, 200)
@@ -86,7 +88,9 @@ export async function POST(request: NextRequest) {
         pickup_city,
         pickup_street,
         pickup_house_number,
-        destination: trip_type === 'intercity' ? destination_city : 'נמל תעופה בן גוריון',
+        destination: trip_type === 'intercity'
+          ? [destination_street, destination_house_number, destination_city].filter(Boolean).join(' ')
+          : 'נמל תעופה בן גוריון',
         travel_date,
         travel_time,
         passengers: passengers ?? 1,

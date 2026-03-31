@@ -354,29 +354,42 @@ export default function BookingForm() {
             onClear={handleAddressClear}
           />
         </Field>
-        {/* Show parsed breakdown */}
+        {/* Show parsed breakdown + house number edit */}
         {form.pickup_city && (
-          <div style={{
-            marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap',
-            fontSize: 12, color: 'var(--txt2)',
-          }}>
-            <span style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px' }}>
-              📍 {form.pickup_city}
-            </span>
-            {form.pickup_street && (
+          <div style={{ marginTop: 8 }}>
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12, color: 'var(--txt2)', marginBottom: form.pickup_street ? 8 : 0 }}>
               <span style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px' }}>
-                🛣 {form.pickup_street} {form.pickup_house_number}
+                📍 {form.pickup_city}
               </span>
+              {form.pickup_street && (
+                <span style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 6, padding: '3px 10px' }}>
+                  🛣 {form.pickup_street} {form.pickup_house_number}
+                </span>
+              )}
+            </div>
+            {form.pickup_street && (
+              <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
+                <label style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 12 }}>מספר בית:</label>
+                <input
+                  type="text"
+                  placeholder="7"
+                  value={form.pickup_house_number}
+                  onChange={e => setField('pickup_house_number', e.target.value)}
+                  style={{ width: 80, padding: '6px 10px', fontSize: 14 }}
+                />
+              </div>
             )}
-            {CITY_PRICES[form.pickup_city] ? (
-              <span style={{ background: 'rgba(255,209,0,0.1)', border: '1px solid rgba(255,209,0,0.3)', borderRadius: 6, padding: '3px 10px', color: 'var(--y)' }}>
-                מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}
-              </span>
-            ) : (
-              <span style={{ background: 'rgba(255,150,0,0.1)', border: '1px solid rgba(255,150,0,0.3)', borderRadius: 6, padding: '3px 10px', color: '#FFA500', fontSize: 11 }}>
-                עיר לא ברשימה — מחיר יתואם בטלפון
-              </span>
-            )}
+            <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', marginTop: 6, fontSize: 12 }}>
+              {CITY_PRICES[form.pickup_city] ? (
+                <span style={{ background: 'rgba(255,209,0,0.1)', border: '1px solid rgba(255,209,0,0.3)', borderRadius: 6, padding: '3px 10px', color: 'var(--y)' }}>
+                  מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}
+                </span>
+              ) : (
+                <span style={{ background: 'rgba(255,150,0,0.1)', border: '1px solid rgba(255,150,0,0.3)', borderRadius: 6, padding: '3px 10px', color: '#FFA500', fontSize: 11 }}>
+                  עיר לא ברשימה — מחיר יתואם בטלפון
+                </span>
+              )}
+            </div>
           </div>
         )}
 

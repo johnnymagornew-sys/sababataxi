@@ -64,9 +64,19 @@ export default function HomePage() {
         }}>
           הזמינו מונית לשדה התעופה
         </h1>
-        <p style={{ color: 'var(--txt2)', fontSize: 17, margin: 0 }}>
+        <p style={{ color: 'var(--txt2)', fontSize: 17, margin: '0 0 16px' }}>
           שירות אמין • מחירים קבועים • ללא הפתעות
         </p>
+        <div style={{
+          display: 'inline-flex', alignItems: 'center', gap: 8,
+          background: 'rgba(39,174,96,0.1)',
+          border: '1px solid rgba(39,174,96,0.25)',
+          borderRadius: 20, padding: '6px 16px',
+          fontSize: 14, color: '#27AE60', fontWeight: 600,
+        }}>
+          <span>✅</span>
+          ללא פרטי אשראי — תשלום ישירות לנהג במזומן או ביט
+        </div>
       </div>
 
       {/* Booking Form */}

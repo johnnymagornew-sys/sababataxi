@@ -401,6 +401,49 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           {ride.customer_email && (
             <div style={{ fontSize: 13, color: 'var(--txt2)' }}>{ride.customer_email}</div>
           )}
+          {/* Action buttons */}
+          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10 }}>
+            <a
+              href={`tel:${ride.customer_phone.replace(/\s/g, '')}`}
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                background: 'rgba(39,174,96,0.12)', border: '1px solid rgba(39,174,96,0.3)',
+                borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
+                color: 'var(--green)', fontSize: 11, fontWeight: 700,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>📞</span>
+              התקשר
+            </a>
+            <a
+              href={`https://wa.me/${toWhatsAppNumber(ride.customer_phone)}`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.3)',
+                borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
+                color: '#25D366', fontSize: 11, fontWeight: 700,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>💬</span>
+              וואטסאפ
+            </a>
+            <a
+              href={`https://waze.com/ul?q=${encodeURIComponent(buildWazeAddress(ride))}&navigate=yes`}
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                background: 'rgba(0,165,255,0.12)', border: '1px solid rgba(0,165,255,0.3)',
+                borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
+                color: '#00A5FF', fontSize: 11, fontWeight: 700,
+              }}
+            >
+              <span style={{ fontSize: 22 }}>🗺️</span>
+              וויז
+            </a>
+          </div>
         </div>
       )}
 
@@ -497,6 +540,20 @@ function EmptyState({ icon, text }: { icon: string; text: string }) {
       <div style={{ fontSize: 16 }}>{text}</div>
     </div>
   )
+}
+
+function toWhatsAppNumber(phone: string): string {
+  const digits = phone.replace(/\D/g, '')
+  // Israeli local: starts with 0 → replace with 972
+  if (digits.startsWith('0')) return '972' + digits.slice(1)
+  // Already international digits (user typed +XX...)
+  return digits
+}
+
+function buildWazeAddress(ride: Booking): string {
+  const isFromAirport = ride.pickup_city === 'נמל תעופה בן גוריון'
+  if (isFromAirport) return ride.destination ?? ''
+  return [ride.pickup_street, ride.pickup_house_number, ride.pickup_city].filter(Boolean).join(' ')
 }
 
 function getCommission(price: number): number {

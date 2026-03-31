@@ -134,6 +134,32 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Send WhatsApp confirmation
+    const waUrl = process.env.WHATSAPP_SERVICE_URL
+    if (waUrl) {
+      try {
+        const dateStr = new Date(travel_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' })
+        const payLabel = (payment_method ?? 'cash') === 'bit' ? 'ביט' : 'מזומן'
+        const waMsg =
+          `✅ ההזמנה שלך התקבלה!\n\n` +
+          `📍 כתובת: ${[pickup_street, pickup_house_number, pickup_city].filter(Boolean).join(' ')}\n` +
+          `📅 תאריך: ${dateStr} בשעה ${travel_time.slice(0, 5)}\n` +
+          `👥 נוסעים: ${passengers ?? 1}\n` +
+          `💰 מחיר: ₪${price}\n` +
+          `💳 תשלום: ${payLabel} לנהג\n` +
+          (return_trip ? `✈️ כולל חזרה מהשדה\n` : '') +
+          `\nנהג יאשר איתך בקרוב 🚕\n` +
+          `*מוניות סבבה*`
+        await fetch(`${waUrl}/send`, {
+          method: 'POST',
+          headers: { 'Content-Type': 'application/json' },
+          body: JSON.stringify({ phone: customer_phone, message: waMsg }),
+        })
+      } catch (err) {
+        console.error('WhatsApp error:', err)
+      }
+    }
+
     // Send confirmation email if customer provided email
     if (customer_email) {
       try {

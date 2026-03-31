@@ -86,16 +86,17 @@ export async function POST(request: NextRequest) {
 
     // If return trip — create a second booking (airport → home), so two drivers can claim independently
     let returnBookingId: string | null = null
-    if (return_trip && return_city && return_date && return_time) {
+    if (return_trip && return_date) {
       const returnTierRow = TIER_PRICES[return_city]
       const returnBasePrice = returnTierRow ? returnTierRow[0] : 0
 
+      const effectiveReturnTime = return_time || '12:00'
       const { total: returnPrice } = calculatePrice({
-        city: return_city,
+        city: return_city || pickup_city,
         basePrice: returnBasePrice,
         passengers: passengers ?? 1,
         travelDate: return_date,
-        travelTime: return_time,
+        travelTime: effectiveReturnTime,
         extras: extras ?? {},
         paymentMethod: payment_method ?? 'cash',
       })
@@ -111,7 +112,7 @@ export async function POST(request: NextRequest) {
           pickup_house_number: null,
           destination: return_address,
           travel_date: return_date,
-          travel_time: return_time,
+          travel_time: effectiveReturnTime,
           passengers: passengers ?? 1,
           large_luggage: large_luggage ?? 0,
           trolley: trolley ?? 0,

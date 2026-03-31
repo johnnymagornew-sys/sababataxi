@@ -46,13 +46,12 @@ export async function POST(request: NextRequest) {
     // Server-side price calculation
     let price: number
     if (trip_type === 'intercity') {
-      const intercityBase = getIntercityPrice(pickup_city, destination_city) ?? 0
-      let total = intercityBase
       const dateTime = new Date(`${travel_date}T${travel_time}`)
       const s = getTimeSurcharges(dateTime)
-      if (s.night) total += 20
+      const isNight = s.night || s.shabbat
+      const intercityBase = getIntercityPrice(pickup_city, destination_city, passengers ?? 1, isNight) ?? 0
+      let total = intercityBase
       if (s.peak) total += 20
-      if (s.shabbat) total += 15
       if (extras?.additional_stop) total += 20
       if (extras?.nearby_city_stop) total += 40
       if (extras?.child_under4) total += 10

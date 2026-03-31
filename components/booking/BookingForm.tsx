@@ -5,7 +5,7 @@ import AddressAutocomplete, { ParsedAddress } from './AddressAutocomplete'
 import PhoneInput from './PhoneInput'
 import { calculatePrice, getTimeSurcharges } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
-import { INTERCITY_PRICES, getIntercityPrice } from '@/lib/intercityPrices'
+import { INTERCITY_PRICES, getIntercityPrice, getIntercityTierIndex, INTERCITY_VEHICLE_TIERS } from '@/lib/intercityPrices'
 import type { BookingExtras } from '@/types/database'
 
 // ─── City normalisation ───────────────────────────────────────────
@@ -119,15 +119,22 @@ export default function BookingForm() {
 
     if (form.trip_type === 'intercity') {
       if (!form.pickup_city || !form.destination_city) { setPrice(null); return }
-      const basePrice = getIntercityPrice(form.pickup_city, form.destination_city)
+      // Determine if night for correct base price
+      let isNight = false
+      if (form.travel_date && form.travel_time) {
+        const dateTime = new Date(`${form.travel_date}T${form.travel_time}`)
+        const s = getTimeSurcharges(dateTime)
+        isNight = s.night || s.shabbat
+      }
+      const basePrice = getIntercityPrice(form.pickup_city, form.destination_city, form.passengers, isNight)
       if (!basePrice) { setPrice(null); return }
+      const tierIdx = getIntercityTierIndex(form.passengers)
+      const tier = INTERCITY_VEHICLE_TIERS[tierIdx]
       let total = basePrice
       if (form.travel_date && form.travel_time) {
         const dateTime = new Date(`${form.travel_date}T${form.travel_time}`)
         const s = getTimeSurcharges(dateTime)
-        if (s.night) total += 20
         if (s.peak) total += 20
-        if (s.shabbat) total += 15
       }
       if (form.extras.additional_stop) total += 20
       if (form.extras.nearby_city_stop) total += 40
@@ -136,7 +143,7 @@ export default function BookingForm() {
       if (form.extras.ski_equipment) total += 20
       if (form.extras.bike_rack) total += 50
       if (form.payment_method === 'bit') total += 10
-      setPrice({ total, tierBase: basePrice, vehicle, range, inTable: true })
+      setPrice({ total, tierBase: basePrice, vehicle: tier.label, range: tier.passengers, inTable: true })
       return
     }
 

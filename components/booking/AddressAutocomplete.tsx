@@ -129,7 +129,7 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
         <div style={{
           position: 'absolute', top: '100%', right: 0, left: 0,
           background: 'var(--card2)', border: '1px solid var(--border)',
-          borderRadius: 8, zIndex: 20, overflow: 'hidden',
+          borderRadius: 8, zIndex: 200, overflow: 'hidden',
           boxShadow: '0 8px 24px rgba(0,0,0,0.5)', marginTop: 4,
           maxHeight: 300, overflowY: 'auto',
         }}>

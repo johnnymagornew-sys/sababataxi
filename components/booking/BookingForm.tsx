@@ -306,7 +306,6 @@ export default function BookingForm() {
         <div
           key={animKey}
           className={dir > 0 ? 'wiz-forward' : 'wiz-back'}
-          style={{ overflow: 'hidden' }}
         >
 
           {/* STEP 0 – Personal ──────────────────────────────── */}
@@ -335,7 +334,7 @@ export default function BookingForm() {
 
           {/* STEP 1 – Trip ──────────────────────────────────── */}
           {step === 1 && (
-            <div className="card" style={{ marginBottom: 16 }}>
+            <div className="card" style={{ marginBottom: 16, position: 'relative', zIndex: 10 }}>
               <StepTitle icon="✈️" title="פרטי נסיעה" />
               <div style={{ display: 'grid', gap: 14 }}>
                 <div className="field-enter">

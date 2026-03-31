@@ -2,6 +2,7 @@
 
 import { useState, useEffect, useRef } from 'react'
 import AddressAutocomplete, { ParsedAddress } from './AddressAutocomplete'
+import PhoneInput from './PhoneInput'
 import { calculatePrice } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
 import type { BookingExtras } from '@/types/database'
@@ -100,6 +101,9 @@ export default function BookingForm() {
   const [animKey, setAnimKey] = useState(0)
   const prevPrice = useRef<number | null>(null)
   const [priceFlash, setPriceFlash] = useState(false)
+  const [phoneValid, setPhoneValid] = useState(false)
+  const videoRef = useRef<HTMLVideoElement>(null)
+  const scrubRafRef = useRef<number | null>(null)
 
   // Price calculation
   useEffect(() => {
@@ -128,6 +132,26 @@ export default function BookingForm() {
       prevPrice.current = price?.total ?? null
     }
   }, [price?.total])
+
+  // Video scrub on step change
+  useEffect(() => {
+    const video = videoRef.current
+    if (!video || isNaN(video.duration)) return
+    const target = (step / (STEPS.length - 1)) * video.duration
+    const startTime = video.currentTime
+    const startMs = performance.now()
+    const dur = 600
+    if (scrubRafRef.current) cancelAnimationFrame(scrubRafRef.current)
+    function frame(now: number) {
+      const p = Math.min((now - startMs) / dur, 1)
+      const eased = 1 - Math.pow(1 - p, 3)
+      video!.currentTime = startTime + (target - startTime) * eased
+      if (p < 1) scrubRafRef.current = requestAnimationFrame(frame)
+    }
+    scrubRafRef.current = requestAnimationFrame(frame)
+    return () => { if (scrubRafRef.current) cancelAnimationFrame(scrubRafRef.current) }
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [step])
 
   function setField<K extends keyof FormData>(key: K, value: FormData[K]) {
     setForm(prev => ({ ...prev, [key]: value }))
@@ -170,6 +194,7 @@ export default function BookingForm() {
     if (step === 0) {
       if (!form.customer_name.trim()) return 'נא להזין שם מלא'
       if (!form.customer_phone.trim()) return 'נא להזין טלפון'
+      if (!phoneValid) return 'נא להזין מספר טלפון תקין'
     }
     if (step === 1) {
       if (!form.pickup_city) return 'נא לבחור כתובת מהרשימה'
@@ -244,6 +269,7 @@ export default function BookingForm() {
         @media (max-width: 480px) {
           .date-time-grid { grid-template-columns: 1fr !important; }
         }
+        .date-time-grid > div { min-width: 0; overflow: hidden; }
         /* Custom toggle */
         .toggle-wrap { display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
         .toggle-track {
@@ -262,6 +288,34 @@ export default function BookingForm() {
       `}</style>
 
       <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
+
+        {/* ── Video scrub strip ────────────────────────────────── */}
+        <div style={{
+          position: 'relative',
+          width: '100%',
+          height: 180,
+          borderRadius: 16,
+          overflow: 'hidden',
+          marginBottom: 24,
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+        }}>
+          <video
+            ref={videoRef}
+            src="/taxi_video.mp4"
+            muted
+            playsInline
+            preload="auto"
+            onLoadedMetadata={() => { if (videoRef.current) videoRef.current.currentTime = 0 }}
+            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+          />
+          {/* bottom fade */}
+          <div style={{
+            position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
+            background: 'linear-gradient(to top, var(--bg), transparent)',
+            pointerEvents: 'none',
+          }} />
+        </div>
 
         {/* ── Progress bar ─────────────────────────────────────── */}
         <div style={{ marginBottom: 24 }}>
@@ -339,8 +393,10 @@ export default function BookingForm() {
                 </div>
                 <div className="field-enter">
                   <label>טלפון *</label>
-                  <input type="tel" placeholder="050-0000000" value={form.customer_phone}
-                    onChange={e => setField('customer_phone', e.target.value)} dir="ltr" style={{ textAlign: 'right' }} />
+                  <PhoneInput
+                    value={form.customer_phone}
+                    onChange={(val, valid) => { setField('customer_phone', val); setPhoneValid(valid) }}
+                  />
                 </div>
                 <div className="field-enter">
                   <label>אימייל (אופציונלי)</label>
@@ -382,16 +438,16 @@ export default function BookingForm() {
                 )}
 
                 <div className="field-enter date-time-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label>תאריך נסיעה *</label>
                     <input type="date" min={new Date().toISOString().split('T')[0]}
                       value={form.travel_date} onChange={e => setField('travel_date', e.target.value)}
-                      style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
+                      style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
                   </div>
-                  <div>
+                  <div style={{ minWidth: 0 }}>
                     <label>שעת נסיעה *</label>
                     <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
-                      style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
+                      style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
                   </div>
                 </div>
 
@@ -435,17 +491,17 @@ export default function BookingForm() {
                           dir="ltr" style={{ textAlign: 'right', fontSize: 16, height: 48 }} />
                       </div>
                       <div className="date-time-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <label>תאריך חזרה</label>
                           <input type="date" value={form.return_date}
                             onChange={e => setField('return_date', e.target.value)}
-                            style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
+                            style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
                         </div>
-                        <div>
+                        <div style={{ minWidth: 0 }}>
                           <label>שעה משוערת</label>
                           <input type="time" value={form.return_time}
                             onChange={e => setField('return_time', e.target.value)}
-                            style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
+                            style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
                         </div>
                       </div>
                     </div>

@@ -1,0 +1,7 @@
+<?xml version='1.0' encoding='utf-8'?>
+<resources>
+    <string name="app_name">סבבה טקסי</string>
+    <string name="title_activity_main">סבבה טקסי</string>
+    <string name="package_name">com.sababataxi.app</string>
+    <string name="custom_url_scheme">com.sababataxi.app</string>
+</resources>

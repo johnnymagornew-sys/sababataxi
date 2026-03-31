@@ -1057,21 +1057,26 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
 }) {
   const [notes, setNotes] = useState(b.admin_notes ?? '')
   const [savingNotes, setSavingNotes] = useState(false)
+  const [notesSaved, setNotesSaved] = useState(false)
   const [unassigning, setUnassigning] = useState(false)
   const extras = (b.extras as Record<string, boolean>) ?? {}
   const activeExtras = Object.entries(extras).filter(([, v]) => v).map(([k]) => EXTRAS_LABELS[k] ?? k)
   const claimedDriver = b.driver_id ? drivers.find(d => d.id === b.driver_id) : null
 
   async function handleUnassign() {
-    if (!confirm(`להסיר את ${claimedDriver?.full_name} מהנסיעה ולהחזיר ₪${b.price} קרדיט?`)) return
+    if (!confirm(`להסיר את ${claimedDriver?.full_name} מהנסיעה ולהחזיר לו את העמלה שנוכתה?`)) return
     setUnassigning(true)
     const res = await fetch('/api/admin/unassign-driver', {
       method: 'POST',
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookingId: b.id }),
     })
+    const data = res.ok ? await res.json() : null
     setUnassigning(false)
-    if (res.ok) onUnassign()
+    if (res.ok) {
+      alert(`הנהג הוסר. הוחזרו לו ₪${data?.refunded ?? 0} קרדיט (עמלה).`)
+      onUnassign()
+    }
   }
 
   async function handleSaveNotes() {
@@ -1087,6 +1092,8 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
         alert('שגיאה בשמירה: ' + (data.error ?? res.status))
       } else {
         onSaveNotes(notes)
+        setNotesSaved(true)
+        setTimeout(() => setNotesSaved(false), 3000)
       }
     } catch (err) {
       alert('שגיאת רשת: ' + err)
@@ -1234,18 +1241,25 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
                 resize: 'vertical', fontFamily: 'inherit', direction: 'rtl',
               }}
             />
-            <button
-              onClick={handleSaveNotes}
-              disabled={savingNotes}
-              style={{
-                marginTop: 6, background: 'rgba(255,209,0,0.1)',
-                border: '1px solid rgba(255,209,0,0.3)', color: '#FFD100',
-                padding: '6px 14px', borderRadius: 8, fontSize: 13,
-                fontWeight: 700, cursor: 'pointer',
-              }}
-            >
-              {savingNotes ? 'שומר...' : '💾 שמור הערה'}
-            </button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 10, marginTop: 6 }}>
+              <button
+                onClick={handleSaveNotes}
+                disabled={savingNotes}
+                style={{
+                  background: 'rgba(255,209,0,0.1)',
+                  border: '1px solid rgba(255,209,0,0.3)', color: '#FFD100',
+                  padding: '6px 14px', borderRadius: 8, fontSize: 13,
+                  fontWeight: 700, cursor: 'pointer',
+                }}
+              >
+                {savingNotes ? 'שומר...' : '💾 שמור הערה'}
+              </button>
+              {notesSaved && (
+                <span style={{ color: '#27AE60', fontSize: 13, fontWeight: 700 }}>
+                  ✓ ההערה נשמרה
+                </span>
+              )}
+            </div>
           </div>
         </div>
       )}

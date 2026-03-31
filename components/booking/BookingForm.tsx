@@ -3,8 +3,9 @@
 import { useState, useEffect, useRef } from 'react'
 import AddressAutocomplete, { ParsedAddress } from './AddressAutocomplete'
 import PhoneInput from './PhoneInput'
-import { calculatePrice } from '@/lib/pricing'
+import { calculatePrice, getTimeSurcharges } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
+import { INTERCITY_PRICES, INTERCITY_CITIES, getIntercityPrice } from '@/lib/intercityPrices'
 import type { BookingExtras } from '@/types/database'
 
 // ─── City normalisation ───────────────────────────────────────────
@@ -63,8 +64,10 @@ const CITY_PRICES: Record<string, number> = {
 
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
+  trip_type: 'airport' | 'intercity'
   customer_name: string; customer_phone: string; customer_email: string
   pickup_city: string; pickup_street: string; pickup_house_number: string
+  destination_city: string
   travel_date: string; travel_time: string; passengers: number
   large_luggage: number; trolley: number; return_trip: boolean
   return_city: string; return_street: string; return_house_number: string
@@ -72,8 +75,10 @@ interface FormData {
   payment_method: 'cash' | 'bit'; special_requests: string; extras: BookingExtras
 }
 const initialForm: FormData = {
+  trip_type: 'airport',
   customer_name: '', customer_phone: '', customer_email: '',
   pickup_city: '', pickup_street: '', pickup_house_number: '',
+  destination_city: '',
   travel_date: '', travel_time: '', passengers: 1, large_luggage: 0, trolley: 0,
   return_trip: false, return_city: '', return_street: '', return_house_number: '',
   return_flight_number: '', return_date: '', return_time: '',
@@ -104,11 +109,36 @@ export default function BookingForm() {
   const [phoneValid, setPhoneValid] = useState(false)
   // Price calculation
   useEffect(() => {
+    const idx = getTierIndex(form.passengers)
+    const { vehicle, range } = TIER_LABELS[idx]
+
+    if (form.trip_type === 'intercity') {
+      if (!form.pickup_city || !form.destination_city) { setPrice(null); return }
+      const basePrice = getIntercityPrice(form.pickup_city, form.destination_city)
+      if (!basePrice) { setPrice(null); return }
+      let total = basePrice
+      if (form.travel_date && form.travel_time) {
+        const dateTime = new Date(`${form.travel_date}T${form.travel_time}`)
+        const s = getTimeSurcharges(dateTime)
+        if (s.night) total += 20
+        if (s.peak) total += 20
+        if (s.shabbat) total += 15
+      }
+      if (form.extras.additional_stop) total += 20
+      if (form.extras.nearby_city_stop) total += 40
+      if (form.extras.child_under4) total += 10
+      if (form.extras.safety_seat) total += 55
+      if (form.extras.ski_equipment) total += 20
+      if (form.extras.bike_rack) total += 50
+      if (form.payment_method === 'bit') total += 10
+      setPrice({ total, tierBase: basePrice, vehicle, range, inTable: true })
+      return
+    }
+
+    // Airport trip
     const fallbackBase = CITY_PRICES[form.pickup_city]
     if (!fallbackBase) { setPrice(null); return }
-    const idx = getTierIndex(form.passengers)
     const tierBase = getTierBasePrice(form.pickup_city, form.passengers, fallbackBase)
-    const { vehicle, range } = TIER_LABELS[idx]
     const inTable = !!(TIER_PRICES[form.pickup_city])
     if (!form.travel_date || !form.travel_time) {
       setPrice({ total: tierBase, tierBase, vehicle, range, inTable }); return
@@ -119,7 +149,7 @@ export default function BookingForm() {
       extras: form.extras, paymentMethod: form.payment_method,
     })
     setPrice({ total, tierBase, vehicle, range, inTable })
-  }, [form.pickup_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
+  }, [form.trip_type, form.pickup_city, form.destination_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
 
   // Flash animation when price changes
   useEffect(() => {
@@ -175,6 +205,7 @@ export default function BookingForm() {
     }
     if (step === 1) {
       if (!form.pickup_city) return 'נא לבחור כתובת מהרשימה'
+      if (form.trip_type === 'intercity' && !form.destination_city) return 'נא לבחור עיר יעד'
       if (!form.travel_date) return 'נא לבחור תאריך נסיעה'
       if (!form.travel_time) return 'נא להזין שעת נסיעה'
     }
@@ -331,7 +362,12 @@ export default function BookingForm() {
               <div style={{ fontSize: 28, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
             </div>
             <div style={{ textAlign: 'left', fontSize: 12, color: 'rgba(0,0,0,0.6)' }}>
-              {form.pickup_city && <div style={{ fontWeight: 600 }}>{form.pickup_city} ← בן גוריון</div>}
+              {form.pickup_city && (
+              <div style={{ fontWeight: 600 }}>
+                {form.pickup_city} ←{' '}
+                {form.trip_type === 'intercity' ? (form.destination_city || '?') : 'בן גוריון'}
+              </div>
+            )}
               <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
               <div style={{ fontSize: 10, opacity: 0.7 }}>{price.range}</div>
             </div>
@@ -373,8 +409,31 @@ export default function BookingForm() {
           {/* STEP 1 – Trip ──────────────────────────────────── */}
           {step === 1 && (
             <div className="card" style={{ marginBottom: 16, position: 'relative', zIndex: 10 }}>
-              <StepTitle icon="✈️" title="פרטי נסיעה" />
+              <StepTitle icon={form.trip_type === 'intercity' ? '🚗' : '✈️'} title="פרטי נסיעה" />
               <div style={{ display: 'grid', gap: 14 }}>
+
+                {/* Trip type selector */}
+                <div className="field-enter" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {(['airport', 'intercity'] as const).map(t => (
+                    <button key={t} type="button"
+                      onClick={() => { setField('trip_type', t); if (t === 'airport') setField('destination_city', '') }}
+                      style={{
+                        background: form.trip_type === t ? 'var(--y-dim)' : 'var(--card2)',
+                        border: `2px solid ${form.trip_type === t ? 'var(--y)' : 'var(--border)'}`,
+                        borderRadius: 12, padding: '12px 8px', cursor: 'pointer', textAlign: 'center',
+                        transition: 'all 0.15s',
+                      }}>
+                      <div style={{ fontSize: 24, marginBottom: 4 }}>{t === 'airport' ? '✈️' : '🚗'}</div>
+                      <div style={{ fontWeight: 700, color: form.trip_type === t ? 'var(--y)' : 'var(--txt)', fontSize: 14 }}>
+                        {t === 'airport' ? 'לשדה תעופה' : 'בין עירונית'}
+                      </div>
+                      <div style={{ fontSize: 11, color: 'var(--txt2)', marginTop: 2 }}>
+                        {t === 'airport' ? 'בן גוריון' : 'עיר לעיר'}
+                      </div>
+                    </button>
+                  ))}
+                </div>
+
                 <div className="field-enter">
                   <label>כתובת איסוף *</label>
                   <AddressAutocomplete value={addressDisplay} onSelect={handleAddressSelect} onClear={handleAddressClear} />
@@ -385,9 +444,13 @@ export default function BookingForm() {
                     <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
                       <Chip>📍 {form.pickup_city}</Chip>
                       {form.pickup_street && <Chip>🛣 {form.pickup_street} {form.pickup_house_number}</Chip>}
-                      {CITY_PRICES[form.pickup_city]
-                        ? <Chip yellow>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</Chip>
-                        : <ChipOrange>עיר לא ברשימה — מחיר יתואם בטלפון</ChipOrange>}
+                      {form.trip_type === 'airport'
+                      ? (CITY_PRICES[form.pickup_city]
+                          ? <Chip yellow>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</Chip>
+                          : <ChipOrange>עיר לא ברשימה — מחיר יתואם בטלפון</ChipOrange>)
+                      : (INTERCITY_PRICES[form.pickup_city]
+                          ? <Chip yellow>עיר נמצאה במחירון</Chip>
+                          : <ChipOrange>עיר לא ברשימה — מחיר יתואם בטלפון</ChipOrange>)}
                     </div>
                     {form.pickup_street && (
                       <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
@@ -395,6 +458,30 @@ export default function BookingForm() {
                         <input type="text" placeholder="7" value={form.pickup_house_number}
                           onChange={e => setField('pickup_house_number', e.target.value)}
                           style={{ width: 80, padding: '6px 10px', fontSize: 14 }} />
+                      </div>
+                    )}
+                  </div>
+                )}
+
+                {/* Intercity destination */}
+                {form.trip_type === 'intercity' && (
+                  <div className="field-enter">
+                    <label>עיר יעד *</label>
+                    <select
+                      value={form.destination_city}
+                      onChange={e => setField('destination_city', e.target.value)}
+                      style={{ fontSize: 15, height: 48, padding: '0 12px', width: '100%' }}
+                    >
+                      <option value="">— בחר עיר יעד —</option>
+                      {INTERCITY_CITIES.filter(c => c !== form.pickup_city).map(c => (
+                        <option key={c} value={c}>{c}</option>
+                      ))}
+                    </select>
+                    {form.destination_city && form.pickup_city && (
+                      <div style={{ marginTop: 6, display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
+                        {getIntercityPrice(form.pickup_city, form.destination_city)
+                          ? <Chip yellow>מחיר בסיס: ₪{getIntercityPrice(form.pickup_city, form.destination_city)}</Chip>
+                          : <ChipOrange>מסלול לא נמצא — מחיר יתואם</ChipOrange>}
                       </div>
                     )}
                   </div>
@@ -426,7 +513,7 @@ export default function BookingForm() {
                       transition: 'all 0.2s',
                     }}>
                     <span style={{ fontWeight: 600, color: 'var(--txt)', fontSize: 15 }}>
-                      ✈️ אני צריך גם חזרה מהשדה
+                      {form.trip_type === 'intercity' ? '🔄 אני צריך גם חזרה' : '✈️ אני צריך גם חזרה מהשדה'}
                     </span>
                     <div className={`toggle-track ${form.return_trip ? 'on' : ''}`}>
                       <div className="toggle-thumb" />
@@ -437,7 +524,7 @@ export default function BookingForm() {
                 {form.return_trip && (
                   <div style={{ display: 'grid', gap: 14, padding: '4px 0' }}>
                     <div className="field-enter">
-                      <label>כתובת יעד לחזרה *</label>
+                      <label>{form.trip_type === 'intercity' ? 'כתובת יעד לחזרה *' : 'כתובת יעד לחזרה *'}</label>
                       <AddressAutocomplete value={returnAddressDisplay} onSelect={handleReturnAddressSelect} onClear={handleReturnAddressClear} />
                     </div>
                     {form.return_city && (
@@ -447,12 +534,12 @@ export default function BookingForm() {
                       </div>
                     )}
                     <div className="field-enter" style={{ display: 'grid', gap: 12 }}>
-                      <div>
+                      {form.trip_type === 'airport' && <div>
                         <label>מספר טיסה</label>
                         <input type="text" placeholder="LY123" value={form.return_flight_number}
                           onChange={e => setField('return_flight_number', e.target.value)}
                           dir="ltr" style={{ textAlign: 'right', fontSize: 16, height: 48 }} />
-                      </div>
+                      </div>}
                       <div className="date-time-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
                         <div style={{ minWidth: 0 }}>
                           <label>תאריך חזרה</label>

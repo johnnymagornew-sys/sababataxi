@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient as createAdminClient } from '@supabase/supabase-js'
-import { calculatePrice } from '@/lib/pricing'
+import { calculatePrice, getTimeSurcharges } from '@/lib/pricing'
 import { TIER_PRICES } from '@/lib/tierPrices'
+import { getIntercityPrice } from '@/lib/intercityPrices'
 import { sendBookingConfirmation } from '@/lib/email'
 import { validateBookingInput, sanitizeString } from '@/lib/validate'
 
@@ -23,6 +24,8 @@ export async function POST(request: NextRequest) {
       travel_date, travel_time, passengers, large_luggage, trolley, special_requests,
     } = sanitized
 
+    const trip_type = body.trip_type === 'intercity' ? 'intercity' : 'airport'
+    const destination_city = sanitizeString(body.destination_city ?? '', 100)
     const return_trip = !!body.return_trip
     const return_city = sanitizeString(body.return_city, 100)
     const return_street = sanitizeString(body.return_street, 200)
@@ -39,20 +42,34 @@ export async function POST(request: NextRequest) {
       : null
 
     // Server-side price calculation
-    const tierRow = TIER_PRICES[pickup_city]
-    const basePrice = tierRow ? tierRow[0] : null
-    // Allow unknown cities (small villages) — price will be coordinated by phone
-    const effectiveBasePrice = basePrice ?? 0
-
-    const { total: price } = calculatePrice({
-      city: pickup_city,
-      basePrice: effectiveBasePrice,
-      passengers: passengers ?? 1,
-      travelDate: travel_date,
-      travelTime: travel_time,
-      extras: extras ?? {},
-      paymentMethod: payment_method ?? 'cash',
-    })
+    let price: number
+    if (trip_type === 'intercity') {
+      const intercityBase = getIntercityPrice(pickup_city, destination_city) ?? 0
+      let total = intercityBase
+      const dateTime = new Date(`${travel_date}T${travel_time}`)
+      const s = getTimeSurcharges(dateTime)
+      if (s.night) total += 20
+      if (s.peak) total += 20
+      if (s.shabbat) total += 15
+      if (extras?.additional_stop) total += 20
+      if (extras?.nearby_city_stop) total += 40
+      if (extras?.child_under4) total += 10
+      if (extras?.safety_seat) total += 55
+      if (extras?.ski_equipment) total += 20
+      if (extras?.bike_rack) total += 50
+      if (payment_method === 'bit') total += 10
+      price = total
+    } else {
+      const tierRow = TIER_PRICES[pickup_city]
+      const basePrice = tierRow ? tierRow[0] : null
+      const effectiveBasePrice = basePrice ?? 0
+      const { total } = calculatePrice({
+        city: pickup_city, basePrice: effectiveBasePrice, passengers: passengers ?? 1,
+        travelDate: travel_date, travelTime: travel_time,
+        extras: extras ?? {}, paymentMethod: payment_method ?? 'cash',
+      })
+      price = total
+    }
 
     const supabase = createAdminClient(
       process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -69,7 +86,7 @@ export async function POST(request: NextRequest) {
         pickup_city,
         pickup_street,
         pickup_house_number,
-        destination: 'נמל תעופה בן גוריון',
+        destination: trip_type === 'intercity' ? destination_city : 'נמל תעופה בן גוריון',
         travel_date,
         travel_time,
         passengers: passengers ?? 1,

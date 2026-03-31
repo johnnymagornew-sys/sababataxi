@@ -3,30 +3,40 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { calculatePrice } from '@/lib/pricing'
 import { TIER_PRICES } from '@/lib/tierPrices'
 import { sendBookingConfirmation } from '@/lib/email'
+import { validateBookingInput, sanitizeString } from '@/lib/validate'
 
 export async function POST(request: NextRequest) {
   try {
     const body = await request.json()
 
+    // Validate + sanitize all inputs before touching DB
+    let sanitized: ReturnType<typeof validateBookingInput>
+    try {
+      sanitized = validateBookingInput(body)
+    } catch (err: unknown) {
+      return NextResponse.json({ error: err instanceof Error ? err.message : 'קלט לא תקין' }, { status: 400 })
+    }
+
     const {
       customer_name, customer_phone, customer_email,
       pickup_city, pickup_street, pickup_house_number,
-      travel_date, travel_time,
-      passengers, large_luggage, trolley,
-      return_trip, return_city, return_street, return_house_number, return_flight_number, return_date, return_time,
-      extras, special_requests, payment_method,
-    } = body
+      travel_date, travel_time, passengers, large_luggage, trolley, special_requests,
+    } = sanitized
 
-    // Build a display string for return address (stored as reference on outbound booking)
+    const return_trip = !!body.return_trip
+    const return_city = sanitizeString(body.return_city, 100)
+    const return_street = sanitizeString(body.return_street, 200)
+    const return_house_number = sanitizeString(body.return_house_number, 20)
+    const return_flight_number = sanitizeString(body.return_flight_number, 20)
+    const return_date = sanitizeString(body.return_date, 10)
+    const return_time = sanitizeString(body.return_time, 5)
+    const payment_method = body.payment_method === 'bit' ? 'bit' : 'cash'
+    const extras = body.extras && typeof body.extras === 'object' ? body.extras : {}
+
+    // Build return address display string
     const return_address = return_city
       ? [return_street, return_house_number, return_city].filter(Boolean).join(' ')
       : null
-
-    // Validate required fields (house number optional — Nominatim doesn't always return it)
-    if (!customer_name || !customer_phone || !pickup_city ||
-        !travel_date || !travel_time) {
-      return NextResponse.json({ error: 'שדות חובה חסרים' }, { status: 400 })
-    }
 
     // Server-side price calculation
     const tierRow = TIER_PRICES[pickup_city]

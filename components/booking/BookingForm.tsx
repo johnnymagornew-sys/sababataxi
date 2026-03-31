@@ -5,7 +5,7 @@ import AddressAutocomplete, { ParsedAddress } from './AddressAutocomplete'
 import PhoneInput from './PhoneInput'
 import { calculatePrice, getTimeSurcharges } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
-import { INTERCITY_PRICES, INTERCITY_CITIES, getIntercityPrice } from '@/lib/intercityPrices'
+import { INTERCITY_PRICES, getIntercityPrice } from '@/lib/intercityPrices'
 import type { BookingExtras } from '@/types/database'
 
 // ─── City normalisation ───────────────────────────────────────────
@@ -490,21 +490,6 @@ export default function BookingForm() {
                         onClear={handleDestinationAddressClear}
                       />
                     </div>
-                    {!destinationAddressDisplay && (
-                      <div>
-                        <label style={{ fontSize: 12, color: 'var(--txt2)' }}>או בחר עיר יעד מהרשימה</label>
-                        <select
-                          value={form.destination_city}
-                          onChange={e => { setField('destination_city', e.target.value); setField('destination_street', ''); setField('destination_house_number', '') }}
-                          style={{ fontSize: 15, height: 44, padding: '0 12px', width: '100%' }}
-                        >
-                          <option value="">— בחר עיר —</option>
-                          {INTERCITY_CITIES.filter(c => c !== form.pickup_city).map(c => (
-                            <option key={c} value={c}>{c}</option>
-                          ))}
-                        </select>
-                      </div>
-                    )}
                     {form.destination_city && (
                       <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
                         <Chip>📍 {form.destination_city}</Chip>

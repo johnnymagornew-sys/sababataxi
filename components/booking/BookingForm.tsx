@@ -240,6 +240,25 @@ export default function BookingForm() {
         .field-enter:nth-child(4){animation-delay:.19s}
         .field-enter:nth-child(5){animation-delay:.24s}
         .field-enter:nth-child(6){animation-delay:.29s}
+        /* Mobile: stack date+time vertically */
+        @media (max-width: 480px) {
+          .date-time-grid { grid-template-columns: 1fr !important; }
+        }
+        /* Custom toggle */
+        .toggle-wrap { display:flex; align-items:center; justify-content:space-between; cursor:pointer; user-select:none; }
+        .toggle-track {
+          width:48px; height:28px; border-radius:99px; flex-shrink:0;
+          background:var(--card2); border:2px solid var(--border);
+          position:relative; transition:background 0.2s, border-color 0.2s;
+        }
+        .toggle-track.on { background:var(--y); border-color:var(--y); }
+        .toggle-thumb {
+          position:absolute; top:2px; right:2px;
+          width:20px; height:20px; border-radius:50%;
+          background:#fff; transition:transform 0.2s cubic-bezier(0.22,1,0.36,1);
+          box-shadow:0 1px 4px rgba(0,0,0,0.3);
+        }
+        .toggle-track.on .toggle-thumb { transform:translateX(-20px); }
       `}</style>
 
       <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
@@ -362,32 +381,38 @@ export default function BookingForm() {
                   </div>
                 )}
 
-                <div className="field-enter" style={{ display: 'grid', gap: 14, gridTemplateColumns: '1fr 1fr' }}>
+                <div className="field-enter date-time-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
                   <div>
                     <label>תאריך נסיעה *</label>
                     <input type="date" min={new Date().toISOString().split('T')[0]}
-                      value={form.travel_date} onChange={e => setField('travel_date', e.target.value)} />
+                      value={form.travel_date} onChange={e => setField('travel_date', e.target.value)}
+                      style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
                   </div>
                   <div>
                     <label>שעת נסיעה *</label>
-                    <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)} />
+                    <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
+                      style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
                   </div>
                 </div>
 
                 {/* Return trip toggle */}
                 <div className="field-enter">
-                  <label
+                  <div
+                    onClick={() => setField('return_trip', !form.return_trip)}
                     style={{
-                      display: 'flex', alignItems: 'center', gap: 12, cursor: 'pointer', userSelect: 'none',
+                      display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       background: form.return_trip ? 'var(--y-dim)' : 'var(--card2)',
                       border: `1px solid ${form.return_trip ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
-                      borderRadius: 10, padding: '12px 16px', transition: 'all 0.15s', margin: 0,
+                      borderRadius: 12, padding: '14px 16px', cursor: 'pointer',
+                      transition: 'all 0.2s',
                     }}>
-                    <input type="checkbox" checked={form.return_trip}
-                      onChange={e => setField('return_trip', e.target.checked)}
-                      style={{ width: 'auto', accentColor: 'var(--y)' }} />
-                    <span style={{ fontWeight: 600, color: 'var(--txt)' }}>אני צריך גם חזרה מהשדה</span>
-                  </label>
+                    <span style={{ fontWeight: 600, color: 'var(--txt)', fontSize: 15 }}>
+                      ✈️ אני צריך גם חזרה מהשדה
+                    </span>
+                    <div className={`toggle-track ${form.return_trip ? 'on' : ''}`}>
+                      <div className="toggle-thumb" />
+                    </div>
+                  </div>
                 </div>
 
                 {form.return_trip && (
@@ -402,19 +427,26 @@ export default function BookingForm() {
                         {form.return_street && <Chip>🛣 {form.return_street} {form.return_house_number}</Chip>}
                       </div>
                     )}
-                    <div className="field-enter" style={{ display: 'grid', gap: 14, gridTemplateColumns: 'repeat(auto-fit,minmax(130px,1fr))' }}>
+                    <div className="field-enter" style={{ display: 'grid', gap: 12 }}>
                       <div>
                         <label>מספר טיסה</label>
                         <input type="text" placeholder="LY123" value={form.return_flight_number}
-                          onChange={e => setField('return_flight_number', e.target.value)} dir="ltr" style={{ textAlign: 'right' }} />
+                          onChange={e => setField('return_flight_number', e.target.value)}
+                          dir="ltr" style={{ textAlign: 'right', fontSize: 16, height: 48 }} />
                       </div>
-                      <div>
-                        <label>תאריך חזרה</label>
-                        <input type="date" value={form.return_date} onChange={e => setField('return_date', e.target.value)} />
-                      </div>
-                      <div>
-                        <label>שעה משוערת</label>
-                        <input type="time" value={form.return_time} onChange={e => setField('return_time', e.target.value)} />
+                      <div className="date-time-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
+                        <div>
+                          <label>תאריך חזרה</label>
+                          <input type="date" value={form.return_date}
+                            onChange={e => setField('return_date', e.target.value)}
+                            style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
+                        </div>
+                        <div>
+                          <label>שעה משוערת</label>
+                          <input type="time" value={form.return_time}
+                            onChange={e => setField('return_time', e.target.value)}
+                            style={{ fontSize: 16, height: 48, padding: '0 14px' }} />
+                        </div>
                       </div>
                     </div>
                   </div>

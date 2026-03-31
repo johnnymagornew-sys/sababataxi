@@ -23,7 +23,7 @@ export async function POST(request: NextRequest) {
       : null
 
     // Validate required fields (house number optional — Nominatim doesn't always return it)
-    if (!customer_name || !customer_phone || !pickup_city || !pickup_street ||
+    if (!customer_name || !customer_phone || !pickup_city ||
         !travel_date || !travel_time) {
       return NextResponse.json({ error: 'שדות חובה חסרים' }, { status: 400 })
     }

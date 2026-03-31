@@ -43,11 +43,15 @@ export default function OnboardingModal() {
   const [sliding, setSliding] = useState(false)
 
   useEffect(() => {
-    if (!localStorage.getItem('sababa_onboarding_v2')) setVisible(true)
+    if (!localStorage.getItem('sababa_onboarding_never')) setVisible(true)
   }, [])
 
   function close() {
-    localStorage.setItem('sababa_onboarding_v2', '1')
+    setVisible(false)
+  }
+
+  function neverShow() {
+    localStorage.setItem('sababa_onboarding_never', '1')
     setVisible(false)
   }
 
@@ -256,18 +260,17 @@ export default function OnboardingModal() {
               </span>
             </button>
 
-            {/* Skip */}
-            {!isLast && (
-              <button
-                onClick={close}
-                style={{
-                  width: '100%', marginTop: 12, background: 'none', border: 'none',
-                  color: 'var(--txt3)', fontSize: 13, cursor: 'pointer', padding: '6px',
-                }}
-              >
-                דלג
+            {/* Skip / Never show */}
+            <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
+              {!isLast ? (
+                <button onClick={close} style={{ background: 'none', border: 'none', color: 'var(--txt3)', fontSize: 13, cursor: 'pointer', padding: '6px' }}>
+                  דלג
+                </button>
+              ) : <span />}
+              <button onClick={neverShow} style={{ background: 'none', border: 'none', color: 'var(--txt3)', fontSize: 12, cursor: 'pointer', padding: '6px', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
+                אל תראה שוב
               </button>
-            )}
+            </div>
           </div>
 
           {/* Progress dots */}

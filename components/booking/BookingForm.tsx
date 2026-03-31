@@ -136,19 +136,29 @@ export default function BookingForm() {
   // Video scrub on step change
   useEffect(() => {
     const video = videoRef.current
-    if (!video || isNaN(video.duration)) return
-    const target = (step / (STEPS.length - 1)) * video.duration
-    const startTime = video.currentTime
-    const startMs = performance.now()
-    const dur = 600
-    if (scrubRafRef.current) cancelAnimationFrame(scrubRafRef.current)
-    function frame(now: number) {
-      const p = Math.min((now - startMs) / dur, 1)
-      const eased = 1 - Math.pow(1 - p, 3)
-      video!.currentTime = startTime + (target - startTime) * eased
-      if (p < 1) scrubRafRef.current = requestAnimationFrame(frame)
+    if (!video) return
+
+    function doScrub() {
+      if (!video || isNaN(video.duration)) return
+      const target = (step / (STEPS.length - 1)) * video.duration
+      const startTime = video.currentTime
+      const startMs = performance.now()
+      const dur = 600
+      if (scrubRafRef.current) cancelAnimationFrame(scrubRafRef.current)
+      function frame(now: number) {
+        const p = Math.min((now - startMs) / dur, 1)
+        const eased = 1 - Math.pow(1 - p, 3)
+        video!.currentTime = startTime + (target - startTime) * eased
+        if (p < 1) scrubRafRef.current = requestAnimationFrame(frame)
+      }
+      scrubRafRef.current = requestAnimationFrame(frame)
     }
-    scrubRafRef.current = requestAnimationFrame(frame)
+
+    if (isNaN(video.duration)) {
+      video.addEventListener('loadedmetadata', doScrub, { once: true })
+    } else {
+      doScrub()
+    }
     return () => { if (scrubRafRef.current) cancelAnimationFrame(scrubRafRef.current) }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [step])
@@ -305,8 +315,9 @@ export default function BookingForm() {
             src="/taxi_video.mp4"
             muted
             playsInline
+            autoPlay
             preload="auto"
-            onLoadedMetadata={() => { if (videoRef.current) videoRef.current.currentTime = 0 }}
+            onCanPlay={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0 }}
             style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
           />
           {/* bottom fade */}

@@ -94,7 +94,9 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
       addr.county ||
       ''
     const street = addr.road || ''
-    const houseNumber = addr.house_number || ''
+    // If Nominatim didn't return a house number, extract it from what the user typed
+    const numberFromQuery = query.match(/\b(\d+)\b/)?.[1] || ''
+    const houseNumber = addr.house_number || numberFromQuery
     const display = [street, houseNumber, city].filter(Boolean).join(' ')
 
     setQuery(display)

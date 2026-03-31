@@ -531,6 +531,8 @@ export default function AdminDashboardClient({
                           onReject={() => updateBookingStatus(b.id, 'rejected')}
                           onComplete={() => updateBookingStatus(b.id, 'completed')}
                           drivers={drivers}
+                          onUnassign={() => setBookings(prev => prev.map(x => x.id === b.id ? { ...x, driver_id: null, status: 'approved' } : x))}
+                          onSaveNotes={(notes) => setBookings(prev => prev.map(x => x.id === b.id ? { ...x, admin_notes: notes } : x))}
                         />
                       ))}
                     </div>
@@ -567,6 +569,8 @@ export default function AdminDashboardClient({
                         onReject={() => updateBookingStatus(b.id, 'rejected')}
                         onComplete={() => updateBookingStatus(b.id, 'completed')}
                         drivers={drivers}
+                        onUnassign={() => setBookings(prev => prev.map(x => x.id === b.id ? { ...x, driver_id: null, status: 'approved' } : x))}
+                        onSaveNotes={(notes) => setBookings(prev => prev.map(x => x.id === b.id ? { ...x, admin_notes: notes } : x))}
                       />
                     ))}
                     {filteredBookings.length === 0 && (
@@ -1040,7 +1044,7 @@ const STATUS_COLORS_CARD: Record<string, string> = {
   completed: '#6B7280', rejected: '#EF4444', cancelled: '#6B7280',
 }
 
-function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onComplete, drivers }: {
+function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onComplete, drivers, onUnassign, onSaveNotes }: {
   booking: Booking
   expanded: boolean
   onToggle: () => void
@@ -1048,10 +1052,38 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
   onReject: () => void
   onComplete: () => void
   drivers: Driver[]
+  onUnassign: () => void
+  onSaveNotes: (notes: string) => void
 }) {
+  const [notes, setNotes] = useState(b.admin_notes ?? '')
+  const [savingNotes, setSavingNotes] = useState(false)
+  const [unassigning, setUnassigning] = useState(false)
   const extras = (b.extras as Record<string, boolean>) ?? {}
   const activeExtras = Object.entries(extras).filter(([, v]) => v).map(([k]) => EXTRAS_LABELS[k] ?? k)
   const claimedDriver = b.driver_id ? drivers.find(d => d.id === b.driver_id) : null
+
+  async function handleUnassign() {
+    if (!confirm(`להסיר את ${claimedDriver?.full_name} מהנסיעה ולהחזיר ₪${b.price} קרדיט?`)) return
+    setUnassigning(true)
+    const res = await fetch('/api/admin/unassign-driver', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: b.id }),
+    })
+    setUnassigning(false)
+    if (res.ok) onUnassign()
+  }
+
+  async function handleSaveNotes() {
+    setSavingNotes(true)
+    await fetch('/api/admin/booking-notes', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ bookingId: b.id, notes }),
+    })
+    setSavingNotes(false)
+    onSaveNotes(notes)
+  }
 
   return (
     <div style={{
@@ -1107,13 +1139,26 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
       </div>
 
       {/* Action buttons */}
-      <div style={{ padding: '0 16px 14px', display: 'flex', gap: 8 }} onClick={e => e.stopPropagation()}>
+      <div style={{ padding: '0 16px 14px', display: 'flex', gap: 8, flexWrap: 'wrap' }} onClick={e => e.stopPropagation()}>
         {b.status === 'pending' && <>
           <button className="btn-approve" onClick={onApprove}>✓ אשר</button>
           <button className="btn-reject" onClick={onReject}>✗ דחה</button>
         </>}
         {b.status === 'approved' && <button className="btn-reject" onClick={onReject}>בטל</button>}
-        {b.status === 'claimed' && <button className="btn-complete" onClick={onComplete}>✓ סיים נסיעה</button>}
+        {b.status === 'claimed' && <>
+          <button className="btn-complete" onClick={onComplete}>✓ סיים נסיעה</button>
+          <button
+            onClick={handleUnassign}
+            disabled={unassigning}
+            style={{
+              background: 'rgba(239,68,68,0.1)', border: '1px solid rgba(239,68,68,0.3)',
+              color: '#EF4444', padding: '7px 14px', borderRadius: 8,
+              fontSize: 13, fontWeight: 700, cursor: 'pointer',
+            }}
+          >
+            {unassigning ? '...' : '🔄 הסר נהג + החזר קרדיט'}
+          </button>
+        </>}
       </div>
 
       {/* Expanded details */}
@@ -1157,6 +1202,34 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
               <Detail label="הערות מיוחדות" value={b.special_requests} />
             </div>
           )}
+          {/* Admin notes */}
+          <div style={{ gridColumn: '1 / -1', marginTop: 4 }}>
+            <div style={{ fontSize: 10, color: '#555', marginBottom: 6, textTransform: 'uppercase', letterSpacing: '0.5px' }}>הערות מנהל</div>
+            <textarea
+              value={notes}
+              onChange={e => setNotes(e.target.value)}
+              placeholder="הוסף הערה פנימית לנסיעה זו..."
+              rows={2}
+              style={{
+                width: '100%', boxSizing: 'border-box',
+                background: '#111', border: '1px solid rgba(255,255,255,0.1)',
+                borderRadius: 8, color: '#ddd', fontSize: 13, padding: '8px 12px',
+                resize: 'vertical', fontFamily: 'inherit', direction: 'rtl',
+              }}
+            />
+            <button
+              onClick={handleSaveNotes}
+              disabled={savingNotes}
+              style={{
+                marginTop: 6, background: 'rgba(255,209,0,0.1)',
+                border: '1px solid rgba(255,209,0,0.3)', color: '#FFD100',
+                padding: '6px 14px', borderRadius: 8, fontSize: 13,
+                fontWeight: 700, cursor: 'pointer',
+              }}
+            >
+              {savingNotes ? 'שומר...' : '💾 שמור הערה'}
+            </button>
+          </div>
         </div>
       )}
     </div>

@@ -307,9 +307,11 @@ export default function BookingForm() {
           <div
             className={priceFlash ? 'price-flash' : ''}
             style={{
+              position: 'sticky', top: 60, zIndex: 40,
               background: 'var(--y)', borderRadius: 14, marginBottom: 16,
               padding: '12px 18px', display: 'flex', alignItems: 'center',
               justifyContent: 'space-between',
+              boxShadow: '0 4px 20px rgba(255,209,0,0.25)',
             }}
           >
             <div>

@@ -140,7 +140,7 @@ export default function BookingForm() {
 
     function doScrub() {
       if (!video || isNaN(video.duration)) return
-      const target = (step / (STEPS.length - 1)) * video.duration
+      const target = (1 - step / (STEPS.length - 1)) * video.duration
       const startTime = video.currentTime
       const startMs = performance.now()
       const dur = 600
@@ -299,34 +299,68 @@ export default function BookingForm() {
 
       <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
 
-        {/* ── Video scrub strip ────────────────────────────────── */}
-        <div style={{
-          position: 'relative',
-          width: '100%',
-          height: 180,
-          borderRadius: 16,
-          overflow: 'hidden',
-          marginBottom: 24,
-          background: 'var(--card)',
-          border: '1px solid var(--border)',
-        }}>
-          <video
-            ref={videoRef}
-            src="/taxi_video.mp4"
-            muted
-            playsInline
-            autoPlay
-            preload="auto"
-            onCanPlay={(e) => { e.currentTarget.pause(); e.currentTarget.currentTime = 0 }}
-            style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
-          />
-          {/* bottom fade */}
-          <div style={{
-            position: 'absolute', bottom: 0, left: 0, right: 0, height: 60,
-            background: 'linear-gradient(to top, var(--bg), transparent)',
-            pointerEvents: 'none',
-          }} />
-        </div>
+        {/* ── Circular video progress badge (fixed) ───────────── */}
+        {(() => {
+          const SIZE = 72
+          const STROKE = 4
+          const R = (SIZE - STROKE) / 2
+          const CIRC = 2 * Math.PI * R
+          const pct = submitted ? 1 : step / (STEPS.length - 1)
+          const offset = CIRC * (1 - pct)
+          return (
+            <div style={{
+              position: 'fixed', bottom: 88, right: 20, zIndex: 100,
+              width: SIZE, height: SIZE,
+              filter: 'drop-shadow(0 4px 12px rgba(0,0,0,0.4))',
+            }}>
+              {/* SVG ring */}
+              <svg width={SIZE} height={SIZE} style={{ position: 'absolute', top: 0, left: 0 }}>
+                {/* track */}
+                <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none"
+                  stroke="rgba(255,255,255,0.15)" strokeWidth={STROKE} />
+                {/* progress */}
+                <circle cx={SIZE/2} cy={SIZE/2} r={R} fill="none"
+                  stroke="var(--y)" strokeWidth={STROKE}
+                  strokeLinecap="round"
+                  strokeDasharray={CIRC}
+                  strokeDashoffset={offset}
+                  transform={`rotate(-90 ${SIZE/2} ${SIZE/2})`}
+                  style={{ transition: 'stroke-dashoffset 0.5s cubic-bezier(0.22,1,0.36,1)' }}
+                />
+              </svg>
+              {/* video circle */}
+              <div style={{
+                position: 'absolute',
+                top: STROKE + 2, left: STROKE + 2,
+                width: SIZE - (STROKE + 2) * 2,
+                height: SIZE - (STROKE + 2) * 2,
+                borderRadius: '50%',
+                overflow: 'hidden',
+                background: '#111',
+              }}>
+                <video
+                  ref={videoRef}
+                  src="/taxi_video.mp4"
+                  muted playsInline autoPlay preload="auto"
+                  onCanPlay={(e) => {
+                    const v = e.currentTarget
+                    v.pause()
+                    v.currentTime = v.duration || 0
+                  }}
+                  style={{ width: '100%', height: '100%', objectFit: 'cover', display: 'block' }}
+                />
+              </div>
+              {/* % label */}
+              <div style={{
+                position: 'absolute', bottom: -18, left: 0, right: 0,
+                textAlign: 'center', fontSize: 11, fontWeight: 700,
+                color: 'var(--y)', letterSpacing: '0.3px',
+              }}>
+                {Math.round(pct * 100)}%
+              </div>
+            </div>
+          )
+        })()}
 
         {/* ── Progress bar ─────────────────────────────────────── */}
         <div style={{ marginBottom: 24 }}>

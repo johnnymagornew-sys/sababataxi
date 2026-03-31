@@ -14,11 +14,18 @@ export async function POST(req: NextRequest) {
 
   const sanitized = sanitizeString(notes ?? '', 1000)
 
-  const { error } = await supabase
+  const { data, error } = await supabase
     .from('bookings')
     .update({ admin_notes: sanitized })
     .eq('id', bookingId)
+    .select('id, admin_notes')
 
-  if (error) return NextResponse.json({ error: 'שגיאה בשמירה' }, { status: 500 })
-  return NextResponse.json({ success: true })
+  if (error) {
+    console.error('booking-notes error:', error)
+    return NextResponse.json({ error: error.message }, { status: 500 })
+  }
+  if (!data || data.length === 0) {
+    return NextResponse.json({ error: 'הזמנה לא נמצאה או העמודה לא קיימת' }, { status: 404 })
+  }
+  return NextResponse.json({ success: true, saved: data[0].admin_notes })
 }

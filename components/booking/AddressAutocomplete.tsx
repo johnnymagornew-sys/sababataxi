@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+import { createPortal } from 'react-dom'
 
 interface NominatimResult {
   place_id: number
@@ -36,10 +37,13 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
   const [results, setResults] = useState<NominatimResult[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
+  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
+  const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selectedRef = useRef(false)
 
+  // Close on outside click
   useEffect(() => {
     function handler(e: MouseEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
@@ -50,10 +54,20 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
     return () => document.removeEventListener('mousedown', handler)
   }, [])
 
-  // Sync external value (e.g. on form reset)
+  // Sync external value (form reset)
+  useEffect(() => { setQuery(value) }, [value])
+
+  // Recalculate dropdown position when opened
   useEffect(() => {
-    setQuery(value)
-  }, [value])
+    if (open && inputRef.current) {
+      const rect = inputRef.current.getBoundingClientRect()
+      setDropdownRect({
+        top: rect.bottom + window.scrollY + 4,
+        left: rect.left + window.scrollX,
+        width: rect.width,
+      })
+    }
+  }, [open])
 
   const search = useCallback(async (q: string) => {
     if (q.length < 3) { setResults([]); setOpen(false); return }
@@ -84,32 +98,67 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
 
   function handleSelect(r: NominatimResult) {
     const addr = r.address
-    const city =
-      addr.city ||
-      addr.town ||
-      addr.village ||
-      addr.municipality ||
-      addr.suburb ||
-      addr.neighbourhood ||
-      addr.county ||
-      ''
+    const city = addr.city || addr.town || addr.village || addr.municipality ||
+      addr.suburb || addr.neighbourhood || addr.county || ''
     const street = addr.road || ''
-    // If Nominatim didn't return a house number, extract it from what the user typed
     const numberFromQuery = query.match(/\b(\d+)\b/)?.[1] || ''
     const houseNumber = addr.house_number || numberFromQuery
     const display = [street, houseNumber, city].filter(Boolean).join(' ')
-
     setQuery(display)
     setOpen(false)
     selectedRef.current = true
     onSelect({ city, street, houseNumber, displayName: display })
   }
 
+  const dropdown = open && results.length > 0 && dropdownRect ? createPortal(
+    <div
+      style={{
+        position: 'absolute',
+        top: dropdownRect.top,
+        left: dropdownRect.left,
+        width: dropdownRect.width,
+        background: 'var(--card2)',
+        border: '1px solid var(--border)',
+        borderRadius: 10,
+        zIndex: 9999,
+        boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
+        maxHeight: 280,
+        overflowY: 'auto',
+      }}
+    >
+      {results.map(r => {
+        const addr = r.address
+        const city = addr.city || addr.town || addr.village || addr.municipality || ''
+        const street = addr.road || ''
+        const house = addr.house_number || ''
+        const line1 = [street, house].filter(Boolean).join(' ') || city
+        const line2 = line1 !== city ? city : ''
+        return (
+          <div
+            key={r.place_id}
+            onMouseDown={e => { e.preventDefault(); handleSelect(r) }}
+            style={{
+              padding: '12px 16px', cursor: 'pointer',
+              borderBottom: '1px solid var(--border)',
+            }}
+            onMouseEnter={e => (e.currentTarget.style.background = 'var(--card)')}
+            onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+          >
+            <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)' }}>{line1}</div>
+            {line2 && <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 3 }}>{line2}</div>}
+          </div>
+        )
+      })}
+    </div>,
+    document.body
+  ) : null
+
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       <input
+        ref={inputRef}
         type="text"
-        placeholder="הקלד כתובת מלאה: רחוב ומספר, עיר..."
+        placeholder="הקלד כתובת: רחוב ומספר, עיר..."
         value={query}
         onChange={e => handleChange(e.target.value)}
         onFocus={() => {
@@ -125,41 +174,7 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
           מחפש...
         </div>
       )}
-      {open && results.length > 0 && (
-        <div style={{
-          position: 'absolute', top: '100%', right: 0, left: 0,
-          background: 'var(--card2)', border: '1px solid var(--border)',
-          borderRadius: 8, zIndex: 200, overflow: 'hidden',
-          boxShadow: '0 8px 24px rgba(0,0,0,0.5)', marginTop: 4,
-          maxHeight: 300, overflowY: 'auto',
-        }}>
-          {results.map(r => {
-            const addr = r.address
-            const city = addr.city || addr.town || addr.village || addr.municipality || ''
-            const street = addr.road || ''
-            const house = addr.house_number || ''
-            const line1 = [street, house].filter(Boolean).join(' ') || city
-            const line2 = line1 !== city ? city : ''
-            return (
-              <div
-                key={r.place_id}
-                onMouseDown={() => handleSelect(r)}
-                style={{
-                  padding: '10px 14px', cursor: 'pointer',
-                  borderBottom: '1px solid var(--border)', transition: 'background 0.1s',
-                }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--card)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
-              >
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{line1}</div>
-                {line2 && (
-                  <div style={{ fontSize: 12, color: 'var(--txt2)', marginTop: 2 }}>{line2}</div>
-                )}
-              </div>
-            )
-          })}
-        </div>
-      )}
+      {dropdown}
     </div>
   )
 }

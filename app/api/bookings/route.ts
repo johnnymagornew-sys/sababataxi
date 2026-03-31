@@ -192,6 +192,9 @@ export async function POST(request: NextRequest) {
       }
     }
 
+    // Mark lead as converted (fire and forget)
+    supabase.from('leads').update({ converted: true }).eq('phone', customer_phone).then(() => {})
+
     return NextResponse.json({ success: true, id: data.id, price, returnId: returnBookingId })
   } catch (err) {
     console.error('Booking API error:', err)

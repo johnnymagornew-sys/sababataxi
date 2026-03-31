@@ -184,6 +184,18 @@ export default function BookingForm() {
   function handleNext() {
     const err = validateStep()
     if (err) { setError(err); return }
+    // Save lead when leaving step 0 (personal details filled in)
+    if (step === 0) {
+      fetch('/api/leads', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          name: form.customer_name,
+          phone: form.customer_phone,
+          email: form.customer_email,
+        }),
+      }).catch(() => {}) // fire and forget, don't block UX
+    }
     goTo(step + 1)
   }
 

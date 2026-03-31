@@ -7,7 +7,9 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 
-type AdminTab = 'dashboard' | 'bookings' | 'drivers' | 'credits' | 'revenue' | 'history'
+type AdminTab = 'dashboard' | 'bookings' | 'drivers' | 'credits' | 'revenue' | 'history' | 'leads'
+
+type Lead = { id: string; name: string; phone: string; email: string | null; created_at: string; converted: boolean }
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'ממתין', approved: 'מאושר', claimed: 'שורין',
@@ -21,9 +23,11 @@ const STATUS_COLORS: Record<string, string> = {
 export default function AdminDashboardClient({
   initialBookings,
   initialDrivers,
+  initialLeads = [],
 }: {
   initialBookings: Booking[]
   initialDrivers: Driver[]
+  initialLeads?: Lead[]
 }) {
   const [tab, setTab] = useState<AdminTab>('dashboard')
   const [bookings, setBookings] = useState<Booking[]>(initialBookings)
@@ -38,6 +42,7 @@ export default function AdminDashboardClient({
   const [creatingDriver, setCreatingDriver] = useState(false)
   const [showNewDriverForm, setShowNewDriverForm] = useState(false)
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
+  const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [revenue, setRevenue] = useState<{ subscriptions: number; credits: number; rides: number } | null>(null)
   const [loadingRevenue, setLoadingRevenue] = useState(false)
   const supabase = createClient()
@@ -178,6 +183,7 @@ export default function AdminDashboardClient({
     { key: 'credits', icon: '💰', label: 'קרדיטים' },
     { key: 'revenue', icon: '📈', label: 'רווחים' },
     { key: 'history', icon: '📋', label: 'היסטוריה' },
+    { key: 'leads', icon: '🎯', label: 'לידים' },
   ]
 
   return (
@@ -912,6 +918,76 @@ export default function AdminDashboardClient({
                 </div>
               </>
             )}
+
+            {/* ── Leads ── */}
+            {tab === 'leads' && (
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>🎯 לידים שלא השלימו הזמנה</div>
+                  <div style={{ color: 'var(--txt2)', fontSize: 13 }}>{leads.length} לידים</div>
+                </div>
+                {leads.length === 0 ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--txt2)' }}>אין לידים פתוחים כרגע 🎉</div>
+                ) : (
+                  <div style={{ display: 'grid', gap: 0 }}>
+                    {leads.map((lead, i) => (
+                      <div key={lead.id} style={{
+                        display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                        padding: '14px 20px',
+                        borderBottom: i < leads.length - 1 ? '1px solid var(--border)' : 'none',
+                        gap: 12,
+                      }}>
+                        <div style={{ flex: 1, minWidth: 0 }}>
+                          <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)' }}>{lead.name}</div>
+                          <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 2 }}>
+                            {new Date(lead.created_at).toLocaleString('he-IL', { day: '2-digit', month: '2-digit', hour: '2-digit', minute: '2-digit' })}
+                          </div>
+                          {lead.email && <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 1 }}>{lead.email}</div>}
+                        </div>
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 8, flexShrink: 0 }}>
+                          <a href={`tel:${lead.phone}`} style={{
+                            background: 'var(--y)', color: '#000', fontWeight: 700,
+                            padding: '8px 14px', borderRadius: 8, fontSize: 14,
+                            textDecoration: 'none', whiteSpace: 'nowrap',
+                          }}>
+                            📞 {lead.phone}
+                          </a>
+                          {lead.phone && (
+                            <a href={`https://wa.me/972${lead.phone.replace(/\D/g, '').replace(/^0/, '')}`}
+                              target="_blank" rel="noopener noreferrer"
+                              style={{
+                                background: '#25D366', color: '#fff', fontWeight: 700,
+                                padding: '8px 12px', borderRadius: 8, fontSize: 14,
+                                textDecoration: 'none',
+                              }}>
+                              💬
+                            </a>
+                          )}
+                          <button
+                            onClick={async () => {
+                              await fetch('/api/leads', {
+                                method: 'PATCH',
+                                headers: { 'Content-Type': 'application/json' },
+                                body: JSON.stringify({ phone: lead.phone }),
+                              })
+                              setLeads(prev => prev.filter(l => l.id !== lead.id))
+                            }}
+                            style={{
+                              background: 'var(--card2)', border: '1px solid var(--border)',
+                              color: 'var(--txt2)', padding: '8px 12px', borderRadius: 8,
+                              fontSize: 13, cursor: 'pointer',
+                            }}
+                            title="סמן כטופל"
+                          >
+                            ✓
+                          </button>
+                        </div>
+                      </div>
+                    ))}
+                  </div>
+                )}
+              </div>
+            )}
           </main>
         </div>
 
@@ -925,6 +1001,7 @@ export default function AdminDashboardClient({
               ['credits',   '💳',  'קרדיט',  0],
               ['revenue',   '📈',  'רווחים', 0],
               ['history',   '📋',  'היסטוריה', 0],
+              ['leads',     '🎯',  'לידים',    leads.length],
             ] as const).map(([key, icon, label, badge]) => (
               <button
                 key={key}

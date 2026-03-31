@@ -20,7 +20,7 @@ export default async function AdminPage() {
     .lt('subscription_expires_at', now)
 
   // Load initial data
-  const [bookingsRes, driversRes] = await Promise.all([
+  const [bookingsRes, driversRes, leadsRes] = await Promise.all([
     supabase
       .from('bookings')
       .select('*')
@@ -30,12 +30,19 @@ export default async function AdminPage() {
       .from('drivers')
       .select('*')
       .order('full_name'),
+    supabase
+      .from('leads')
+      .select('*')
+      .eq('converted', false)
+      .order('created_at', { ascending: false })
+      .limit(200),
   ])
 
   return (
     <AdminDashboardClient
       initialBookings={bookingsRes.data ?? []}
       initialDrivers={driversRes.data ?? []}
+      initialLeads={leadsRes.data ?? []}
     />
   )
 }

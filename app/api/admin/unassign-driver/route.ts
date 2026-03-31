@@ -23,7 +23,20 @@ export async function POST(req: NextRequest) {
   if (!booking.driver_id) return NextResponse.json({ error: 'אין נהג משויך' }, { status: 400 })
 
   const driverId = booking.driver_id
-  const refundAmount = booking.price ?? 0
+
+  // Find the actual commission that was deducted when the driver claimed the ride
+  const { data: txRow } = await supabase
+    .from('credit_transactions')
+    .select('amount')
+    .eq('driver_id', driverId)
+    .eq('booking_id', bookingId)
+    .lt('amount', 0)
+    .order('created_at', { ascending: false })
+    .limit(1)
+    .single()
+
+  // refundAmount = absolute value of the deducted commission
+  const refundAmount = txRow ? Math.abs(txRow.amount) : 0
 
   // 1. Unassign driver + revert status to approved
   const { error: updateErr } = await supabase

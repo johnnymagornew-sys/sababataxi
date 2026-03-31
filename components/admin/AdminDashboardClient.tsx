@@ -1076,13 +1076,23 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
 
   async function handleSaveNotes() {
     setSavingNotes(true)
-    await fetch('/api/admin/booking-notes', {
-      method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
-      body: JSON.stringify({ bookingId: b.id, notes }),
-    })
-    setSavingNotes(false)
-    onSaveNotes(notes)
+    try {
+      const res = await fetch('/api/admin/booking-notes', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ bookingId: b.id, notes }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        alert('שגיאה בשמירה: ' + (data.error ?? res.status))
+      } else {
+        onSaveNotes(notes)
+      }
+    } catch (err) {
+      alert('שגיאת רשת: ' + err)
+    } finally {
+      setSavingNotes(false)
+    }
   }
 
   return (

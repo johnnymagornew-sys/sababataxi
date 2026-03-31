@@ -1,10 +1,12 @@
 import BookingForm from '@/components/booking/BookingForm'
+import OnboardingModal from '@/components/OnboardingModal'
 import Link from 'next/link'
 import LogoRefreshButton from '@/components/LogoRefreshButton'
 
 export default function HomePage() {
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
+      <OnboardingModal />
       {/* Header */}
       <header style={{
         background: 'var(--black)',

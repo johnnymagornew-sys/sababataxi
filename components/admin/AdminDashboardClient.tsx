@@ -1137,6 +1137,13 @@ function BookingCard({ booking: b, expanded, onToggle, onApprove, onReject, onCo
               <span style={{ fontSize: 11, color: '#555', direction: 'ltr' }}>{claimedDriver.phone}</span>
             </div>
           )}
+          {b.admin_notes && (
+            <div style={{ marginTop: 4, display: 'flex', alignItems: 'center', gap: 5 }}>
+              <span style={{ fontSize: 10, background: 'rgba(255,209,0,0.12)', color: '#FFD100', padding: '2px 8px', borderRadius: 20, fontWeight: 700 }}>
+                📋 {b.admin_notes.slice(0, 40)}{b.admin_notes.length > 40 ? '...' : ''}
+              </span>
+            </div>
+          )}
         </div>
 
         {/* Price */}

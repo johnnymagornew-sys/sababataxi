@@ -458,6 +458,21 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
         </div>
       )}
 
+      {/* Admin notes */}
+      {ride.admin_notes && (
+        <div style={{
+          background: 'rgba(255,209,0,0.08)', border: '1px solid rgba(255,209,0,0.25)',
+          borderRadius: 8, padding: '10px 12px', marginBottom: 12,
+          display: 'flex', gap: 8, alignItems: 'flex-start',
+        }}>
+          <span style={{ fontSize: 16, flexShrink: 0 }}>📋</span>
+          <div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 3 }}>הערת מנהל</div>
+            <div style={{ fontSize: 13, color: 'var(--txt)', lineHeight: 1.5 }}>{ride.admin_notes}</div>
+          </div>
+        </div>
+      )}
+
       {/* Cancel button — only for claimed rides */}
       {onCancel && (
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>

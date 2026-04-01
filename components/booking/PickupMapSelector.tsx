@@ -49,6 +49,7 @@ export default function PickupMapSelector({
   const [hovered, setHovered] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const mouseX = useMotionValue(0)
@@ -122,13 +123,14 @@ export default function PickupMapSelector({
     setResults([])
   }
 
-  // Close on outside click
+  // Close on outside click — skip if click is inside the portal dropdown
   useEffect(() => {
     if (phase !== 'searching') return
     function handler(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
-        closeSearch()
-      }
+      const t = e.target as Node
+      const insideCard = containerRef.current?.contains(t)
+      const insideDropdown = dropdownRef.current?.contains(t)
+      if (!insideCard && !insideDropdown) closeSearch()
     }
     document.addEventListener('mousedown', handler)
     return () => document.removeEventListener('mousedown', handler)
@@ -143,6 +145,7 @@ export default function PickupMapSelector({
   const dropdown = results.length > 0 && dropRect && phase === 'searching'
     ? createPortal(
         <motion.div
+          ref={dropdownRef}
           initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
           style={{
             position: 'absolute', top: dropRect.top, left: dropRect.left,

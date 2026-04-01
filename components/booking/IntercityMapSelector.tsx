@@ -55,6 +55,7 @@ export default function IntercityMapSelector({
   const [hovered, setHovered] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
+  const dropdownRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const mouseX = useMotionValue(0)
@@ -148,11 +149,14 @@ export default function IntercityMapSelector({
     }
   }
 
-  // Close on outside click
+  // Close on outside click — skip if click is inside the portal dropdown
   useEffect(() => {
     if (phase !== 'pickup' && phase !== 'destination') return
     function handler(e: MouseEvent) {
-      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+      const t = e.target as Node
+      const insideCard = containerRef.current?.contains(t)
+      const insideDropdown = dropdownRef.current?.contains(t)
+      if (!insideCard && !insideDropdown) {
         if (pickup && destination) setPhase('complete')
         else if (pickup) setPhase('destination')
         else setPhase('idle')
@@ -179,6 +183,7 @@ export default function IntercityMapSelector({
   const dropdown = results.length > 0 && dropRect && isExpanded
     ? createPortal(
         <motion.div
+          ref={dropdownRef}
           initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
           style={{
             position: 'absolute', top: dropRect.top, left: dropRect.left,

@@ -549,11 +549,8 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           </div>
           {(() => {
             const currentRideStatus = (ride as Booking & { ride_status?: RideStatus }).ride_status ?? null
-            const currentStep = currentRideStatus !== null
+            const nextStep = currentRideStatus !== null
               ? RIDE_STATUS_STEPS.find(s => s.key === currentRideStatus)
-              : null
-            const nextStep = currentStep
-              ? RIDE_STATUS_STEPS.find(s => s.key === currentStep.next)
               : RIDE_STATUS_STEPS[0]
 
             if (!nextStep) return (

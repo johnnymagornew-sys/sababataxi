@@ -75,15 +75,15 @@ export default function HomePage() {
             { icon: '⭐', text: 'שירות אמין ואדיב', sub: 'נהגים מנוסים' },
           ].map(({ icon, text, sub }) => (
             <div key={text} style={{
-              display: 'flex', alignItems: 'center', gap: 8,
-              background: 'rgba(255,255,255,0.04)',
-              border: '1px solid rgba(255,255,255,0.08)',
-              borderRadius: 14, padding: '8px 14px',
+              display: 'flex', alignItems: 'center', gap: 10,
+              background: 'rgba(255,255,255,0.07)',
+              border: '1px solid rgba(255,255,255,0.14)',
+              borderRadius: 14, padding: '10px 16px',
             }}>
-              <span style={{ fontSize: 18 }}>{icon}</span>
+              <span style={{ fontSize: 20 }}>{icon}</span>
               <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt)' }}>{text}</div>
-                <div style={{ fontSize: 11, color: 'var(--txt3)' }}>{sub}</div>
+                <div style={{ fontSize: 14, fontWeight: 800, color: '#F2F2F2' }}>{text}</div>
+                <div style={{ fontSize: 12, color: '#A0A0A0', marginTop: 1 }}>{sub}</div>
               </div>
             </div>
           ))}

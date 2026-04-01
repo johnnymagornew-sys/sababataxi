@@ -38,7 +38,7 @@ export default function AdminWrapper() {
         supabase.from('leads').select('*').eq('converted', false).order('created_at', { ascending: false }).limit(200),
         supabase.from('ride_reviews').select(`
           id, booking_id, driver_rating, cleanliness_rating, comment, created_at,
-          bookings (customer_name, pickup_city, destination, travel_date, drivers (full_name))
+          bookings (driver_id, customer_name, pickup_city, destination, travel_date, drivers (full_name))
         `).order('created_at', { ascending: false }).limit(200),
       ])
 

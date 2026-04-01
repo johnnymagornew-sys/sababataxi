@@ -19,6 +19,7 @@ type Review = {
   comment: string | null
   created_at: string
   bookings: {
+    driver_id: string | null
     customer_name: string
     pickup_city: string
     destination: string
@@ -66,6 +67,14 @@ export default function AdminDashboardClient({
   const [loadingRevenue, setLoadingRevenue] = useState(false)
   const supabase = createClient()
   const router = useRouter()
+
+  function driverRatingStats(driverId: string) {
+    const dr = reviews.filter(r => r.bookings?.driver_id === driverId)
+    if (!dr.length) return null
+    const avgD = dr.reduce((s, r) => s + r.driver_rating, 0) / dr.length
+    const avgC = dr.reduce((s, r) => s + r.cleanliness_rating, 0) / dr.length
+    return { count: dr.length, avg: ((avgD + avgC) / 2).toFixed(1), avgD: avgD.toFixed(1), avgC: avgC.toFixed(1), list: dr }
+  }
 
   const pendingCount = bookings.filter(b => b.status === 'pending').length
   const activeDrivers = drivers.filter(d => d.subscription_active && d.is_active).length
@@ -720,6 +729,20 @@ export default function AdminDashboardClient({
                               )}
                               {!d.subscription_active && <span style={{ color: '#E74C3C' }}> • מנוי לא פעיל</span>}
                             </div>
+                            {(() => {
+                              const stats = driverRatingStats(d.id)
+                              if (!stats) return null
+                              return (
+                                <div style={{ display: 'flex', gap: 10, marginTop: 6, flexWrap: 'wrap' }}>
+                                  <span style={{ fontSize: 12, background: 'rgba(255,209,0,0.12)', border: '1px solid rgba(255,209,0,0.25)', borderRadius: 20, padding: '2px 10px', color: '#FFD100', fontWeight: 700 }}>
+                                    ⭐ {stats.avg} ({stats.count} דירוגים)
+                                  </span>
+                                  <span style={{ fontSize: 11, color: '#888', padding: '2px 0' }}>
+                                    🧑‍✈️ שירות {stats.avgD} · 🚕 ניקיון {stats.avgC}
+                                  </span>
+                                </div>
+                              )
+                            })()}
                           </div>
                         </div>
                         <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>

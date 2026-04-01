@@ -29,6 +29,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
   const [claiming, setClaiming] = useState<string | null>(null)
   const [updatingRideStatus, setUpdatingRideStatus] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null)
+  const [myStats, setMyStats] = useState<{ count: number; avg: number; avg_driver: number; avg_cleanliness: number } | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -51,6 +52,13 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
     if (availRes.data) setAvailableRides(availRes.data as Booking[])
     if (mineRes.data) setMyRides(mineRes.data as Booking[])
   }, [driver.id, supabase])
+
+  useEffect(() => {
+    fetch('/api/driver/my-stats')
+      .then(r => r.json())
+      .then(d => { if (d.avg !== null) setMyStats(d) })
+      .catch(() => {})
+  }, [])
 
   useEffect(() => {
     loadRides()
@@ -151,14 +159,10 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
   const isSubActive = driver.subscription_active
 
-  // Split my rides: active (< 45 min after ride time) vs history
+  // Split my rides: completed → history immediately; claimed → active
   const now = new Date()
-  const HISTORY_CUTOFF_MS = 45 * 60 * 1000
   const activeMyRides = myRides
-    .filter(r => {
-      const rideTime = new Date(`${r.travel_date}T${r.travel_time}`)
-      return now.getTime() - rideTime.getTime() < HISTORY_CUTOFF_MS
-    })
+    .filter(r => r.status === 'claimed')
     .sort((a, b) => {
       // In-progress rides (ride_status set) always first
       const aActive = (a as Booking & { ride_status?: string | null }).ride_status != null
@@ -170,10 +174,9 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
       const bMs = new Date(`${b.travel_date}T${b.travel_time}`).getTime()
       return aMs - bMs
     })
-  const historyRides = myRides.filter(r => {
-    const rideTime = new Date(`${r.travel_date}T${r.travel_time}`)
-    return now.getTime() - rideTime.getTime() >= HISTORY_CUTOFF_MS
-  })
+  const historyRides = myRides
+    .filter(r => r.status === 'completed')
+    .sort((a, b) => new Date(`${b.travel_date}T${b.travel_time}`).getTime() - new Date(`${a.travel_date}T${a.travel_time}`).getTime())
 
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)', maxWidth: 520, margin: '0 auto' }}>
@@ -225,6 +228,20 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
               />
               <StatusBadge label={`קרדיט: ₪${driver.credits}`} color="var(--y)" />
             </div>
+            {myStats && (
+              <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                <span style={{
+                  fontSize: 12, fontWeight: 700,
+                  background: 'rgba(255,209,0,0.12)', border: '1px solid rgba(255,209,0,0.25)',
+                  borderRadius: 20, padding: '3px 10px', color: 'var(--y)',
+                }}>
+                  ⭐ {myStats.avg} · {myStats.count} דירוגים
+                </span>
+                <span style={{ fontSize: 11, color: 'var(--txt3)', alignSelf: 'center' }}>
+                  🧑‍✈️ {myStats.avg_driver} · 🚕 {myStats.avg_cleanliness}
+                </span>
+              </div>
+            )}
           </div>
         </div>
 

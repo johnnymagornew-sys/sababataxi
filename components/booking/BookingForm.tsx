@@ -605,22 +605,214 @@ export default function BookingForm() {
             </div>
           )}
 
-          {/* STEP 3 – Payment ───────────────────────────────── */}
+          {/* STEP 3 – Summary ──────────────────────────────── */}
           {step === 3 && (
-            <div style={{ display: 'grid', gap: 16 }}>
-              <div className="card field-enter">
-                <StepTitle icon="💳" title="אמצעי תשלום" />
-                <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
-                  <PayMethod label="מזומן" icon="💵" selected={form.payment_method === 'cash'} onClick={() => setField('payment_method', 'cash')} />
-                  <PayMethod label="ביט" icon="📱" sub="+₪10" selected={form.payment_method === 'bit'} onClick={() => setField('payment_method', 'bit')} />
+            <div className="field-enter" style={{ display: 'grid', gap: 20 }}>
+
+              {/* Editorial header */}
+              <div style={{ textAlign: 'right', padding: '4px 2px 0' }}>
+                <h2 style={{ fontSize: 'clamp(32px,8vw,44px)', fontWeight: 900, color: 'var(--txt)', margin: 0, letterSpacing: '-1.5px', lineHeight: 1.1 }}>
+                  סיכום נסיעה
+                </h2>
+                <p style={{ fontSize: 14, color: 'var(--txt3)', margin: '6px 0 0', fontWeight: 500 }}>
+                  בדקו את הפרטים לפני ההזמנה
+                </p>
+              </div>
+
+              {/* Glass trip card */}
+              <div style={{
+                position: 'relative', overflow: 'hidden', borderRadius: 20,
+                background: 'rgba(53,53,52,0.55)',
+                backdropFilter: 'blur(32px)',
+                WebkitBackdropFilter: 'blur(32px)',
+                border: '1px solid rgba(255,255,255,0.07)',
+                boxShadow: '0 20px 60px rgba(0,0,0,0.5)',
+                padding: '28px 22px 22px',
+              }}>
+                {/* Map decoration top-left */}
+                <div style={{ position: 'absolute', top: -32, left: -32, width: 160, height: 160, opacity: 0.12, pointerEvents: 'none' }}>
+                  <svg width="160" height="160" viewBox="0 0 160 160" fill="none">
+                    <circle cx="80" cy="80" r="70" stroke="#FFD700" strokeWidth="1"/>
+                    <circle cx="80" cy="80" r="50" stroke="#FFD700" strokeWidth="0.8"/>
+                    <circle cx="80" cy="80" r="30" stroke="#FFD700" strokeWidth="0.6"/>
+                    <line x1="10" y1="80" x2="150" y2="80" stroke="#FFD700" strokeWidth="0.6"/>
+                    <line x1="80" y1="10" x2="80" y2="150" stroke="#FFD700" strokeWidth="0.6"/>
+                    <line x1="30" y1="30" x2="130" y2="130" stroke="#FFD700" strokeWidth="0.4"/>
+                    <line x1="130" y1="30" x2="30" y2="130" stroke="#FFD700" strokeWidth="0.4"/>
+                  </svg>
+                </div>
+
+                <div style={{ position: 'relative', zIndex: 1, display: 'grid', gap: 22 }}>
+                  {/* Route */}
+                  <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                    {/* Pickup */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 4, flexShrink: 0 }}>
+                        <div style={{ width: 10, height: 10, borderRadius: '50%', background: '#FFD700', boxShadow: '0 0 8px rgba(255,215,0,0.6)', flexShrink: 0 }} />
+                        <div style={{ width: 1.5, height: 40, background: 'linear-gradient(to bottom, #FFD700, rgba(255,255,255,0.1))', margin: '3px 0' }} />
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>נקודת איסוף</div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--txt)', lineHeight: 1.25 }}>
+                          {form.pickup_street ? `${form.pickup_street} ${form.pickup_house_number}, ${form.pickup_city}` : form.pickup_city || '—'}
+                        </div>
+                      </div>
+                    </div>
+                    {/* Destination */}
+                    <div style={{ display: 'flex', alignItems: 'flex-start', gap: 14 }}>
+                      <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', paddingTop: 4, flexShrink: 0 }}>
+                        <div style={{ fontSize: 18, color: 'var(--txt)', lineHeight: 1, marginRight: 0 }}>📍</div>
+                      </div>
+                      <div style={{ flex: 1 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>יעד סופי</div>
+                        <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--txt)', lineHeight: 1.25 }}>
+                          {form.trip_type === 'airport'
+                            ? 'נמל התעופה בן גוריון, טרמינל 3'
+                            : (form.destination_street
+                                ? `${form.destination_street} ${form.destination_house_number}, ${form.destination_city}`
+                                : form.destination_city || '—')}
+                        </div>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Date + Time */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: '14px 16px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>תאריך</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14 }}>📅</span>
+                        <span style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14 }}>
+                          {form.travel_date
+                            ? new Date(form.travel_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long', year: 'numeric' })
+                            : '—'}
+                        </span>
+                      </div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: '14px 16px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>שעה</div>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+                        <span style={{ fontSize: 14 }}>🕐</span>
+                        <span style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14 }}>
+                          {form.travel_time ? form.travel_time.slice(0, 5) : '—'}
+                        </span>
+                      </div>
+                    </div>
+                  </div>
+
+                  {/* Passengers + luggage row */}
+                  <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
+                    <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
+                      👥 {form.passengers} נוסעים
+                    </span>
+                    {form.large_luggage > 0 && (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
+                        🧳 {form.large_luggage} מזוודות
+                      </span>
+                    )}
+                    {form.trolley > 0 && (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
+                        🎒 {form.trolley} טרולי
+                      </span>
+                    )}
+                  </div>
                 </div>
               </div>
-              <div className="card field-enter" style={{ animationDelay: '0.06s' }}>
-                <label style={{ fontSize: 13, color: 'var(--txt2)' }}>הערות מיוחדות</label>
-                <textarea rows={3} placeholder="בקשות מיוחדות, הנחיות גישה..."
-                  value={form.special_requests} onChange={e => setField('special_requests', e.target.value)}
-                  style={{ resize: 'vertical' }} />
+
+              {/* Price row */}
+              <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 4px' }}>
+                <button type="button" onClick={() => goTo(1)}
+                  style={{ background: 'none', border: 'none', color: 'var(--y)', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, padding: 0 }}>
+                  <span>✏️</span> עריכה
+                </button>
+                <div style={{ textAlign: 'left' }}>
+                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 2 }}>מחיר נסיעה</div>
+                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                    <span style={{ fontSize: 52, fontWeight: 900, color: '#FFD700', letterSpacing: '-2px', lineHeight: 1 }}>
+                      ₪{price?.total ?? '—'}
+                    </span>
+                    <span style={{ fontSize: 13, color: 'var(--txt3)', fontWeight: 500 }}>כולל מע״מ</span>
+                  </div>
+                </div>
               </div>
+
+              {/* Payment method */}
+              <div>
+                <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12, paddingRight: 4 }}>
+                  אמצעי תשלום
+                </div>
+                <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {/* Bit */}
+                  <button type="button" onClick={() => setField('payment_method', 'bit')} style={{
+                    position: 'relative',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 10, padding: '18px 12px',
+                    borderRadius: 18,
+                    background: form.payment_method === 'bit' ? 'rgba(42,30,0,0.8)' : 'rgba(255,255,255,0.04)',
+                    border: form.payment_method === 'bit' ? '2px solid #FFD700' : '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: form.payment_method === 'bit' ? '0 0 20px rgba(255,215,0,0.15)' : 'none',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}>
+                    {form.payment_method === 'bit' && (
+                      <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 14, color: '#FFD700' }}>✓</span>
+                    )}
+                    <div style={{
+                      width: 44, height: 44, borderRadius: '50%',
+                      background: 'linear-gradient(135deg, #E9C400, #FFD700)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 22,
+                    }}>⚡</div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 15, color: 'var(--txt)', marginBottom: 2 }}>Bit</div>
+                      <div style={{ fontSize: 11, color: 'var(--txt3)' }}>+₪10</div>
+                    </div>
+                  </button>
+
+                  {/* Cash */}
+                  <button type="button" onClick={() => setField('payment_method', 'cash')} style={{
+                    position: 'relative',
+                    display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center',
+                    gap: 10, padding: '18px 12px',
+                    borderRadius: 18,
+                    background: form.payment_method === 'cash' ? 'rgba(42,30,0,0.8)' : 'rgba(255,255,255,0.04)',
+                    border: form.payment_method === 'cash' ? '2px solid #FFD700' : '1px solid rgba(255,255,255,0.08)',
+                    boxShadow: form.payment_method === 'cash' ? '0 0 20px rgba(255,215,0,0.15)' : 'none',
+                    cursor: 'pointer', transition: 'all 0.2s',
+                  }}>
+                    {form.payment_method === 'cash' && (
+                      <span style={{ position: 'absolute', top: 8, right: 8, fontSize: 14, color: '#FFD700' }}>✓</span>
+                    )}
+                    <div style={{
+                      width: 44, height: 44, borderRadius: '50%',
+                      background: 'rgba(255,255,255,0.08)',
+                      display: 'flex', alignItems: 'center', justifyContent: 'center',
+                      fontSize: 22,
+                    }}>💵</div>
+                    <div>
+                      <div style={{ fontWeight: 800, fontSize: 15, color: form.payment_method === 'cash' ? 'var(--txt)' : 'var(--txt2)' }}>מזומן</div>
+                      <div style={{ fontSize: 11, color: 'var(--txt3)' }}>ישירות לנהג</div>
+                    </div>
+                  </button>
+                </div>
+              </div>
+
+              {/* Special requests */}
+              <div>
+                <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: 8, paddingRight: 4 }}>
+                  הערות מיוחדות
+                </label>
+                <textarea rows={2} placeholder="בקשות מיוחדות, הנחיות גישה..."
+                  value={form.special_requests} onChange={e => setField('special_requests', e.target.value)}
+                  style={{
+                    resize: 'none', width: '100%', boxSizing: 'border-box',
+                    background: 'rgba(255,255,255,0.04)',
+                    border: '1px solid rgba(255,255,255,0.08)',
+                    borderRadius: 14, padding: '12px 14px',
+                    color: 'var(--txt)', fontSize: 14, fontFamily: 'inherit',
+                    direction: 'rtl',
+                  }} />
+              </div>
+
             </div>
           )}
 

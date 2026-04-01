@@ -349,14 +349,15 @@ export default function BookingForm() {
       <div ref={formTopRef} style={{ scrollMarginTop: 72 }} />
       <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
 
-        {/* ── Progress bar (sticky) ────────────────────────────── */}
+        {/* ── Sticky header: progress bar + price ─────────────── */}
         <div style={{
           position: 'sticky', top: 0, zIndex: 50,
           background: 'var(--bg)',
-          paddingTop: 12, paddingBottom: 12,
+          paddingTop: 12,
           marginBottom: 12,
           borderBottom: '1px solid var(--border)',
         }}>
+          {/* Progress dots */}
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
             {STEPS.map((s, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1 }}>
@@ -389,36 +390,34 @@ export default function BookingForm() {
               boxShadow: '0 0 8px rgba(255,209,0,0.5)',
             }} />
           </div>
-        </div>
-
-        {/* ── Sticky price bar ─────────────────────────────────── */}
-        {price && step < 3 && (
-          <div
-            className={priceFlash ? 'price-flash' : ''}
-            style={{
-              position: 'sticky', top: 60, zIndex: 40,
-              background: 'var(--y)', borderRadius: 14, marginBottom: 16,
-              padding: '12px 18px', display: 'flex', alignItems: 'center',
-              justifyContent: 'space-between',
-              boxShadow: '0 4px 20px rgba(255,209,0,0.25)',
-            }}
-          >
-            <div>
-              <div style={{ fontSize: 11, fontWeight: 700, color: 'rgba(0,0,0,0.55)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>מחיר משוער</div>
-              <div style={{ fontSize: 28, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
-            </div>
-            <div style={{ textAlign: 'left', fontSize: 12, color: 'rgba(0,0,0,0.6)' }}>
-              {form.pickup_city && (
-              <div style={{ fontWeight: 600 }}>
-                {form.pickup_city} ←{' '}
-                {form.trip_type === 'intercity' ? (form.destination_city || '?') : 'בן גוריון'}
+          {/* Price bar — inside same sticky block, shown on steps 0-2 when price exists */}
+          {price && step < 3 && (
+            <div
+              className={priceFlash ? 'price-flash' : ''}
+              style={{
+                background: 'var(--y)', borderRadius: 14, margin: '10px 0 10px',
+                padding: '10px 16px', display: 'flex', alignItems: 'center',
+                justifyContent: 'space-between',
+                boxShadow: '0 4px 20px rgba(255,209,0,0.25)',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(0,0,0,0.55)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>מחיר משוער</div>
+                <div style={{ fontSize: 26, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
               </div>
-            )}
-              <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
-              <div style={{ fontSize: 10, opacity: 0.7 }}>{price.range}</div>
+              <div style={{ textAlign: 'left', fontSize: 12, color: 'rgba(0,0,0,0.6)' }}>
+                {form.pickup_city && (
+                  <div style={{ fontWeight: 600 }}>
+                    {form.pickup_city} ←{' '}
+                    {form.trip_type === 'intercity' ? (form.destination_city || '?') : 'בן גוריון'}
+                  </div>
+                )}
+                <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
+                <div style={{ fontSize: 10, opacity: 0.7 }}>{price.range}</div>
+              </div>
             </div>
-          </div>
-        )}
+          )}
+        </div>
 
         {/* ── Step content ─────────────────────────────────────── */}
         <div

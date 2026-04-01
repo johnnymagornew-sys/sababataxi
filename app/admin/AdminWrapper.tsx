@@ -7,9 +7,11 @@ import type { Booking, Driver } from '@/types/database'
 import AdminDashboardClient from '@/components/admin/AdminDashboardClient'
 
 type Lead = { id: string; name: string; phone: string; email: string | null; created_at: string; converted: boolean }
+// eslint-disable-next-line @typescript-eslint/no-explicit-any
+type Review = any
 
 export default function AdminWrapper() {
-  const [data, setData] = useState<{ bookings: Booking[]; drivers: Driver[]; leads: Lead[] } | null>(null)
+  const [data, setData] = useState<{ bookings: Booking[]; drivers: Driver[]; leads: Lead[]; reviews: Review[] } | null>(null)
   const supabase = createClient()
   const router = useRouter()
 
@@ -30,16 +32,21 @@ export default function AdminWrapper() {
         .eq('subscription_active', true)
         .lt('subscription_expires_at', new Date().toISOString())
 
-      const [bookingsRes, driversRes, leadsRes] = await Promise.all([
+      const [bookingsRes, driversRes, leadsRes, reviewsRes] = await Promise.all([
         supabase.from('bookings').select('*').order('created_at', { ascending: false }).limit(100),
         supabase.from('drivers').select('*').order('full_name'),
         supabase.from('leads').select('*').eq('converted', false).order('created_at', { ascending: false }).limit(200),
+        supabase.from('ride_reviews').select(`
+          id, booking_id, driver_rating, cleanliness_rating, comment, created_at,
+          bookings (customer_name, pickup_city, destination, travel_date, drivers (full_name))
+        `).order('created_at', { ascending: false }).limit(200),
       ])
 
       setData({
         bookings: bookingsRes.data ?? [],
         drivers: driversRes.data ?? [],
         leads: leadsRes.data ?? [],
+        reviews: reviewsRes.data ?? [],
       })
     }
     init()
@@ -65,6 +72,7 @@ export default function AdminWrapper() {
       initialBookings={data.bookings}
       initialDrivers={data.drivers}
       initialLeads={data.leads}
+      initialReviews={data.reviews}
     />
   )
 }

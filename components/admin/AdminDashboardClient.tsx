@@ -7,9 +7,25 @@ import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
 
-type AdminTab = 'dashboard' | 'bookings' | 'drivers' | 'credits' | 'revenue' | 'history' | 'leads'
+type AdminTab = 'dashboard' | 'bookings' | 'drivers' | 'credits' | 'revenue' | 'history' | 'leads' | 'reviews'
 
 type Lead = { id: string; name: string; phone: string; email: string | null; created_at: string; converted: boolean }
+
+type Review = {
+  id: string
+  booking_id: string
+  driver_rating: number
+  cleanliness_rating: number
+  comment: string | null
+  created_at: string
+  bookings: {
+    customer_name: string
+    pickup_city: string
+    destination: string
+    travel_date: string
+    drivers: { full_name: string } | null
+  } | null
+}
 
 const STATUS_LABELS: Record<string, string> = {
   pending: 'ממתין', approved: 'מאושר', claimed: 'שורין',
@@ -24,10 +40,12 @@ export default function AdminDashboardClient({
   initialBookings,
   initialDrivers,
   initialLeads = [],
+  initialReviews = [],
 }: {
   initialBookings: Booking[]
   initialDrivers: Driver[]
   initialLeads?: Lead[]
+  initialReviews?: Review[]
 }) {
   const [tab, setTab] = useState<AdminTab>('dashboard')
   const [bookings, setBookings] = useState<Booking[]>(initialBookings)
@@ -43,6 +61,7 @@ export default function AdminDashboardClient({
   const [showNewDriverForm, setShowNewDriverForm] = useState(false)
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
+  const [reviews] = useState<Review[]>(initialReviews)
   const [revenue, setRevenue] = useState<{ subscriptions: number; credits: number; rides: number } | null>(null)
   const [loadingRevenue, setLoadingRevenue] = useState(false)
   const supabase = createClient()
@@ -184,6 +203,7 @@ export default function AdminDashboardClient({
     { key: 'revenue', icon: '📈', label: 'רווחים' },
     { key: 'history', icon: '📋', label: 'היסטוריה' },
     { key: 'leads', icon: '🎯', label: 'לידים' },
+    { key: 'reviews', icon: '⭐', label: 'חוות דעת', badge: reviews.length || undefined },
   ]
 
   return (
@@ -992,6 +1012,84 @@ export default function AdminDashboardClient({
                 )}
               </div>
             )}
+            {/* ── Reviews ── */}
+            {tab === 'reviews' && (
+              <div className="card" style={{ padding: 0, overflow: 'hidden' }}>
+                <div style={{ padding: '16px 20px', borderBottom: '1px solid var(--border)', display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
+                  <div style={{ fontWeight: 700, fontSize: 16 }}>⭐ חוות דעת לקוחות</div>
+                  <div style={{ color: 'var(--txt2)', fontSize: 13 }}>{reviews.length} חוות דעת</div>
+                </div>
+                {reviews.length === 0 ? (
+                  <div style={{ padding: '40px 20px', textAlign: 'center', color: 'var(--txt2)' }}>אין חוות דעת עדיין</div>
+                ) : (
+                  <div>
+                    {/* Average summary */}
+                    {reviews.length > 0 && (() => {
+                      const avgDriver = reviews.reduce((s, r) => s + r.driver_rating, 0) / reviews.length
+                      const avgClean = reviews.reduce((s, r) => s + r.cleanliness_rating, 0) / reviews.length
+                      const avg = (avgDriver + avgClean) / 2
+                      return (
+                        <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 12, padding: '16px 20px', borderBottom: '1px solid var(--border)' }}>
+                          {[
+                            { label: 'ממוצע כללי', value: avg },
+                            { label: 'שירות נהג', value: avgDriver },
+                            { label: 'ניקיון', value: avgClean },
+                          ].map(({ label, value }) => (
+                            <div key={label} style={{ background: 'var(--card2)', borderRadius: 10, padding: '12px', textAlign: 'center' }}>
+                              <div style={{ fontSize: 22, fontWeight: 800, color: 'var(--y)' }}>{value.toFixed(1)}</div>
+                              <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 4 }}>{label}</div>
+                              <div style={{ fontSize: 13, marginTop: 4 }}>{'⭐'.repeat(Math.round(value))}</div>
+                            </div>
+                          ))}
+                        </div>
+                      )
+                    })()}
+                    {/* Review list */}
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
+                      {reviews.map((review, i) => (
+                        <div key={review.id} style={{
+                          padding: '16px 20px',
+                          borderBottom: i < reviews.length - 1 ? '1px solid var(--border)' : 'none',
+                        }}>
+                          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 10, gap: 12 }}>
+                            <div>
+                              <div style={{ fontWeight: 700, fontSize: 15 }}>{review.bookings?.customer_name ?? '—'}</div>
+                              <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 2 }}>
+                                {review.bookings?.pickup_city} → {review.bookings?.destination?.slice(0, 20)}
+                                {review.bookings?.drivers?.full_name && (
+                                  <span> · נהג: {review.bookings.drivers.full_name}</span>
+                                )}
+                              </div>
+                            </div>
+                            <div style={{ fontSize: 11, color: 'var(--txt3)', whiteSpace: 'nowrap', flexShrink: 0 }}>
+                              {new Date(review.created_at).toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: '2-digit' })}
+                            </div>
+                          </div>
+                          <div style={{ display: 'flex', gap: 16, marginBottom: review.comment ? 10 : 0 }}>
+                            <div style={{ fontSize: 13, color: 'var(--txt2)' }}>
+                              🧑‍✈️ שירות נהג: <span style={{ color: 'var(--y)', fontWeight: 700 }}>{'⭐'.repeat(review.driver_rating)} {review.driver_rating}/5</span>
+                            </div>
+                            <div style={{ fontSize: 13, color: 'var(--txt2)' }}>
+                              🚕 ניקיון: <span style={{ color: 'var(--y)', fontWeight: 700 }}>{'⭐'.repeat(review.cleanliness_rating)} {review.cleanliness_rating}/5</span>
+                            </div>
+                          </div>
+                          {review.comment && (
+                            <div style={{
+                              background: 'var(--card2)', border: '1px solid var(--border)',
+                              borderRadius: 8, padding: '10px 12px',
+                              fontSize: 14, color: 'var(--txt)', lineHeight: 1.5, fontStyle: 'italic',
+                            }}>
+                              &quot;{review.comment}&quot;
+                            </div>
+                          )}
+                        </div>
+                      ))}
+                    </div>
+                  </div>
+                )}
+              </div>
+            )}
+
           </main>
         </div>
 
@@ -1006,6 +1104,7 @@ export default function AdminDashboardClient({
               ['revenue',   '📈',  'רווחים', 0],
               ['history',   '📋',  'היסטוריה', 0],
               ['leads',     '🎯',  'לידים',    leads.length],
+              ['reviews',   '⭐',  'חוות דעת', reviews.length],
             ] as const).map(([key, icon, label, badge]) => (
               <button
                 key={key}

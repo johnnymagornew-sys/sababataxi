@@ -9,8 +9,8 @@ const heebo = Heebo({
 })
 
 export const metadata: Metadata = {
-  title: 'סבבה טקסי – מוניות לנמל תעופה',
-  description: 'הזמינו מונית מקצועית לנמל תעופה בן גוריון',
+  title: 'סבבה טקסי – מוניות לנתב״ג ונסיעות בין עירוניות',
+  description: 'מוניות לנתב״ג ומעיר לעיר במחירים קבועים מראש. ללא פרטי אשראי, תשלום ישירות לנהג. נהגים מקצועיים, הגעה בזמן, שירות אמין ואדיב.',
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

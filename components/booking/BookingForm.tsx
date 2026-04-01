@@ -117,6 +117,7 @@ export default function BookingForm() {
   const prevPrice = useRef<number | null>(null)
   const [priceFlash, setPriceFlash] = useState(false)
   const [phoneValid, setPhoneValid] = useState(false)
+  const formTopRef = useRef<HTMLDivElement>(null)
   // Price calculation
   useEffect(() => {
     const idx = getTierIndex(form.passengers)
@@ -228,7 +229,11 @@ export default function BookingForm() {
   function goTo(next: number) {
     setError('')
     setDir(next > step ? 1 : -1)
-    setTimeout(() => { setStep(next); setAnimKey(k => k + 1) }, 10)
+    setTimeout(() => {
+      setStep(next)
+      setAnimKey(k => k + 1)
+      formTopRef.current?.scrollIntoView({ behavior: 'smooth', block: 'start' })
+    }, 10)
   }
 
   function validateStep(): string | null {
@@ -341,6 +346,7 @@ export default function BookingForm() {
         .toggle-track.on .toggle-thumb { transform:translateX(-20px); }
       `}</style>
 
+      <div ref={formTopRef} style={{ scrollMarginTop: 72 }} />
       <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
 
         {/* ── Progress bar ─────────────────────────────────────── */}
@@ -380,7 +386,7 @@ export default function BookingForm() {
         </div>
 
         {/* ── Sticky price bar ─────────────────────────────────── */}
-        {price && (
+        {price && step < 3 && (
           <div
             className={priceFlash ? 'price-flash' : ''}
             style={{

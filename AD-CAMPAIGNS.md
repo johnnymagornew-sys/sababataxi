@@ -1,439 +1,424 @@
-# Ad Campaigns: מוניות סבבה (Sababa Taxi)
+# Ad Campaigns: סבבה טקסי
 **URL:** https://sababataxi.vercel.app
-**Date:** 2026-03-31
-**Business Type:** Local Service — Airport Transfer
-**Primary Objective:** Conversions (Booking Form Completions)
-**Recommended Platforms:** Meta (Facebook + Instagram), TikTok, Google Search
+**Date:** 2026-04-01
+**Business Type:** Local Service — Airport Transportation (Israel)
+**Primary Objective:** Bookings (conversions)
+**Recommended Platforms:** Google Search, Meta (Facebook + Instagram), TikTok
 
 ---
 
 ## Campaign Strategy Overview
 
-מוניות סבבה היא שירות מונית לשדה תעופה בן גוריון עם יתרון תחרותי ברור: **מחיר קבוע, ללא כרטיס אשראי, תשלום ישירות לנהג**. הקהל הרחב כולל משפחות, נוסעים עסקיים ותיירים — כולם עם צורך אחד: להגיע לשדה בזמן, בלי הפתעות.
+סבבה טקסי is a fixed-price airport taxi service operating in Israel. The core offer — **מחיר ידוע מראש, ללא הפתעות, תשלום ישיר לנהג** — directly addresses the #1 pain point of Israeli airport travelers: fear of a meter running or an inflated price. Every ad should lead with price certainty and convenience.
 
-האסטרטגיה מתמקדת בשלוש שכבות: **מודעות** (מי לא מכיר את הסרוויס), **שיקול** (למה סבבה ולא אחרים), **המרה** (לדחוף לסגירת הזמנה). מאחר שמדובר בשירות מקומי ישראלי, Meta ו-TikTok הם הערוצים העיקריים — ו-Google Search לתפיסת ביקוש קיים.
+The highest-intent channel is **Google Search**, where people actively search for taxi to/from Ben Gurion moments before or after a trip. This should receive 55% of budget. **Meta** (Facebook + Instagram) is the awareness and retargeting engine — reaching Israeli travelers in the planning phase (7–30 days before a trip). **TikTok** can be tested with a low budget targeting 22–40 year olds who travel frequently.
 
-הפרסום יתמקד בכאב הידוע: "לא ידעתי כמה זה יעלה עד שהגענו ליעד" — וייתן מענה מיידי: מחיר קבוע מראש.
+The conversion funnel is short: ad → landing page → fill form → booking confirmed. The landing page is already strong (Hebrew, mobile-first, fixed prices). Message match between ad and page is high.
 
 ---
 
 ## Audience Targeting
 
-### קהלי יעד ראשיים
+### Google Search
+- **Primary keywords:** people searching for taxi to/from Ben Gurion Airport in Hebrew/English
+- **Geography:** Israel (all regions)
+- **Device:** Heavy mobile bias (80%+ of airport searches are mobile)
+- **Schedule:** All hours; bid increases 04:00–08:00 and 18:00–23:00 (peak travel windows)
 
-| קהל | גיל | תיאור | פלטפורמה |
-|-----|-----|--------|-----------|
-| משפחות לשדה | 30-55 | הורים עם ילדים ומזוודות, נוסעים לחופשה | Meta |
-| עסקים | 28-55 | מנהלים, נוסעי עסקים תכופים | Meta, Google |
-| תיירים חוזרים | 25-60 | ישראלים שחוזרים ומזמינים מראש | Meta, Google |
-| נוסעים צעירים | 20-35 | זוגות, חברים, בקשת נוחות ומחיר | TikTok, Instagram |
+### Meta (Facebook + Instagram)
+- **Core audience:** Israel, ages 25–55, interests: travel, flights, El Al, airports, tourism
+- **Lookalike:** 1% lookalike of website visitors
+- **Retargeting:** Website visitors last 30 days who didn't convert
+- **Exclusion:** People who already submitted a booking form
 
-### Targeting Parameters — Meta
-
-**Core Audiences:**
-- גיאוגרפיה: ישראל (רדיוס 80 ק"מ מת"א — רוב הנסיעות)
-- תחומי עניין: Travel, Airports, Family Travel, Business Travel
-- התנהגויות: Frequent Travelers, International Travelers
-- רמת הכנסה: Middle–High (מסוגלים לשלם על שירות)
-
-**Lookalike Audiences (לאחר 50+ המרות):**
-- LAL 1% — מבוסס על אנשים שהשלימו הזמנה
-- LAL 2-3% — להרחבת הישג
-
-**Retargeting:**
-- מבקרי אתר אחרונים 30 יום שלא סיימו הזמנה
-- אנשים שהתחילו טופס הזמנה
+### TikTok
+- **Geography:** Israel
+- **Ages:** 22–40
+- **Interests:** Travel, Road trips, Lifestyle, Israel tourism
+- **Device:** Mobile only
 
 ---
 
-## Campaign 1: Meta Ads — Facebook + Instagram
+## Campaign 1: Google Search
 
-### Ad Set 1: קהל קר — משפחות
+### Ad Group 1: "מונית לנמל תעופה" (Taxi to Airport — Main)
 
-**Targeting:** גיל 30-50, ישראל, תחומי עניין: Family Travel, Ben Gurion Airport, Israel flights
-**Budget:** ₪80/יום
-**Objective:** Conversions (Booking Completions)
-**Placement:** Instagram Stories, Instagram Feed, Facebook Feed
+**Keywords:**
+- [מונית לנמל תעופה בן גוריון]
+- [מונית לשדה התעופה]
+- "מונית לנתב"ג"
+- +מונית +שדה +תעופה
+- [taxi to ben gurion airport]
+- [airport taxi israel]
+- "הסעה לנמל תעופה"
+- +מחיר +מונית +שדה +תעופה
+- [כמה עולה מונית לשדה התעופה]
+- [הזמנת מונית לנמל תעופה]
+
+**Negative keywords:** אוטובוס, רכבת, שאטל, קרון, מסוף, מונית לירושלים ממרכז, מונית אנונימי
+
+**Budget:** ₪80/day (~₪2,400/month)
+**Bid strategy:** Maximize conversions
+
+#### RSA — Main
+**Headlines (30 chars max):**
+1. `מונית לנתב"ג – מחיר קבוע` (24)
+2. `ללא הפתעות במחיר` (17)
+3. `הזמינו עכשיו – מהיר וקל` (24)
+4. `סבבה טקסי לשדה התעופה` (22)
+5. `תשלום מזומן או ביט לנהג` (25)
+6. `כמה עולה? ראו מחיר מיד` (24)
+7. `נהג מקצועי עד הדלת` (20)
+8. `הגעה בזמן – מובטח` (18)
+9. `הזמנה בדקות – ללא כרטיס` (26)
+10. `מחיר שנקבע מראש` (17)
+11. `100+ ערים בישראל` (17)
+12. `סבבה – פשוט להזמין` (20)
+13. `24/7 – כל יום, כל שעה` (22)
+14. `בן גוריון – נסיעה בטוחה` (26)
+15. `חזרה מהשדה? גם זה אצלנו` (26)
+
+**Descriptions (90 chars max):**
+1. `מחירים קבועים לכל עיר בישראל. הזמינו מונית לנמל תעופה בן גוריון עכשיו – בלי טלפון.` (85)
+2. `תשלום ישיר לנהג — מזומן או ביט. ללא פרטי אשראי, ללא עמלות. פשוט ונוח.` (73)
+3. `נהגים מקצועיים, הגעה בזמן. אלפי נסיעות לשדה התעופה. הזמינו ב-2 דקות.` (72)
+4. `צריכים מונית לנתב"ג? קבלו מחיר מיידי לפי עיר. ביטול חינם עד שעה לפני.` (73)
+
+**Display URL path:** מונית / נמל-תעופה
+**Landing Page:** https://sababataxi.vercel.app
+**Message Match Score:** 9/10
 
 ---
 
-#### Variation 1A — Pain Point (קצר)
-- **Headline:** `מחיר קבוע לשדה התעופה`
-- **Primary Text (קצר):** מזוודות, ילדים, לחץ של טיסה — בלי לדאוג כמה יעלה. מחיר קבוע מראש, תשלום ישירות לנהג. ✈️
-- **Primary Text (בינוני):** יש לך טיסה מחר בבוקר. הכל מוכן — פספורטים, מזוודות, ילדים. הדבר האחרון שאתה צריך זה לגלות בסוף הנסיעה שהמחיר הכפיל את עצמו. עם מוניות סבבה — מחיר קבוע מראש, ללא הפתעות.
-- **Primary Text (ארוך):** רוב חברות המונית עובדות עם מונה. אתה לא יודע כמה זה יעלה עד שמגיעים. פקק? תוספת. לילה? תוספת. מזוודה? תוספת. אצלנו זה לא ככה. מחיר קבוע לשדה תעופה בן גוריון — לא משנה מה קורה בדרך. שלם במזומן או ביט ישירות לנהג. אין צורך בכרטיס אשראי, אין עמלות מפתיעות. פשוט נסיעה נוחה.
-- **Description:** `ללא כרטיס אשראי • מזומן או ביט`
-- **CTA:** Book Now
-- **Visual:** תמונת ad3-משפחה.jpg — משפחה עם מזוודות + לוגו גדול
+### Ad Group 2: "חזרה מהשדה" (Return from Airport)
+
+**Keywords:**
+- [מונית מנמל תעופה הביתה]
+- [הסעה מנתב"ג]
+- "מונית מהשדה לתל אביב"
+- "מונית מהשדה לחיפה"
+- "מונית מהשדה לירושלים"
+- +מונית +מנמל +תעופה
+- [taxi from ben gurion airport]
+- [airport pickup israel]
+
+**Budget:** ₪40/day (~₪1,200/month)
+
+**Headlines:**
+1. `חזרה מנתב"ג? אנחנו כאן` (24)
+2. `מונית מהשדה – מחיר קבוע` (25)
+3. `נהג ממתין בהגעה` (16)
+4. `הזמינו נסיעה לפני הטיסה` (25)
+5. `סבבה טקסי – גם לחזרה` (22)
+
+**Descriptions:**
+1. `הזמינו מונית חזרה כבר עכשיו — הנהג ממתין כשאתם נוחתים. מחיר קבוע, ללא הפתעות.` (82)
+2. `כולל נסיעת חזרה מהשדה בהזמנה אחת. שני נהגים עצמאיים, תיאום מלא.` (68)
 
 ---
 
-#### Variation 1B — Before/After
-- **Headline:** `בלי הפתעות בסוף הנסיעה`
-- **Primary Text (קצר):** לפני: "כמה זה עולה?" אחרי שהגענו: "לא ידעתי שיהיה כל כך יקר..." 😬 עם סבבה — מחיר קבוע מראש. נקודה.
-- **Primary Text (בינוני):** כמה פעמים הגעת לשדה ושילמת יותר ממה שציפית? פקק, לילה, מזוודה — כל פרט הפך לתוספת. מוניות סבבה עובדת אחרת: מחיר קבוע מהרגע שסוגרים, ללא מונה, ללא הפתעות.
-- **Description:** `שדה תעופה בן גוריון • מחיר קבוע`
-- **CTA:** Learn More
-- **Visual:** גרפיקה — לפני/אחרי עם צבעי המותג צהוב/שחור
+### Ad Group 3: עיר ספציפית (City-Specific)
+
+**Keywords:**
+- [מונית לשדה התעופה מתל אביב]
+- [מונית לנתב"ג מחיפה]
+- [מונית לשדה מירושלים]
+- [מחיר מונית לנמל תעופה מרחובות]
+- [הסעה לשדה מראשון לציון]
+
+**Budget:** ₪30/day
+
+**Headlines:**
+1. `מונית לנתב"ג מכל עיר` (21)
+2. `מחיר קבוע מהעיר שלכם` (22)
+3. `ראשל"צ, ת"א, חיפה ועוד` (23)
+4. `הכניסו עיר – קבלו מחיר` (24)
+5. `הגעה עד הדלת שלכם` (19)
+
+**Descriptions:**
+1. `הזינו את העיר שלכם וקבלו מחיר מיידי לשדה התעופה. ללא הפתעות, תשלום לנהג.` (75)
+2. `מאות ערים בישראל. נהגים מקצועיים ומאומתים. הזמינו ב-2 דקות עכשיו.` (68)
 
 ---
 
-#### Variation 1C — Urgency
-- **Headline:** `הטיסה מחר? הזמן עכשיו`
-- **Primary Text (קצר):** נהגים פנויים להיום ומחר. הזמן ב-2 דקות, קבל אישור מיידי. ✅
-- **Primary Text (בינוני):** אל תשאיר את הנסיעה לשדה לרגע האחרון. הזמן עכשיו — תהליך הזמנה של 2 דקות, מחיר קבוע, ואישור מיידי. נהגים מקצועיים, מגיעים בדיוק בזמן.
-- **Description:** `הזמנה מהירה • אישור מיידי`
-- **CTA:** Book Now
-- **Visual:** ad1-מחיר-קבוע.jpg — מונית ישראלית + לוגו
+## Campaign 2: Meta Ads (Facebook + Instagram)
 
----
-
-### Ad Set 2: קהל קר — עסקים
-
-**Targeting:** גיל 28-55, ישראל, תחומי עניין: Business Travel, Frequent Flyers, LinkedIn users
-**Budget:** ₪60/יום
+### Ad Set 1: Cold Audience — Travelers
+**Targeting:** Israel | Ages 25–55 | Interests: El Al, flights, tourism, Ben Gurion Airport
+**Placements:** Feed + Stories + Reels
+**Budget:** ₪50/day (~₪1,500/month)
 **Objective:** Conversions
 
 ---
 
-#### Variation 2A — Professional
-- **Headline:** `מהנחיתה ישר לפגישה`
-- **Primary Text (קצר):** נהג מחכה לך. מגיעים בזמן. אין תירוצים. 💼 שירות עסקי אמין לשדה תעופה בן גוריון.
-- **Primary Text (בינוני):** פגישה ב-9:00. הטיסה נוחתת ב-7:30. אין זמן לבזבז. הנהג שלנו מחכה לך בשדה, לוקח אותך ישר ליעד — בלי המתנה, בלי הפתעות במחיר. שירות עסקי אמין, בכל שעה.
-- **Description:** `שירות אמין • בכל שעה • מחיר קבוע`
-- **CTA:** Book Now
-- **Visual:** ad4-עסקים.jpg
+#### Angle 1: PAIN POINT — "המחיר המפתיע"
+
+**Primary Text — Short:**
+```
+מונית לשדה ובסוף המחיר הפתיע אתכם?
+בסבבה טקסי — המחיר ידוע לפני שאתם עולים לרכב.
+```
+
+**Primary Text — Medium:**
+```
+כולנו היינו שם: מגיעים לשדה התעופה, המחשבה רצה — כמה זה יעלה הפעם?
+
+בסבבה טקסי המחיר נקבע מראש לפי עיר.
+לא מד, לא הפתעות, לא מחיר "לפי פקק".
+
+הזמינו עכשיו ודעו בדיוק כמה תשלמו.
+```
+
+**Primary Text — Long:**
+```
+הסיפור הישראלי הקלאסי: הזמנתם מונית לשדה, הנהג לקח דרך עקיפה, המד רץ — ובסוף שילמתם כפול.
+
+סבבה טקסי עובד אחרת.
+
+✅ מחיר קבוע לפי עיר — ידוע לפני ההזמנה
+✅ תשלום ישיר לנהג — מזומן או ביט
+✅ ללא פרטי כרטיס אשראי
+✅ הזמנה ב-2 דקות מהטלפון
+✅ נסיעת חזרה מהשדה באותה הזמנה
+
+הטיסה הבאה שלכם — תתחיל בכיף.
+```
+
+**Headlines:**
+1. `מחיר קבוע לנמל התעופה` (23)
+2. `ללא הפתעות במחיר` (17)
+3. `הזמינו מונית לנתב"ג` (21)
+4. `סבבה טקסי – פשוט ונוח` (23)
+5. `כמה עולה? ראו עכשיו` (20)
+
+**CTA Button:** הזמינו עכשיו
+**Visual:** Split-screen — שמאל: נוסע מודאג מסתכל על מד מונית גבוה. ימין: אותו נוסע מחייך, טלפון ביד עם מחיר סבבה ברור. טקסט: "ידעתם מחיר מראש."
 
 ---
 
-#### Variation 2B — Social Proof
-- **Headline:** `המונית של אנשי העסקים`
-- **Primary Text (קצר):** מנהלים שנוסעים לעתים קרובות לשדה יודעים: אמינות שווה יותר ממחיר. אצלנו — גם זה וגם זה.
-- **Primary Text (בינוני):** נוסעים לשדה לפחות פעם בחודש? מוניות סבבה מציעה מחיר קבוע, נהגים מדויקים, ותשלום פשוט. ללא כרטיס אשראי, ללא עמלות. פשוט מקצועיות.
-- **CTA:** Learn More
-- **Visual:** ad4-עסקים.jpg — עם overlay "שירות עסקי"
+#### Angle 2: DIRECT BENEFIT — "2 דקות"
+
+**Primary Text — Short:**
+```
+הזמינו מונית לשדה התעופה ב-2 דקות.
+מחיר קבוע. תשלום לנהג. סבבה.
+```
+
+**Primary Text — Medium:**
+```
+שלב 1: הכניסו עיר + תאריך
+שלב 2: ראו מחיר קבוע
+שלב 3: אישור מיידי ב-WhatsApp
+
+זהו. מונית לנמל תעופה בן גוריון — בלי שיחות טלפון, בלי מו"מ, בלי כרטיס אשראי.
+```
+
+**Headlines:**
+1. `מונית לנתב"ג ב-2 דקות` (22)
+2. `הזמינו בלי להתקשר` (19)
+3. `אישור מיידי בוואטסאפ` (21)
+
+**CTA Button:** הזמינו עכשיו
+**Visual:** מסך טלפון מראה את טופס ההזמנה — אצבע ממלאת "תל אביב", מחיר מופיע, לחיצה. Cut: הודעת WhatsApp — "ההזמנה שלך התקבלה! ✅". רקע: שדה תעופה בן גוריון, בוקר.
 
 ---
 
-### Ad Set 3: Retargeting — ביקרו ולא הזמינו
+#### Angle 3: BEFORE/AFTER
 
-**Targeting:** מבקרי אתר 1-30 יום
-**Budget:** ₪40/יום
-**Objective:** Conversions
+**Primary Text — Medium:**
+```
+לפני סבבה טקסי:
+😰 לא יודעים כמה יעלה עד שמגיעים
+📞 צריך להתקשר, להמתין, לשאול
+
+אחרי סבבה טקסי:
+✅ מחיר ידוע מראש לפי עיר
+📱 הזמנה אונליין ב-2 דקות
+💳 תשלום ישיר לנהג — מזומן או ביט
+
+כך נוסעים לשדה התעופה בלי לחץ.
+```
+
+**Headlines:**
+1. `הדרך הנוחה לנמל התעופה` (26)
+2. `ידעתם מחיר לפני שעליתם` (26)
+3. `לנסוע לשדה — בלי לחץ` (22)
+
+**CTA Button:** הזמינו עכשיו
 
 ---
 
-#### Variation 3A — Reminder
-- **Headline:** `עוד לא סגרת את הנסיעה?`
-- **Primary Text:** ראינו שביקרת. מחיר קבוע לשדה תעופה בן גוריון — תוך 2 דקות אתה בסדר. 😊
-- **CTA:** Book Now
+### Ad Set 2: Retargeting — Website Visitors (7–30 days)
+**Targeting:** Custom audience — website visitors, last 30 days, excluding converters
+**Budget:** ₪20/day
 
-#### Variation 3B — Objection Handling
-- **Headline:** `לא צריך כרטיס אשראי`
-- **Primary Text:** שילם במזומן או ביט ישירות לנהג. אין הרשמה, אין עמלות, אין הפתעות. פשוט תזמין.
-- **CTA:** Book Now
+#### Retargeting Ad 1 — Reminder
+**Primary Text:**
+```
+ראינו שביקרתם באתר סבבה טקסי 👋
+
+עדיין מחפשים מונית לנמל התעופה?
+המחיר הקבוע עדיין מחכה לכם — הזמינו לפני שהמקום יתפס.
+```
+**Headline:** `סיימו את ההזמנה שלכם` (24)
+**CTA:** הזמינו עכשיו
+
+#### Retargeting Ad 2 — Objection Handle
+**Primary Text:**
+```
+לא בטוחים? הנה מה שמבדיל אותנו:
+
+✅ אין חיוב מראש — משלמים לנהג
+✅ ביטול חינם עד שעה לפני
+✅ נהגים מקצועיים ומאומתים
+
+סבבה טקסי — פשוט להזמין, בטוח לנסוע.
+```
+**Headline:** `ללא סיכון – שלמו לנהג` (25)
+**CTA:** הזמינו עכשיו
 
 ---
 
-## Campaign 2: TikTok Ads
+### Ad Set 3: Stories + Reels
+**Placements:** Instagram Stories, Facebook Stories, Reels
+**Budget:** ₪25/day
 
-**Objective:** Awareness + Traffic
-**Budget:** ₪50/יום
-**Placement:** In-Feed, TopView
+#### Story Ad — Video Script (10 seconds)
+```
+0-2s: טקסט גדול על רקע כהה: "כמה תשלמו על מונית לנתב"ג? 🤔"
+2-5s: מפה — עיר → חץ → שדה התעופה. מחיר מופיע.
+5-9s: טלפון עם הטופס הפשוט. אצבע ממלאת ולוחצת.
+9-10s: "סבבה טקסי — מחיר קבוע, הזמינו עכשיו ↑"
+```
+**Ad Text:** `מונית לנמל התעופה – מחיר קבוע, ללא הפתעות. הזמינו ב-2 דקות 🚕`
+**CTA:** הזמינו עכשיו
 
 ---
 
-### Script 1 — "הפתעת המחיר" (15 שניות)
+## Campaign 3: TikTok Ads
 
+### Ad Set 1: In-Feed — Young Travelers
+**Targeting:** Israel | Ages 22–38 | Travel, lifestyle, flights
+**Budget:** ₪20/day
+
+#### Script 1 — "הסוד של הנסיעה לשדה"
 ```
-[0-3 שניות] HOOK (טקסט על מסך):
-"לא ידעתי כמה זה יעלה עד שהגענו 😱"
-
-[3-8 שניות] PROBLEM:
-מישהו מגיב לתמונה של מחיר טקסי יקר מהמצופה
-טקסט: "זה קרה לכולנו"
-
-[8-13 שניות] SOLUTION:
-מוצג האתר / תהליך הזמנה, מחיר מוצג מיד
-טקסט: "מוניות סבבה — מחיר קבוע מראש"
-
-[13-15 שניות] CTA:
-לוגו + "הזמן עכשיו • sababataxi.vercel.app"
+[0-3s]  HOOK: "תתקרבו — אני הולך לחסוך לכם כסף על הנסיעה לנתב"ג"
+[3-8s]  PROBLEM: כולם מזמינים מונית ורק בסוף מגלים כמה זה עלה...
+[8-18s] SOLUTION: בסבבה טקסי המחיר נקבע מראש.
+        [מציג טלפון — מכניס "חיפה", רואה ₪400]
+        שום הפתעות. שום מד.
+[18-25s] תשלום לנהג ישירות — מזומן או ביט. ללא כרטיס אשראי.
+[25-30s] "הלינק ב-bio — הזמינו לפני הטיסה הבאה שלכם"
 ```
+**Ad Text (100 chars):** `מחיר קבוע לנמל התעופה 🛫 ללא הפתעות, תשלום לנהג. הזמינו עכשיו!`
 
-**Ad Text (100 chars):** מחיר קבוע לשדה התעופה ✈️ ללא הפתעות, ללא כרטיס אשראי
-**CTA Button:** Learn More
+#### Script 2 — POV השוואה
+```
+[0-3s]  HOOK: "POV: השוואת מחיר מוניות לשדה התעופה 👀"
+[3-10s] PROBLEM: מוניות רגילות — לא יודעים כמה עולה עד שמגיעים
+[10-20s] SOLUTION: סבבה טקסי — מחיר קבוע לפי עיר
+         [ספליט מסך: שמאל מד רץ, ימין מחיר קבוע]
+[20-28s] "הזמינו ב-2 דקות. מחיר שנקבע מראש. ללא כרטיס אשראי."
+[28-30s] CTA: "לינק ב-bio 🔗"
+```
 
 ---
 
-### Script 2 — "משפחה בדרך לשדה" (15 שניות)
+## Retargeting Strategy
 
-```
-[0-3 שניות] HOOK:
-"POV: הטיסה ב-6 בבוקר עם כל המשפחה 😅"
-
-[3-10 שניות] SHOW:
-מונית ישראלית, משפחה נכנסת, מזוודות
-טקסט: "נהג מגיע בזמן, מחיר קבוע, שלם בביט"
-
-[10-15 שניות] CTA:
-"מוניות סבבה — הזמן עכשיו"
-```
-
-**Ad Text:** POV: הטיסה ב-6 בבוקר ☀️ מוניות סבבה — מחיר קבוע, תשלום בביט
-**CTA Button:** Book Now
-
----
-
-### Script 3 — "Before/After" (30 שניות)
-
-```
-[0-3 שניות] HOOK:
-"מוניות מסורתיות vs. מוניות סבבה 👀"
-
-[3-15 שניות] BEFORE (מוניות רגילות):
-✗ לא יודעים מחיר מראש
-✗ מונה דולק
-✗ צריך כרטיס אשראי
-✗ הפתעות בסוף
-
-[15-25 שניות] AFTER (סבבה):
-✓ מחיר קבוע מראש
-✓ ללא מונה
-✓ מזומן / ביט
-✓ אישור מיידי
-
-[25-30 שניות] CTA:
-לוגו + "הזמן עכשיו"
-```
-
-**Ad Text:** מוניות מסורתיות vs. סבבה — ההבדל ברור 🚕✈️
-**CTA Button:** Learn More
-
----
-
-## Campaign 3: Google Search Ads
-
-**Objective:** Capture High-Intent Searches
-**Budget:** ₪100/יום
-**Bidding:** Target CPA — ₪45
-
----
-
-### Ad Group 1: "מונית לשדה תעופה"
-
-**Keywords:**
-```
-[מונית לשדה תעופה בן גוריון]
-[הזמנת מונית לנתב"ג]
-[מחיר מונית לשדה תעופה]
-"מונית לשדה" +מחיר +קבוע
-[שירות מונית לנמל תעופה]
-[taxi to ben gurion airport israel]
-[airport transfer israel fixed price]
-"שדה תעופה" "מונית" "מחיר"
-```
-
-**Negative Keywords:**
-```
--חינם, -זול, -הסעות, -אוטובוס, -רכבת, -שכירת רכב,
--enterprise, -hertz, -avis, -waze, -uber, -gett
-```
-
-**RSA Headlines (15):**
-1. `מונית לשדה התעופה` (22)
-2. `מחיר קבוע לנתב״ג` (17)
-3. `ללא הפתעות בסוף` (16)
-4. `הזמן תוך 2 דקות` (17)
-5. `תשלום במזומן או ביט` (20)
-6. `ללא כרטיס אשראי` (17)
-7. `אישור הזמנה מיידי` (18)
-8. `מוניות סבבה — סבבה!` (20)
-9. `שירות אמין לשדה` (16)
-10. `נהג מדויק ומקצועי` (18)
-11. `מחיר ידוע מראש` (15)
-12. `בן גוריון — כל שעה` (19)
-13. `בלי מונה בלי הפתעות` (20)
-14. `הזמן עכשיו לנסיעה` (18)
-15. `Airport Transfer Israel` (23)
-
-**RSA Descriptions (4):**
-1. `שירות מונית אמין לשדה תעופה בן גוריון. מחיר קבוע מראש, תשלום ישירות לנהג במזומן או ביט. הזמן עכשיו!` (99)
-2. `לא ידעת כמה זה יעלה? אצלנו תמיד יודעים מראש. ללא מונה, ללא תוספות, ללא הפתעות. מוניות סבבה.` (90)
-3. `הזמנה פשוטה בטופס מקוון, אישור מיידי. נהגים מקצועיים שמגיעים בזמן לכל יעד בישראל.` (82)
-4. `ללא צורך בכרטיס אשראי. שלם ישירות לנהג במזומן או ביט. הזמן עכשיו — מקומות מוגבלים.` (86)
-
-**Display URL:** sababataxi.vercel.app / הזמנה
-
----
-
-### Ad Group 2: "Airport Transfer English" (תיירים)
-
-**Keywords:**
-```
-[airport taxi israel]
-[ben gurion airport transfer]
-[taxi from tel aviv airport]
-[fixed price taxi israel airport]
-"ben gurion" taxi "fixed price"
-[book taxi israel airport]
-```
-
-**RSA Headlines (10):**
-1. `Ben Gurion Airport Taxi` (24)
-2. `Fixed Price, No Surprises` (25)
-3. `Pay Cash or Bit — No Card` (25)
-4. `Book in 2 Min, Instant OK` (25)
-5. `Reliable Israel Airport Taxi` (28)
-6. `No Meter, No Hidden Fees` (24)
-7. `Airport Transfer Israel` (23)
-8. `Professional Drivers 24/7` (25)
-9. `From/To Ben Gurion Airport` (26)
-10. `Book Your Ride Now` (18)
-
-**RSA Descriptions (3):**
-1. `Fixed price taxi to/from Ben Gurion Airport. Pay directly to driver — cash or Bit. No credit card needed. Book now!` (113 — trim: `Fixed price taxi to Ben Gurion Airport. Pay cash or Bit. No credit card. Book now!` 83)
-2. `Reliable, professional drivers. Know your price before you ride. Instant booking confirmation. Available 24/7.` (108 — trim: `Reliable drivers. Know your price before you ride. Instant confirmation. 24/7.` 76)
-3. `Simple online booking, instant confirmation. Fixed rates to all Israeli cities from Ben Gurion Airport.` (99)
-
----
-
-## Retargeting Strategy (3 שלבים)
-
-### שלב 1: Awareness (קהל קר)
-**קהל:** Lookalike 1-2%, תחומי עניין נסיעות, ישראל
-**תקציב:** 40% מהכולל
-**מטרה:** הצגת המותג וה-USP
-**פורמטים:** Stories, Reels 15 שניות, Feed
-
-### שלב 2: Consideration (קהל חם)
-**קהל:** מבקרי אתר 7-30 יום, מעורבים עם תוכן
-**תקציב:** 35% מהכולל
-**מטרה:** בניית אמון, טיפול בהתנגדויות
-**מסרים:** ביקורות, "ללא כרטיס אשראי", "מחיר קבוע"
-
-### שלב 3: Conversion (קהל חם מאוד)
-**קהל:** ביקרו בטופס הזמנה ולא השלימו
-**תקציב:** 25% מהכולל
-**מטרה:** סגירת הזמנה
-**מסרים:** "עוד לא סגרת?", Urgency, "הנהגים עסוקים — הזמן עכשיו"
+| שלב | קהל | % תקציב | מטרה |
+|-----|-----|---------|------|
+| Awareness | Interest-based קר | 40% | חשיפה + ביקור באתר |
+| Consideration | ביקר 7–30 יום, צפה בוידאו 50%+ | 35% | שבירת חסמים |
+| Conversion | ביקר בעמוד הזמנה, לא השלים | 25% | השלמת הזמנה |
 
 ---
 
 ## Budget Allocation
 
-| פלטפורמה | תקציב יומי | אחוז | הערה |
-|----------|------------|------|------|
-| Google Search | ₪100 | 38% | Capture intent |
-| Meta (Facebook+Instagram) | ₪130 | 50% | Awareness + Retargeting |
-| TikTok | ₪30 | 12% | Gen Z + young adults |
-| **סה"כ** | **₪260/יום** | 100% | ~₪7,800/חודש |
+| פלטפורמה | תקציב יומי | חודשי | % |
+|---------|-----------|-------|---|
+| Google Search | ₪150 | ₪4,500 | 55% |
+| Meta (כולל retargeting) | ₪95 | ₪2,850 | 35% |
+| TikTok | ₪20 | ₪600 | 7% |
+| **סה"כ** | **₪265** | **₪7,950** | 100% |
 
-**לתקציב מינימום של ₪3,000/חודש:**
-
-| פלטפורמה | תקציב יומי |
-|----------|------------|
-| Google Search | ₪40 |
-| Meta | ₪55 |
-| TikTok | ₪5 |
+**תקציב מינימלי להתחלה:** ₪3,000/month (Google + Meta retargeting בלבד)
 
 ---
 
 ## Testing Plan
 
-### Priority 1: Offer
-- גרסה A: "מחיר קבוע" (פוקוס על ודאות)
-- גרסה B: "ללא כרטיס אשראי" (פוקוס על נוחות)
+| עדיפות | מה בודקים | למה |
+|--------|----------|-----|
+| 1 | קהלים — Interest vs Lookalike vs Broad | הגורם המשפיע ביותר |
+| 2 | הצעת ערך — "מחיר קבוע" vs "ב-2 דקות" vs "ללא הפתעות" | מה מדבר יותר לקהל |
+| 3 | פורמט — Single image vs Video Story | מה מייצר יותר clicks |
+| 4 | כותרת — 5 וריאציות לכותרת המנצחת | |
+| 5 | CTA — "הזמינו עכשיו" vs "ראו מחיר עכשיו" | |
 
-### Priority 2: Audience
-- קהל A: משפחות 30-50
-- קהל B: נוסעי עסקים 28-55
-
-### Priority 3: Creative
-- גרסה A: תמונה סטטית (המודעות שנוצרו)
-- גרסה B: וידאו/Reel אורגני של נהג מספר
-
-### Priority 4: CTA
-- "הזמן עכשיו" vs "קבל מחיר" vs "בדוק זמינות"
-
-**כלל:** להריץ כל טסט 5 ימים מינימום או 1,000 חשיפות לפני החלטה.
+**כללים:** מינימום 5 ימים / 1,000 חשיפות לוריאנט. הפסק חלשים ב-2x CPA מטרה. הגדל מנצחים ב-20%.
 
 ---
 
 ## Performance Benchmarks
 
-| פלטפורמה | CPC יעד | CPA יעד | CTR יעד |
-|----------|---------|---------|---------|
-| Google Search | ₪1.5–3 | ₪35–60 | 5–8% |
-| Meta Feed | ₪0.8–2 | ₪40–70 | 1.5–3% |
-| Meta Stories | ₪0.5–1.5 | ₪45–75 | 0.8–2% |
-| TikTok | ₪0.3–1 | ₪50–90 | 1–2.5% |
-
----
-
-## Creative Brief for Designers
-
-### Asset Requirements
-
-**Meta Feed (1080×1080):**
-- 4 וריאציות תמונה (נוצרו: ad1–ad4)
-- לוגו מוניות סבבה מוצג ברור בפינה עליונה
-- headline בעברית גדולה ובולטת
-- CTA button בצהוב/שחור
-- Bottom bar צהוב
-
-**Meta/Instagram Stories (1080×1920):**
-- 4 וריאציות (נוצרו)
-- Safe zone: 250px מלמעלה ו-250px מלמטה לאלמנטים חשובים
-
-**TikTok (1080×1920):**
-- 3 סקריפטים מוכנים (ראה לעיל)
-- Duration: 15–30 שניות
-- Sound-off captions על כל פריים
-
-**Google Display (1200×628 + 1200×1200):**
-- גרסת landscape ו-square
-- לוגו + headline + CTA
-
-### Brand Guidelines
-- **צבע עיקרי:** #FFD100 (צהוב)
-- **צבע משני:** #000000 (שחור)
-- **טקסט:** לבן על רקע כהה
-- **פונט:** Arial Bold לכותרות
-- **טון:** אמין, ישיר, חם — לא קורפורטי
+| פלטפורמה | CPC מצופה | CPA מצופה | ROAS מטרה |
+|---------|----------|----------|----------|
+| Google Search | ₪1.50–₪4.00 | ₪25–₪60 | 3:1 |
+| Meta | ₪0.80–₪2.50 | ₪40–₪80 | 2.5:1 |
+| TikTok | ₪0.40–₪1.20 | ₪50–₪100 | 2:1 |
 
 ---
 
 ## Landing Page Alignment
 
-| מודעה | הבטחה | עמוד נחיתה | ציון התאמה |
-|-------|--------|------------|-----------|
-| מחיר קבוע | "תדע כמה תשלם מראש" | טופס הזמנה עם מחיר אוטומטי | 9/10 ✅ |
-| ללא כרטיס אשראי | "שלם ישירות לנהג" | Badge ירוק "ללא פרטי אשראי" | 9/10 ✅ |
-| אישור מיידי | "אישור מיידי" | הזמנה מוגשת — הודעת "התקבלה!" | 8/10 ✅ |
-| Google EN | "Fixed price" | אתר בעברית בלבד | 5/10 ⚠️ |
+| מודעה | ציון | הערות |
+|------|------|-------|
+| Google "מחיר קבוע" | 9/10 | טופס מיידי, Hebrew, mobile ✅ |
+| Meta — Pain point | 9/10 | התאמה גבוהה |
+| Meta — Before/After | 7/10 | כדאי להוסיף social proof בעמוד |
+| TikTok — "2 דקות" | 9/10 | עמוד נטען מהר, mobile-first ✅ |
 
-**המלצה:** להוסיף עמוד נחיתה באנגלית לתיירים (Google EN).
+**המלצות לשיפור עמוד הנחיתה:**
+- הוסיפו מונה "X הזמנות בוצעו החודש" מעל הטופס
+- הוסיפו 2–3 ביקורות לקוחות קצרות
+- הציגו מחיר לדוגמה לידם ("מתל אביב – החל מ-₪145")
+
+---
+
+## Creative Brief for Designers
+
+**צבעים:** #FFD100 (צהוב/זהב) · #0a0a0a (רקע) · #ffffff (טקסט)
+**פונט:** Heebo / Assistant — עברית ידידותית ועגולה
+
+| פורמט | גודל | שימוש |
+|-------|------|-------|
+| Square | 1080×1080 | Meta feed |
+| Vertical | 1080×1920 | Stories, Reels, TikTok |
+| Landscape | 1200×628 | Google Display |
+| Video | 1080×1920, 15–30s | Stories, TikTok |
+
+**סגנון צילום:** שדה תעופה בן גוריון + מוניות ישראליות. שעות בוקר/שקיעה. **לא** תמונות stock אמריקאיות.
 
 ---
 
 ```
 === AD CAMPAIGNS GENERATED ===
 
-Business: מוניות סבבה (Sababa Taxi)
-URL: https://sababataxi.vercel.app
-Platforms: Meta (Facebook+Instagram), TikTok, Google Search
-Total Ad Variations: 18
+Business: סבבה טקסי
+Platforms: Google Search, Meta (Facebook + Instagram), TikTok
+Total Ad Variations: 28
 
 Campaign Structure:
-  Google Search: 2 ad groups, 6 RSA variations
-  Meta Ads: 3 ad sets, 7 variations
-  TikTok: 3 video scripts
+  Google Ads:    3 ad groups · 15 headlines · 8 descriptions
+  Meta Ads:      3 ad sets · 8 ad variations (3 cold + 2 retargeting + 3 stories)
+  TikTok:        1 ad set · 2 video scripts
 
-Budget Recommendation (מינימום): ₪3,000/חודש
-Budget Recommendation (מומלץ): ₪7,800/חודש
-Expected CPA: ₪35–75 (תלוי פלטפורמה)
-Target ROAS: 4:1 (כל הזמנה ממוצעת ₪180 → CPA מקסימום ₪45)
+Budget Recommendation: ₪7,950/month (full) | ₪3,000/month (starter)
+Expected CPA: ₪25–₪80 per booking
+Target ROAS: 3:1
 
 Full campaigns saved to: AD-CAMPAIGNS.md
 ```

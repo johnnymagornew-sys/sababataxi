@@ -349,8 +349,14 @@ export default function BookingForm() {
       <div ref={formTopRef} style={{ scrollMarginTop: 72 }} />
       <form onSubmit={handleSubmit} style={{ marginTop: 24 }}>
 
-        {/* ── Progress bar ─────────────────────────────────────── */}
-        <div style={{ marginBottom: 24 }}>
+        {/* ── Progress bar (sticky) ────────────────────────────── */}
+        <div style={{
+          position: 'sticky', top: 0, zIndex: 50,
+          background: 'var(--bg)',
+          paddingTop: 12, paddingBottom: 12,
+          marginBottom: 12,
+          borderBottom: '1px solid var(--border)',
+        }}>
           <div style={{ display: 'flex', justifyContent: 'space-between', marginBottom: 10 }}>
             {STEPS.map((s, i) => (
               <div key={i} style={{ display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4, flex: 1 }}>
@@ -709,11 +715,11 @@ export default function BookingForm() {
                   {/* Passengers + luggage row */}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
-                      👥 {form.passengers} נוסעים
+                      👥 {form.passengers} נוסע{form.passengers !== 1 ? 'ים' : ''}
                     </span>
                     {form.large_luggage > 0 && (
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
-                        🧳 {form.large_luggage} מזוודות
+                        🧳 {form.large_luggage} מזווד{form.large_luggage !== 1 ? 'ות' : 'ה'}
                       </span>
                     )}
                     {form.trolley > 0 && (
@@ -721,6 +727,58 @@ export default function BookingForm() {
                         🎒 {form.trolley} טרולי
                       </span>
                     )}
+                    {price && (
+                      <span style={{ fontSize: 12, fontWeight: 600, color: 'rgba(255,209,0,0.8)', background: 'rgba(255,209,0,0.08)', borderRadius: 20, padding: '4px 12px', border: '1px solid rgba(255,209,0,0.15)' }}>
+                        🚗 {price.vehicle} · {price.range}
+                      </span>
+                    )}
+                  </div>
+
+                  {/* Extras */}
+                  {Object.values(form.extras).some(Boolean) && (
+                    <div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>תוספות</div>
+                      <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
+                        {form.extras.additional_stop && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>📍 נקודה נוספת באותו ישוב</span>}
+                        {form.extras.nearby_city_stop && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>📍 נקודה בישוב סמוך</span>}
+                        {form.extras.child_under4 && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>👶 ילד עד גיל 4</span>}
+                        {form.extras.safety_seat && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>💺 כיסא בטיחות</span>}
+                        {form.extras.ski_equipment && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>⛷️ ציוד סקי</span>}
+                        {form.extras.bike_rack && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>🚲 ארגז אופניים</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Return trip */}
+                  {form.return_trip && (
+                    <div style={{ background: 'rgba(255,209,0,0.06)', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(255,209,0,0.15)' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>🔄 נסיעת חזרה</div>
+                      <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', marginBottom: 4 }}>
+                        {form.return_city
+                          ? `${form.return_street ? form.return_street + ' ' + form.return_house_number + ', ' : ''}${form.return_city}`
+                          : '—'}
+                      </div>
+                      <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--txt3)' }}>
+                        {form.return_date && <span>📅 {new Date(form.return_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}</span>}
+                        {form.return_time && <span>🕐 {form.return_time.slice(0, 5)}</span>}
+                        {form.return_flight_number && <span>✈️ {form.return_flight_number}</span>}
+                      </div>
+                    </div>
+                  )}
+
+                  {/* Divider */}
+                  <div style={{ height: 1, background: 'rgba(255,255,255,0.06)' }} />
+
+                  {/* Personal details */}
+                  <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                    <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 5 }}>שם</div>
+                      <div style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14 }}>{form.customer_name || '—'}</div>
+                    </div>
+                    <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px 14px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 5 }}>טלפון</div>
+                      <div style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14, direction: 'ltr', textAlign: 'right' }}>{form.customer_phone || '—'}</div>
+                    </div>
                   </div>
                 </div>
               </div>

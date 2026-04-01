@@ -4,6 +4,7 @@ import { useState, useEffect, useRef } from 'react'
 import { AnimatePresence } from 'framer-motion'
 import AddressAutocomplete, { ParsedAddress } from './AddressAutocomplete'
 import PickupMapSelector from './PickupMapSelector'
+import IntercityMapSelector from './IntercityMapSelector'
 import PhoneInput from './PhoneInput'
 import { calculatePrice, getTimeSurcharges } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
@@ -467,43 +468,38 @@ export default function BookingForm() {
                   ))}
                 </div>
 
-                <div className="field-enter">
-                  <PickupMapSelector
-                    value={addressDisplay}
-                    selected={selectedPickup}
-                    onSelect={handleAddressSelect}
-                    onClear={handleAddressClear}
-                    houseNumber={form.pickup_house_number}
-                    onHouseNumberChange={v => setField('pickup_house_number', v)}
-                    priceChip={form.pickup_city
-                      ? (form.trip_type === 'airport'
-                          ? (CITY_PRICES[form.pickup_city]
-                              ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</span>
-                              : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>)
-                          : (INTERCITY_PRICES[form.pickup_city]
-                              ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>עיר נמצאה במחירון</span>
-                              : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>))
-                      : undefined}
-                  />
-                </div>
-
-                {/* Intercity destination */}
-                {form.trip_type === 'intercity' && (
+                {form.trip_type === 'airport' ? (
                   <div className="field-enter">
                     <PickupMapSelector
-                      value={destinationAddressDisplay}
-                      selected={selectedDestination}
-                      onSelect={handleDestinationAddressSelect}
-                      onClear={handleDestinationAddressClear}
-                      houseNumber={form.destination_house_number}
-                      onHouseNumberChange={v => setField('destination_house_number', v)}
-                      label="כתובת יעד *"
-                      placeholder="הקלד כתובת יעד..."
-                      badgeLabel="כתובת יעד"
-                      pinColor="#3B82F6"
-                      priceChip={form.destination_city && form.pickup_city
+                      value={addressDisplay}
+                      selected={selectedPickup}
+                      onSelect={handleAddressSelect}
+                      onClear={handleAddressClear}
+                      houseNumber={form.pickup_house_number}
+                      onHouseNumberChange={v => setField('pickup_house_number', v)}
+                      priceChip={form.pickup_city
+                        ? (CITY_PRICES[form.pickup_city]
+                            ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</span>
+                            : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>)
+                        : undefined}
+                    />
+                  </div>
+                ) : (
+                  <div className="field-enter">
+                    <IntercityMapSelector
+                      pickup={selectedPickup}
+                      destination={selectedDestination}
+                      pickupHouseNumber={form.pickup_house_number}
+                      destinationHouseNumber={form.destination_house_number}
+                      onPickupSelect={handleAddressSelect}
+                      onDestinationSelect={handleDestinationAddressSelect}
+                      onPickupClear={handleAddressClear}
+                      onDestinationClear={handleDestinationAddressClear}
+                      onPickupHouseNumberChange={v => setField('pickup_house_number', v)}
+                      onDestinationHouseNumberChange={v => setField('destination_house_number', v)}
+                      priceChip={form.pickup_city && form.destination_city
                         ? (getIntercityPrice(form.pickup_city, form.destination_city)
-                            ? <span style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6', background: 'rgba(59,130,246,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.25)' }}>מחיר בסיס: ₪{getIntercityPrice(form.pickup_city, form.destination_city)}</span>
+                            ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{getIntercityPrice(form.pickup_city, form.destination_city)}</span>
                             : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מסלול לא ברשימה — מחיר יתואם</span>)
                         : undefined}
                     />

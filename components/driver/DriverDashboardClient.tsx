@@ -509,8 +509,40 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
         </div>
       )}
 
-      {/* Ride status progression */}
-      {onUpdateRideStatus && ride.status === 'claimed' && (
+      {/* Ride status progression — only within 30 min of ride time */}
+      {onUpdateRideStatus && ride.status === 'claimed' && (() => {
+        const rideMs = new Date(`${ride.travel_date}T${ride.travel_time}`).getTime()
+        const diffMin = (rideMs - Date.now()) / 60000
+        const currentRideStatus = (ride as Booking & { ride_status?: RideStatus }).ride_status ?? null
+        const alreadyStarted = currentRideStatus !== null
+        if (!alreadyStarted && diffMin > 30) {
+          const rideTimeStr = ride.travel_time.slice(0, 5)
+          const openAt = new Date(rideMs - 30 * 60000).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+          return (
+            <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+              <div style={{
+                background: 'rgba(255,255,255,0.03)', border: '1px solid var(--border)',
+                borderRadius: 10, padding: '10px 14px', textAlign: 'center',
+              }}>
+                <div style={{ fontSize: 13, color: 'var(--txt3)' }}>
+                  ⏳ עדכון נסיעה יפתח בשעה <strong style={{ color: 'var(--txt)' }}>{openAt}</strong>
+                </div>
+                <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 4, opacity: 0.7 }}>
+                  30 דקות לפני הנסיעה ({rideTimeStr})
+                </div>
+              </div>
+            </div>
+          )
+        }
+        return null
+      })()}
+      {onUpdateRideStatus && ride.status === 'claimed' && (() => {
+        const rideMs = new Date(`${ride.travel_date}T${ride.travel_time}`).getTime()
+        const diffMin = (rideMs - Date.now()) / 60000
+        const currentRideStatus = (ride as Booking & { ride_status?: RideStatus }).ride_status ?? null
+        const alreadyStarted = currentRideStatus !== null
+        if (!alreadyStarted && diffMin > 30) return null
+        return (
         <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 4 }}>
           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
             עדכון סטטוס נסיעה
@@ -578,7 +610,8 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
             )
           })()}
         </div>
-      )}
+        )
+      })()}
 
       {/* Cancel button — only for claimed rides */}
       {onCancel && (

@@ -55,6 +55,11 @@ export default function TrackingClient({
   const isCancelled = status === 'cancelled' || status === 'rejected'
   const isPending = status === 'pending'
 
+  const rideMs = new Date(`${travelDate}T${travelTime}`).getTime()
+  const diffMin = (rideMs - Date.now()) / 60000
+  const trackingLive = rideStatus !== null || diffMin <= 30
+  const trackingOpenAt = new Date(rideMs - 30 * 60000).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit' })
+
   const poll = useCallback(async () => {
     try {
       const res = await fetch(`/api/track/${token}`)
@@ -181,8 +186,31 @@ export default function TrackingClient({
         </div>
       )}
 
+      {/* Not live yet */}
+      {!isPending && !isCancelled && !trackingLive && (
+        <div style={{
+          background: 'var(--card)', border: '1px solid var(--border)',
+          borderRadius: 18, padding: '24px 20px', textAlign: 'center',
+        }}>
+          <div style={{ fontSize: 36, marginBottom: 12 }}>⏰</div>
+          <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--txt)', marginBottom: 6 }}>
+            המעקב החי יפתח בשעה {trackingOpenAt}
+          </div>
+          <div style={{ fontSize: 13, color: 'var(--txt3)', lineHeight: 1.5 }}>
+            30 דקות לפני הנסיעה תוכל לעקוב<br />אחרי הנהג בזמן אמת
+          </div>
+          <div style={{
+            marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6,
+            background: 'rgba(255,209,0,0.08)', border: '1px solid rgba(255,209,0,0.2)',
+            borderRadius: 20, padding: '6px 14px', fontSize: 13, color: 'var(--y)', fontWeight: 600,
+          }}>
+            ✈️ שעת נסיעה: {travelTime.slice(0, 5)}
+          </div>
+        </div>
+      )}
+
       {/* Timeline */}
-      {!isPending && !isCancelled && (
+      {!isPending && !isCancelled && trackingLive && (
         <div style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',

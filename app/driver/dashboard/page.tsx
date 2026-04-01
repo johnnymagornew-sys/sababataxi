@@ -1,6 +1,4 @@
-import dynamic from 'next/dynamic'
-
-const DashboardWrapper = dynamic(() => import('./DashboardWrapper'), { ssr: false })
+import DashboardWrapper from './DashboardWrapper'
 
 export default function DriverDashboardPage() {
   return <DashboardWrapper />

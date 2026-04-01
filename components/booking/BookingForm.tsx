@@ -202,13 +202,16 @@ export default function BookingForm() {
   }
   function handleDestinationAddressSelect(parsed: ParsedAddress) {
     const city = normalizeCity(parsed.city)
+    const normalized = { ...parsed, city }
     setDestinationAddressDisplay(parsed.displayName)
+    setSelectedDestination(normalized)
     setField('destination_city', city)
     setField('destination_street', parsed.street)
     setField('destination_house_number', parsed.houseNumber)
   }
   function handleDestinationAddressClear() {
     setDestinationAddressDisplay('')
+    setSelectedDestination(null)
     setField('destination_city', ''); setField('destination_street', ''); setField('destination_house_number', '')
   }
   function handleReturnAddressSelect(parsed: ParsedAddress) {
@@ -486,32 +489,24 @@ export default function BookingForm() {
 
                 {/* Intercity destination */}
                 {form.trip_type === 'intercity' && (
-                  <div className="field-enter" style={{ display: 'grid', gap: 10 }}>
-                    <div>
-                      <label>כתובת יעד *</label>
-                      <AddressAutocomplete
-                        value={destinationAddressDisplay}
-                        onSelect={handleDestinationAddressSelect}
-                        onClear={handleDestinationAddressClear}
-                      />
-                    </div>
-                    {form.destination_city && (
-                      <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap', fontSize: 12 }}>
-                        <Chip>📍 {form.destination_city}</Chip>
-                        {form.destination_street && <Chip>🛣 {form.destination_street} {form.destination_house_number}</Chip>}
-                        {form.pickup_city && (getIntercityPrice(form.pickup_city, form.destination_city)
-                          ? <Chip yellow>מחיר בסיס: ₪{getIntercityPrice(form.pickup_city, form.destination_city)}</Chip>
-                          : <ChipOrange>מסלול לא ברשימה — מחיר יתואם</ChipOrange>)}
-                      </div>
-                    )}
-                    {form.destination_city && form.destination_street && (
-                      <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                        <label style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 12 }}>מספר בית:</label>
-                        <input type="text" placeholder="7" value={form.destination_house_number}
-                          onChange={e => setField('destination_house_number', e.target.value)}
-                          style={{ width: 80, padding: '6px 10px', fontSize: 14 }} />
-                      </div>
-                    )}
+                  <div className="field-enter">
+                    <PickupMapSelector
+                      value={destinationAddressDisplay}
+                      selected={selectedDestination}
+                      onSelect={handleDestinationAddressSelect}
+                      onClear={handleDestinationAddressClear}
+                      houseNumber={form.destination_house_number}
+                      onHouseNumberChange={v => setField('destination_house_number', v)}
+                      label="כתובת יעד *"
+                      placeholder="הקלד כתובת יעד..."
+                      badgeLabel="כתובת יעד"
+                      pinColor="#3B82F6"
+                      priceChip={form.destination_city && form.pickup_city
+                        ? (getIntercityPrice(form.pickup_city, form.destination_city)
+                            ? <span style={{ fontSize: 11, fontWeight: 700, color: '#3B82F6', background: 'rgba(59,130,246,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(59,130,246,0.25)' }}>מחיר בסיס: ₪{getIntercityPrice(form.pickup_city, form.destination_city)}</span>
+                            : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מסלול לא ברשימה — מחיר יתואם</span>)
+                        : undefined}
+                    />
                   </div>
                 )}
 

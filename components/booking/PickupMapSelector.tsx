@@ -29,65 +29,75 @@ interface Props {
   label?: string
   placeholder?: string
   badgeLabel?: string
+  pinColor?: string
 }
 
 export default function PickupMapSelector({
   value, selected, onSelect, onClear,
   houseNumber, onHouseNumberChange,
-  priceChip, label = 'כתובת איסוף *',
+  priceChip,
+  label = 'כתובת איסוף *',
   placeholder = 'הקלד כתובת: רחוב ומספר, עיר...',
   badgeLabel = 'כתובת איסוף',
+  pinColor = '#FFD100',
 }: Props) {
   const [phase, setPhase] = useState<'idle' | 'searching' | 'selected'>(selected ? 'selected' : 'idle')
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<NominatimResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
+  const [dropRect, setDropRect] = useState<{ top: number; left: number; width: number } | null>(null)
+  const [hovered, setHovered] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
   const mouseX = useMotionValue(0)
   const mouseY = useMotionValue(0)
   const rotateX = useTransform(mouseY, [-40, 40], [4, -4])
   const rotateY = useTransform(mouseX, [-40, 40], [-4, 4])
-  const springRX = useSpring(rotateX, { stiffness: 300, damping: 30 })
-  const springRY = useSpring(rotateY, { stiffness: 300, damping: 30 })
+  const springRX = useSpring(rotateX, { stiffness: 280, damping: 28 })
+  const springRY = useSpring(rotateY, { stiffness: 280, damping: 28 })
 
-  // Sync external reset
   useEffect(() => {
     if (!value && !selected) { setPhase('idle'); setQuery('') }
   }, [value, selected])
 
-  function handleMouseMove(e: React.MouseEvent) {
-    if (!containerRef.current) return
+  function onMouseMove(e: React.MouseEvent) {
+    if (!containerRef.current || phase === 'searching') return
     const r = containerRef.current.getBoundingClientRect()
     mouseX.set(e.clientX - (r.left + r.width / 2))
     mouseY.set(e.clientY - (r.top + r.height / 2))
   }
-  function handleMouseLeave() { mouseX.set(0); mouseY.set(0) }
+  function onMouseLeaveCard() {
+    mouseX.set(0); mouseY.set(0); setHovered(false)
+  }
 
   const search = useCallback(async (q: string) => {
     if (q.length < 3) { setResults([]); return }
     setLoading(true)
     try {
-      const res = await fetch(
+      const r = await fetch(
         `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&countrycodes=il&limit=6&accept-language=he`,
         { headers: { 'Accept-Language': 'he' } }
       )
-      setResults(await res.json())
+      setResults(await r.json())
     } catch { setResults([]) }
     finally { setLoading(false) }
   }, [])
+
+  function updateDropRect() {
+    if (inputRef.current) {
+      const r = inputRef.current.getBoundingClientRect()
+      setDropRect({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width })
+    }
+  }
 
   function handleChange(val: string) {
     setQuery(val)
     onClear()
     if (timerRef.current) clearTimeout(timerRef.current)
-    timerRef.current = setTimeout(() => search(val), 400)
-    if (inputRef.current) {
-      const rect = inputRef.current.getBoundingClientRect()
-      setDropdownRect({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width })
-    }
+    timerRef.current = setTimeout(() => search(val), 380)
+    updateDropRect()
   }
 
   function handleSelect(r: NominatimResult) {
@@ -104,24 +114,45 @@ export default function PickupMapSelector({
 
   function openSearch() {
     setPhase('searching')
-    setTimeout(() => inputRef.current?.focus(), 120)
+    setTimeout(() => { inputRef.current?.focus(); inputRef.current?.select() }, 80)
   }
 
   function closeSearch() {
-    if (selected) { setPhase('selected') }
-    else { setPhase('idle') }
+    setPhase(selected ? 'selected' : 'idle')
     setResults([])
   }
 
-  const dropdown = results.length > 0 && dropdownRect && phase === 'searching'
+  // Close on outside click
+  useEffect(() => {
+    if (phase !== 'searching') return
+    function handler(e: MouseEvent) {
+      if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
+        closeSearch()
+      }
+    }
+    document.addEventListener('mousedown', handler)
+    return () => document.removeEventListener('mousedown', handler)
+  // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [phase, selected])
+
+  const isClickable = phase === 'idle' || phase === 'selected'
+  const fullAddress = selected
+    ? [selected.street, selected.houseNumber || houseNumber, selected.city].filter(Boolean).join(' ')
+    : ''
+
+  const dropdown = results.length > 0 && dropRect && phase === 'searching'
     ? createPortal(
-        <div style={{
-          position: 'absolute', top: dropdownRect.top, left: dropdownRect.left,
-          width: dropdownRect.width, background: 'var(--card2)', border: '1px solid var(--border)',
-          borderRadius: 10, zIndex: 9999, boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
-          maxHeight: 260, overflowY: 'auto',
-        }}>
-          {results.map(r => {
+        <motion.div
+          initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+          style={{
+            position: 'absolute', top: dropRect.top, left: dropRect.left,
+            width: dropRect.width, background: '#1a1a1a',
+            border: '1px solid rgba(255,209,0,0.2)',
+            borderRadius: 12, zIndex: 9999,
+            boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
+            maxHeight: 260, overflowY: 'auto',
+          }}>
+          {results.map((r, i) => {
             const a = r.address
             const city = a.city || a.town || a.village || a.municipality || ''
             const street = a.road || ''
@@ -129,182 +160,192 @@ export default function PickupMapSelector({
             const line1 = [street, house].filter(Boolean).join(' ') || city
             const line2 = line1 !== city ? city : ''
             return (
-              <div key={r.place_id}
+              <motion.div key={r.place_id}
+                initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
+                transition={{ delay: i * 0.04 }}
                 onMouseDown={e => { e.preventDefault(); handleSelect(r) }}
-                style={{ padding: '12px 16px', cursor: 'pointer', borderBottom: '1px solid var(--border)' }}
-                onMouseEnter={e => (e.currentTarget.style.background = 'var(--card)')}
-                onMouseLeave={e => (e.currentTarget.style.background = 'transparent')}
+                style={{
+                  padding: '12px 16px', cursor: 'pointer',
+                  borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
+                  display: 'flex', alignItems: 'center', gap: 10,
+                }}
+                whileHover={{ background: 'rgba(255,209,0,0.07)' }}
               >
-                <div style={{ fontSize: 15, fontWeight: 600, color: 'var(--txt)' }}>{line1}</div>
-                {line2 && <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 3 }}>{line2}</div>}
-              </div>
+                <span style={{ fontSize: 14, color: pinColor, flexShrink: 0 }}>📍</span>
+                <div>
+                  <div style={{ fontSize: 14, fontWeight: 600, color: '#F2F2F2' }}>{line1}</div>
+                  {line2 && <div style={{ fontSize: 12, color: '#666', marginTop: 2 }}>{line2}</div>}
+                </div>
+              </motion.div>
             )
           })}
-        </div>,
+        </motion.div>,
         document.body
       )
     : null
-
-  const fullAddress = selected
-    ? [selected.street, selected.houseNumber, selected.city].filter(Boolean).join(' ')
-    : ''
 
   return (
     <div>
       <label style={{ display: 'block', marginBottom: 8 }}>{label}</label>
 
-      <motion.div
-        ref={containerRef}
-        style={{ perspective: 1000 }}
-        onMouseMove={handleMouseMove}
-        onMouseLeave={handleMouseLeave}
+      <div ref={containerRef} style={{ perspective: '1000px' }}
+        onMouseMove={onMouseMove}
+        onMouseEnter={() => setHovered(true)}
+        onMouseLeave={onMouseLeaveCard}
       >
+        {/* ─── THE CARD ─────────────────────────────────────── */}
         <motion.div
           style={{
-            rotateX: springRX,
-            rotateY: springRY,
+            rotateX: springRX, rotateY: springRY,
             transformStyle: 'preserve-3d',
-            position: 'relative',
-            overflow: 'hidden',
-            borderRadius: 14,
-            height: 120,
-            cursor: phase === 'idle' ? 'pointer' : 'default',
-            background: '#0f0f0f',
+            position: 'relative', overflow: 'hidden',
+            borderRadius: 14, height: 120, background: '#0d0d0d',
+            cursor: isClickable ? 'pointer' : 'default',
+            userSelect: 'none',
           }}
           animate={{
             borderColor: phase === 'searching'
-              ? 'rgba(255,209,0,0.5)'
+              ? 'rgba(255,209,0,0.55)'
               : phase === 'selected'
-              ? 'rgba(255,209,0,0.25)'
-              : 'rgba(255,255,255,0.1)',
+              ? hovered ? 'rgba(255,209,0,0.4)' : 'rgba(255,209,0,0.22)'
+              : hovered ? 'rgba(255,255,255,0.18)' : 'rgba(255,255,255,0.09)',
             boxShadow: phase === 'searching'
-              ? '0 0 0 3px rgba(255,209,0,0.12), 0 8px 32px rgba(0,0,0,0.5)'
+              ? '0 0 0 3px rgba(255,209,0,0.1), 0 12px 40px rgba(0,0,0,0.6)'
+              : phase === 'selected' && hovered
+              ? '0 8px 32px rgba(0,0,0,0.5), 0 0 0 1px rgba(255,209,0,0.15)'
               : '0 4px 20px rgba(0,0,0,0.4)',
           }}
-          transition={{ duration: 0.3 }}
-          onClick={() => { if (phase === 'idle') openSearch() }}
-          whileTap={phase === 'idle' ? { scale: 0.98 } : {}}
+          transition={{ duration: 0.25 }}
+          onClick={() => { if (isClickable) openSearch() }}
+          whileTap={isClickable ? { scale: 0.985 } : {}}
         >
-          {/* ── Map background (always) ── */}
+          {/* Map roads (always visible) */}
           <svg style={{ position: 'absolute', inset: 0, width: '100%', height: '100%' }} preserveAspectRatio="none">
-            <motion.line x1="0%" y1="38%" x2="100%" y2="38%" stroke="rgba(255,255,255,0.1)" strokeWidth="3"
-              initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8, delay: 0.1 }} />
-            <motion.line x1="0%" y1="68%" x2="100%" y2="68%" stroke="rgba(255,255,255,0.1)" strokeWidth="3"
-              initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.8, delay: 0.2 }} />
-            <motion.line x1="28%" y1="0%" x2="28%" y2="100%" stroke="rgba(255,255,255,0.07)" strokeWidth="2"
-              initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6, delay: 0.3 }} />
-            <motion.line x1="65%" y1="0%" x2="65%" y2="100%" stroke="rgba(255,255,255,0.07)" strokeWidth="2"
-              initial={{ pathLength: 0 }} animate={{ pathLength: 1 }} transition={{ duration: 0.6, delay: 0.35 }} />
-            {[18, 55, 82].map((y, i) => (
-              <motion.line key={`h${i}`} x1="0%" y1={`${y}%`} x2="100%" y2={`${y}%`}
-                stroke="rgba(255,255,255,0.04)" strokeWidth="1.5"
+            {[['0%','36%','100%','36%',3], ['0%','67%','100%','67%',3]].map(([x1,y1,x2,y2,w],i) => (
+              <motion.line key={`h${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke="rgba(255,255,255,0.09)" strokeWidth={w}
                 initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, delay: 0.4 + i * 0.08 }} />
+                transition={{ duration: 0.9, delay: 0.1 + i*0.12 }} />
             ))}
-            {[12, 44, 80].map((x, i) => (
-              <motion.line key={`v${i}`} x1={`${x}%`} y1="0%" x2={`${x}%`} y2="100%"
-                stroke="rgba(255,255,255,0.04)" strokeWidth="1.5"
+            {[['27%','0%','27%','100%',2], ['64%','0%','64%','100%',2]].map(([x1,y1,x2,y2,w],i) => (
+              <motion.line key={`v${i}`} x1={x1} y1={y1} x2={x2} y2={y2}
+                stroke="rgba(255,255,255,0.06)" strokeWidth={w}
                 initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
-                transition={{ duration: 0.5, delay: 0.5 + i * 0.08 }} />
+                transition={{ duration: 0.6, delay: 0.25 + i*0.1 }} />
+            ))}
+            {[18,52,83].map((y,i) => (
+              <motion.line key={`hs${i}`} x1="0%" y1={`${y}%`} x2="100%" y2={`${y}%`}
+                stroke="rgba(255,255,255,0.03)" strokeWidth="1.5"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                transition={{ duration: 0.5, delay: 0.4 + i*0.07 }} />
+            ))}
+            {[11,43,79].map((x,i) => (
+              <motion.line key={`vs${i}`} x1={`${x}%`} y1="0%" x2={`${x}%`} y2="100%"
+                stroke="rgba(255,255,255,0.03)" strokeWidth="1.5"
+                initial={{ pathLength: 0 }} animate={{ pathLength: 1 }}
+                transition={{ duration: 0.5, delay: 0.5 + i*0.07 }} />
             ))}
           </svg>
 
           {/* Buildings */}
           {[
-            { top: '42%', left: '8%', w: '12%', h: '22%', d: 0.3 },
-            { top: '12%', left: '33%', w: '10%', h: '18%', d: 0.4 },
-            { top: '72%', left: '70%', w: '14%', h: '20%', d: 0.5 },
-            { top: '15%', left: '82%', w: '9%', h: '24%', d: 0.35 },
-            { top: '55%', left: '3%', w: '7%', h: '10%', d: 0.45 },
-            { top: '8%', left: '72%', w: '11%', h: '9%', d: 0.55 },
-          ].map((b, i) => (
+            [42,8,12,23,0.3], [12,33,10,18,0.4], [70,70,14,20,0.5],
+            [14,82,9,24,0.35], [54,3,7,10,0.45], [7,71,11,9,0.55],
+          ].map(([top,left,w,h,d],i) => (
             <motion.div key={i} style={{
-              position: 'absolute', top: b.top, left: b.left, width: b.w, height: b.h,
-              borderRadius: 3, background: 'rgba(255,255,255,0.05)',
+              position: 'absolute', top: `${top}%`, left: `${left}%`,
+              width: `${w}%`, height: `${h}%`,
+              borderRadius: 3,
+              background: 'rgba(255,255,255,0.045)',
               border: '1px solid rgba(255,255,255,0.03)',
             }}
-              initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }}
-              transition={{ duration: 0.35, delay: b.d }} />
+              initial={{ opacity: 0, scale: 0.6 }} animate={{ opacity: 1, scale: 1 }}
+              transition={{ duration: 0.3, delay: d }} />
           ))}
 
-          {/* Pin — animated in idle, static in selected */}
+          {/* Gradient overlays */}
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(13,13,13,0.93) 0%, transparent 52%)', pointerEvents: 'none' }} />
+          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to left, rgba(13,13,13,0.75) 0%, transparent 58%)', pointerEvents: 'none' }} />
+
+          {/* Pin (idle + selected) */}
           <AnimatePresence>
             {phase !== 'searching' && (
-              <motion.div
-                key="pin"
-                style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -60%)', zIndex: 10 }}
-                initial={{ scale: 0, y: -20, opacity: 0 }}
+              <motion.div key="pin"
+                style={{ position: 'absolute', top: '50%', left: '50%', transform: 'translate(-50%, -60%)', zIndex: 10, pointerEvents: 'none' }}
+                initial={{ scale: 0, y: -16, opacity: 0 }}
                 animate={{ scale: 1, y: 0, opacity: 1 }}
                 exit={{ scale: 0, y: -10, opacity: 0 }}
-                transition={{ type: 'spring', stiffness: 400, damping: 18 }}
+                transition={{ type: 'spring', stiffness: 420, damping: 20 }}
               >
-                {/* bounce animation for idle */}
                 <motion.div
-                  animate={phase === 'idle' ? { y: [0, -6, 0] } : {}}
-                  transition={{ duration: 1.4, repeat: Infinity, ease: 'easeInOut' }}
+                  animate={phase === 'idle' ? { y: [0, -7, 0] } : {}}
+                  transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
                 >
-                  <svg width="28" height="34" viewBox="0 0 24 30" fill="none"
-                    style={{ filter: `drop-shadow(0 0 ${phase === 'selected' ? '10px' : '6px'} rgba(255,209,0,${phase === 'selected' ? '0.7' : '0.4'}))` }}>
+                  <svg width="26" height="32" viewBox="0 0 24 30" fill="none"
+                    style={{ filter: `drop-shadow(0 2px 8px ${pinColor}88)` }}>
                     <path d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 21 9 21s9-14.25 9-21c0-4.97-4.03-9-9-9z"
-                      fill={phase === 'selected' ? '#FFD100' : 'rgba(255,209,0,0.5)'} />
-                    <circle cx="12" cy="9" r="3.5" fill="#0f0f0f" />
+                      fill={phase === 'selected' ? pinColor : `${pinColor}66`} />
+                    <circle cx="12" cy="9" r="3.5" fill="#0d0d0d" />
                   </svg>
                 </motion.div>
+                {/* Shadow pulse */}
+                <motion.div style={{
+                  position: 'absolute', bottom: -2, left: '50%', transform: 'translateX(-50%)',
+                  width: 16, height: 5, borderRadius: '50%',
+                  background: `${pinColor}44`,
+                }}
+                  animate={{ scale: [1, 1.9, 1], opacity: [0.5, 0, 0.5] }}
+                  transition={{ duration: 1.6, repeat: Infinity, ease: 'easeInOut' }}
+                />
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* Pulse ring */}
-          {phase !== 'searching' && (
-            <motion.div style={{
-              position: 'absolute', top: '50%', left: '50%',
-              transform: 'translate(-50%, -5%)', width: 18, height: 7,
-              borderRadius: '50%', background: 'rgba(255,209,0,0.25)',
-            }}
-              animate={{ scale: [1, 1.8, 1], opacity: [0.5, 0, 0.5] }}
-              transition={{ duration: 1.8, repeat: Infinity, ease: 'easeInOut' }}
-            />
-          )}
-
-          {/* Gradient overlays */}
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to top, rgba(15,15,15,0.9) 0%, transparent 50%)', pointerEvents: 'none' }} />
-          <div style={{ position: 'absolute', inset: 0, background: 'linear-gradient(to left, rgba(15,15,15,0.7) 0%, transparent 55%)', pointerEvents: 'none' }} />
-
-          {/* ── IDLE state content ── */}
+          {/* ── IDLE content ── */}
           <AnimatePresence>
             {phase === 'idle' && (
-              <motion.div key="idle-content"
-                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+              <motion.div key="idle"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0, scale: 0.95 }}
                 transition={{ duration: 0.2 }}
-                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 6, zIndex: 10 }}
+                style={{ position: 'absolute', inset: 0, display: 'flex', flexDirection: 'column', alignItems: 'center', justifyContent: 'center', gap: 7, zIndex: 10 }}
               >
                 <motion.div
-                  animate={{ scale: [1, 1.04, 1] }}
-                  transition={{ duration: 2, repeat: Infinity, ease: 'easeInOut' }}
+                  animate={{ scale: hovered ? 1.05 : [1, 1.03, 1] }}
+                  transition={hovered ? { duration: 0.15 } : { duration: 2.2, repeat: Infinity, ease: 'easeInOut' }}
                   style={{
-                    background: 'rgba(255,209,0,0.12)', border: '1px solid rgba(255,209,0,0.3)',
-                    borderRadius: 24, padding: '7px 18px',
+                    background: `${pinColor}18`,
+                    border: `1px solid ${pinColor}44`,
+                    borderRadius: 24, padding: '7px 20px',
                     display: 'flex', alignItems: 'center', gap: 8,
+                    backdropFilter: 'blur(4px)',
                   }}
                 >
-                  <span style={{ fontSize: 16 }}>📍</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#FFD100' }}>לחץ לבחירת כתובת</span>
+                  <span style={{ fontSize: 15 }}>📍</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: pinColor }}>לחץ לבחירת כתובת</span>
                 </motion.div>
-                <div style={{ fontSize: 12, color: 'rgba(255,255,255,0.3)' }}>כתובת האיסוף שלך</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.2px' }}>
+                  {badgeLabel}
+                </div>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* ── SEARCHING state content ── */}
+          {/* ── SEARCHING content ── */}
           <AnimatePresence>
             {phase === 'searching' && (
-              <motion.div key="search-content"
-                initial={{ opacity: 0, y: 10 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0, y: 10 }}
-                transition={{ duration: 0.2 }}
-                style={{ position: 'absolute', inset: 0, zIndex: 20, display: 'flex', flexDirection: 'column', justifyContent: 'center', padding: '0 14px', gap: 8, background: 'rgba(15,15,15,0.92)' }}
+              <motion.div key="search"
+                initial={{ opacity: 0 }} animate={{ opacity: 1 }} exit={{ opacity: 0 }}
+                transition={{ duration: 0.18 }}
                 onClick={e => e.stopPropagation()}
+                style={{
+                  position: 'absolute', inset: 0, zIndex: 20,
+                  display: 'flex', flexDirection: 'column', justifyContent: 'center',
+                  padding: '0 48px 0 14px', gap: 8,
+                  background: 'rgba(13,13,13,0.94)',
+                  backdropFilter: 'blur(8px)',
+                }}
               >
-                <div style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', textTransform: 'uppercase', letterSpacing: '0.5px' }}>
+                <div style={{ fontSize: 10, fontWeight: 700, color: pinColor, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
                   {label}
                 </div>
                 <div style={{ position: 'relative' }}>
@@ -314,105 +355,116 @@ export default function PickupMapSelector({
                     placeholder={placeholder}
                     value={query}
                     onChange={e => handleChange(e.target.value)}
-                    onFocus={() => {
-                      if (inputRef.current) {
-                        const rect = inputRef.current.getBoundingClientRect()
-                        setDropdownRect({ top: rect.bottom + window.scrollY + 4, left: rect.left + window.scrollX, width: rect.width })
-                      }
-                    }}
+                    onFocus={updateDropRect}
                     autoComplete="off"
                     style={{
                       width: '100%', boxSizing: 'border-box',
-                      background: 'rgba(255,255,255,0.07)',
-                      border: '1px solid rgba(255,209,0,0.3)',
-                      borderRadius: 10, color: 'var(--txt)',
+                      background: 'rgba(255,255,255,0.06)',
+                      border: `1px solid ${pinColor}55`,
+                      borderRadius: 10, color: '#F2F2F2',
                       padding: '10px 14px', fontSize: 15, outline: 'none',
+                      direction: 'rtl',
                     }}
                   />
                   {loading && (
-                    <div style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: 'var(--txt2)' }}>
+                    <motion.div
+                      animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1, repeat: Infinity }}
+                      style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#666' }}>
                       מחפש...
-                    </div>
+                    </motion.div>
                   )}
                 </div>
-                <button type="button" onClick={closeSearch}
-                  style={{ position: 'absolute', top: 10, left: 12, background: 'none', border: 'none', color: 'rgba(255,255,255,0.35)', fontSize: 20, cursor: 'pointer', lineHeight: 1, padding: 0 }}>
-                  ✕
-                </button>
               </motion.div>
             )}
           </AnimatePresence>
 
-          {/* ── SELECTED state content ── */}
+          {/* Close button (searching) */}
           <AnimatePresence>
-            {phase === 'selected' && (
-              <motion.div key="selected-content"
-                initial={{ opacity: 0, y: 8 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.25 }}
-                style={{ position: 'absolute', zIndex: 10 }}
-              >
-                {/* Edit button */}
-                <motion.button type="button"
-                  onClick={openSearch}
-                  initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
-                  transition={{ delay: 0.2 }}
-                  style={{
-                    position: 'absolute', top: 10, left: 12,
-                    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.12)',
-                    borderRadius: 8, color: 'rgba(255,255,255,0.5)', fontSize: 12,
-                    cursor: 'pointer', padding: '3px 10px', fontWeight: 600,
-                  }}>
-                  ✏️ שנה
-                </motion.button>
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Address text bottom-right */}
-          <AnimatePresence>
-            {phase === 'selected' && (
-              <motion.div key="address-text"
-                initial={{ opacity: 0, x: 10 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
-                transition={{ duration: 0.3, delay: 0.1 }}
-                style={{ position: 'absolute', bottom: 12, right: 14, zIndex: 10, textAlign: 'right', direction: 'rtl' }}
-              >
-                <div style={{ fontSize: 15, fontWeight: 800, color: '#F2F2F2', lineHeight: 1.3, marginBottom: 4 }}>
-                  {fullAddress}
-                </div>
-                {priceChip}
-              </motion.div>
-            )}
-          </AnimatePresence>
-
-          {/* Badge top-right for selected */}
-          <AnimatePresence>
-            {phase === 'selected' && (
-              <motion.div key="badge"
-                initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0 }}
-                transition={{ delay: 0.15 }}
+            {phase === 'searching' && (
+              <motion.button key="close"
+                type="button"
+                initial={{ opacity: 0, scale: 0.7 }} animate={{ opacity: 1, scale: 1 }} exit={{ opacity: 0, scale: 0.7 }}
+                onClick={e => { e.stopPropagation(); closeSearch() }}
                 style={{
-                  position: 'absolute', top: 10, right: 12, zIndex: 10,
-                  display: 'flex', alignItems: 'center', gap: 5,
-                  background: 'rgba(255,209,0,0.1)', border: '1px solid rgba(255,209,0,0.2)',
-                  borderRadius: 20, padding: '3px 10px',
+                  position: 'absolute', top: 10, left: 10, zIndex: 30,
+                  background: 'rgba(255,255,255,0.08)', border: '1px solid rgba(255,255,255,0.12)',
+                  borderRadius: 8, color: 'rgba(255,255,255,0.45)',
+                  fontSize: 16, cursor: 'pointer', padding: '3px 8px', lineHeight: 1,
                 }}
-              >
-                <div style={{ width: 6, height: 6, borderRadius: '50%', background: '#FFD100' }} />
-                <span style={{ fontSize: 10, fontWeight: 700, color: '#FFD100', letterSpacing: '0.4px' }}>{badgeLabel}</span>
-              </motion.div>
+                whileTap={{ scale: 0.9 }}
+              >✕</motion.button>
             )}
           </AnimatePresence>
+
+          {/* ── SELECTED content ── */}
+          <AnimatePresence>
+            {phase === 'selected' && (
+              <>
+                {/* Badge top-right */}
+                <motion.div key="badge"
+                  initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }} exit={{ opacity: 0 }}
+                  transition={{ delay: 0.1 }}
+                  style={{
+                    position: 'absolute', top: 10, right: 12, zIndex: 10,
+                    display: 'flex', alignItems: 'center', gap: 5,
+                    background: `${pinColor}18`, border: `1px solid ${pinColor}33`,
+                    borderRadius: 20, padding: '3px 10px',
+                  }}
+                >
+                  <motion.div
+                    animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity }}
+                    style={{ width: 5, height: 5, borderRadius: '50%', background: pinColor }}
+                  />
+                  <span style={{ fontSize: 10, fontWeight: 700, color: pinColor, letterSpacing: '0.4px' }}>{badgeLabel}</span>
+                </motion.div>
+
+                {/* Edit hint top-left */}
+                <motion.div key="edit-hint"
+                  initial={{ opacity: 0 }} animate={{ opacity: hovered ? 1 : 0 }} exit={{ opacity: 0 }}
+                  style={{
+                    position: 'absolute', top: 10, left: 12, zIndex: 10,
+                    background: 'rgba(255,255,255,0.07)', border: '1px solid rgba(255,255,255,0.1)',
+                    borderRadius: 8, padding: '3px 10px',
+                    fontSize: 11, fontWeight: 600, color: 'rgba(255,255,255,0.4)',
+                    display: 'flex', alignItems: 'center', gap: 4,
+                    pointerEvents: 'none',
+                  }}>
+                  ✏️ <span>לחץ לשינוי</span>
+                </motion.div>
+
+                {/* Address bottom-right */}
+                <motion.div key="addr"
+                  initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }} exit={{ opacity: 0 }}
+                  transition={{ delay: 0.12, type: 'spring', stiffness: 300, damping: 24 }}
+                  style={{ position: 'absolute', bottom: 12, right: 14, zIndex: 10, textAlign: 'right', direction: 'rtl' }}
+                >
+                  <div style={{ fontSize: 14, fontWeight: 800, color: '#F0F0F0', lineHeight: 1.35, marginBottom: 4 }}>
+                    {fullAddress}
+                  </div>
+                  {priceChip}
+                </motion.div>
+              </>
+            )}
+          </AnimatePresence>
+
+          {/* Hover shimmer overlay */}
+          <motion.div
+            style={{ position: 'absolute', inset: 0, pointerEvents: 'none',
+              background: `radial-gradient(circle at 50% 50%, ${pinColor}08 0%, transparent 70%)` }}
+            animate={{ opacity: hovered && isClickable ? 1 : 0 }}
+            transition={{ duration: 0.25 }}
+          />
         </motion.div>
-      </motion.div>
+      </div>
 
       {dropdown}
 
-      {/* House number input after selection */}
+      {/* House number */}
       <AnimatePresence>
         {phase === 'selected' && selected?.street && (
           <motion.div
             initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
-            transition={{ duration: 0.25 }}
+            transition={{ duration: 0.22 }}
             style={{ overflow: 'hidden', marginTop: 8 }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>

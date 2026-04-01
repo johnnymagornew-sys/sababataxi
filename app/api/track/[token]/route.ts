@@ -32,6 +32,13 @@ export async function GET(
     return NextResponse.json({ error: 'נסיעה לא נמצאה' }, { status: 404 })
   }
 
+  // Check if review already submitted
+  const { data: review } = await supabase
+    .from('ride_reviews')
+    .select('id')
+    .eq('booking_id', data.id)
+    .maybeSingle()
+
   // Return only public-safe fields (no phone, email, price, admin_notes)
   return NextResponse.json({
     id: data.id,
@@ -48,5 +55,6 @@ export async function GET(
       // eslint-disable-next-line @typescript-eslint/no-explicit-any
       ? ((data as any).drivers?.full_name?.split(' ')[0] ?? null)
       : null,
+    has_review: !!review,
   })
 }

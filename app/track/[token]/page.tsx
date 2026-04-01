@@ -18,7 +18,8 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
       id, status, ride_status,
       pickup_city, pickup_street, pickup_house_number,
       destination, travel_date, travel_time, passengers,
-      driver_id, drivers (full_name)
+      driver_id, drivers (full_name),
+      ride_reviews (id)
     `)
     .eq('tracking_token', token)
     .single()
@@ -66,6 +67,7 @@ export default async function TrackPage({ params }: { params: Promise<{ token: s
             passengers={data.passengers}
             // eslint-disable-next-line @typescript-eslint/no-explicit-any
             driverFirstName={data.driver_id ? ((data as any).drivers?.full_name?.split(' ')[0] ?? null) : null}
+            initialHasReview={Array.isArray((data as any).ride_reviews) && (data as any).ride_reviews.length > 0}
           />
         )}
       </div>

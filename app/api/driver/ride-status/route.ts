@@ -78,6 +78,8 @@ export async function PATCH(request: NextRequest) {
         waMsg = `🚗 הנהג שלך בדרך!\n\nעקוב בזמן אמת:\n${trackUrl}\n\n*מוניות סבבה*`
       } else if (ride_status === 'arrived') {
         waMsg = `📍 הנהג הגיע לכתובת האיסוף!\n\nעקוב בזמן אמת:\n${trackUrl}\n\n*מוניות סבבה*`
+      } else if (ride_status === 'done') {
+        waMsg = `🙏 תודה רבה שנסעתם עם מוניות סבבה!\n\nנשמח לשמוע על חווית הנסיעה שלך — לוקח רק שניות:\n${trackUrl}\n\n*מוניות סבבה*`
       }
 
       if (waMsg) {

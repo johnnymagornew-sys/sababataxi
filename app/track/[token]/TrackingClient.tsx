@@ -5,6 +5,37 @@ import { useState, useEffect, useCallback } from 'react'
 type BookingStatus = 'pending' | 'approved' | 'rejected' | 'claimed' | 'completed' | 'cancelled'
 type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done' | null
 
+// ─── Star Rating ────────────────────────────────────────────────────
+function StarRating({ value, onChange, label }: { value: number; onChange: (v: number) => void; label: string }) {
+  const [hover, setHover] = useState(0)
+  return (
+    <div style={{ marginBottom: 16 }}>
+      <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 8 }}>{label}</div>
+      <div style={{ display: 'flex', gap: 8, direction: 'ltr' }}>
+        {[1, 2, 3, 4, 5].map(star => (
+          <button
+            key={star}
+            type="button"
+            onClick={() => onChange(star)}
+            onMouseEnter={() => setHover(star)}
+            onMouseLeave={() => setHover(0)}
+            style={{
+              background: 'none', border: 'none', cursor: 'pointer', padding: 2,
+              fontSize: 32,
+              opacity: (hover || value) >= star ? 1 : 0.25,
+              transform: (hover || value) >= star ? 'scale(1.1)' : 'scale(1)',
+              transition: 'all 0.15s',
+              filter: (hover || value) >= star ? 'none' : 'grayscale(1)',
+            }}
+          >
+            ⭐
+          </button>
+        ))}
+      </div>
+    </div>
+  )
+}
+
 interface Props {
   bookingId: string
   token: string
@@ -18,6 +49,7 @@ interface Props {
   travelTime: string
   passengers: number
   driverFirstName: string | null
+  initialHasReview: boolean
 }
 
 const STEPS: { key: string; label: string; sublabel: string; icon: string }[] = [
@@ -44,12 +76,19 @@ export default function TrackingClient({
   initialStatus, initialRideStatus,
   pickupCity, pickupStreet, pickupHouseNumber,
   destination, travelDate, travelTime, passengers,
-  driverFirstName,
+  driverFirstName, initialHasReview,
 }: Props) {
   const [status, setStatus] = useState<BookingStatus>(initialStatus)
   const [rideStatus, setRideStatus] = useState<RideStatus>(initialRideStatus)
   const [driver, setDriver] = useState<string | null>(driverFirstName)
   const [lastPoll, setLastPoll] = useState(Date.now())
+  const [hasReview, setHasReview] = useState(initialHasReview)
+  // Review form state
+  const [driverRating, setDriverRating] = useState(0)
+  const [cleanlinessRating, setCleanlinessRating] = useState(0)
+  const [comment, setComment] = useState('')
+  const [submittingReview, setSubmittingReview] = useState(false)
+  const [reviewDone, setReviewDone] = useState(initialHasReview)
 
   const activeStep = getActiveStepIndex(status, rideStatus)
   const isCancelled = status === 'cancelled' || status === 'rejected'
@@ -68,6 +107,7 @@ export default function TrackingClient({
       setStatus(data.status)
       setRideStatus(data.ride_status)
       if (data.driver_first_name) setDriver(data.driver_first_name)
+      if (data.has_review) { setHasReview(true); setReviewDone(true) }
       setLastPoll(Date.now())
     } catch { /* ignore */ }
   }, [token])
@@ -77,6 +117,30 @@ export default function TrackingClient({
     const interval = setInterval(poll, 8000)
     return () => clearInterval(interval)
   }, [poll])
+
+  const isCompleted = status === 'completed' || rideStatus === 'done'
+
+  async function submitReview() {
+    if (!driverRating || !cleanlinessRating) return
+    setSubmittingReview(true)
+    try {
+      const res = await fetch('/api/reviews', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          booking_id: bookingId,
+          driver_rating: driverRating,
+          cleanliness_rating: cleanlinessRating,
+          comment: comment.trim() || null,
+        }),
+      })
+      if (res.ok) {
+        setReviewDone(true)
+        setHasReview(true)
+      }
+    } catch { /* ignore */ }
+    setSubmittingReview(false)
+  }
 
   const pickupAddress = pickupStreet
     ? `${pickupStreet} ${pickupHouseNumber}, ${pickupCity}`
@@ -279,6 +343,75 @@ export default function TrackingClient({
               )
             })}
           </div>
+        </div>
+      )}
+
+      {/* Review form — appears only after ride is completed */}
+      {isCompleted && (
+        <div style={{
+          background: 'var(--card)',
+          border: '1px solid var(--border)',
+          borderRadius: 18,
+          padding: '20px',
+        }}>
+          {reviewDone ? (
+            <div style={{ textAlign: 'center', padding: '8px 0' }}>
+              <div style={{ fontSize: 36, marginBottom: 10 }}>🙏</div>
+              <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--txt)', marginBottom: 6 }}>
+                תודה על המשוב!
+              </div>
+              <div style={{ fontSize: 13, color: 'var(--txt3)' }}>חוות הדעת שלך עוזרת לנו להשתפר</div>
+            </div>
+          ) : (
+            <>
+              <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 16 }}>
+                איך הייתה הנסיעה?
+              </div>
+              <StarRating
+                label="שירות הנהג"
+                value={driverRating}
+                onChange={setDriverRating}
+              />
+              <StarRating
+                label="ניקיון המונית"
+                value={cleanlinessRating}
+                onChange={setCleanlinessRating}
+              />
+              <div style={{ marginBottom: 16 }}>
+                <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 8 }}>
+                  חוות דעת (אופציונלי)
+                </div>
+                <textarea
+                  value={comment}
+                  onChange={e => setComment(e.target.value)}
+                  placeholder="ספר לנו על הנסיעה..."
+                  rows={3}
+                  style={{
+                    width: '100%', borderRadius: 10, padding: '10px 12px',
+                    background: 'var(--card2)', border: '1px solid var(--border)',
+                    color: 'var(--txt)', fontSize: 14, fontFamily: 'inherit',
+                    resize: 'none', boxSizing: 'border-box', outline: 'none',
+                    lineHeight: 1.5,
+                  }}
+                />
+              </div>
+              <button
+                onClick={submitReview}
+                disabled={!driverRating || !cleanlinessRating || submittingReview}
+                style={{
+                  width: '100%', padding: '13px',
+                  borderRadius: 10, border: 'none',
+                  background: (!driverRating || !cleanlinessRating) ? 'var(--card2)' : 'var(--y)',
+                  color: (!driverRating || !cleanlinessRating) ? 'var(--txt3)' : '#000',
+                  fontWeight: 800, fontSize: 15, cursor: (!driverRating || !cleanlinessRating) ? 'not-allowed' : 'pointer',
+                  fontFamily: 'inherit', transition: 'all 0.2s',
+                  opacity: submittingReview ? 0.7 : 1,
+                }}
+              >
+                {submittingReview ? '...' : '📤 שלח משוב'}
+              </button>
+            </>
+          )}
         </div>
       )}
 

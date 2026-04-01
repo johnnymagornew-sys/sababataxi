@@ -45,7 +45,8 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         .select('*')
         .eq('driver_id', driver.id)
         .in('status', ['claimed', 'completed'])
-        .order('travel_date', { ascending: false }),
+        .order('travel_date', { ascending: true })
+        .order('travel_time', { ascending: true }),
     ])
     if (availRes.data) setAvailableRides(availRes.data as Booking[])
     if (mineRes.data) setMyRides(mineRes.data as Booking[])
@@ -153,10 +154,22 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
   // Split my rides: active (< 45 min after ride time) vs history
   const now = new Date()
   const HISTORY_CUTOFF_MS = 45 * 60 * 1000
-  const activeMyRides = myRides.filter(r => {
-    const rideTime = new Date(`${r.travel_date}T${r.travel_time}`)
-    return now.getTime() - rideTime.getTime() < HISTORY_CUTOFF_MS
-  })
+  const activeMyRides = myRides
+    .filter(r => {
+      const rideTime = new Date(`${r.travel_date}T${r.travel_time}`)
+      return now.getTime() - rideTime.getTime() < HISTORY_CUTOFF_MS
+    })
+    .sort((a, b) => {
+      // In-progress rides (ride_status set) always first
+      const aActive = (a as Booking & { ride_status?: string | null }).ride_status != null
+      const bActive = (b as Booking & { ride_status?: string | null }).ride_status != null
+      if (aActive && !bActive) return -1
+      if (!aActive && bActive) return 1
+      // Then sort by closest date/time
+      const aMs = new Date(`${a.travel_date}T${a.travel_time}`).getTime()
+      const bMs = new Date(`${b.travel_date}T${b.travel_time}`).getTime()
+      return aMs - bMs
+    })
   const historyRides = myRides.filter(r => {
     const rideTime = new Date(`${r.travel_date}T${r.travel_time}`)
     return now.getTime() - rideTime.getTime() >= HISTORY_CUTOFF_MS

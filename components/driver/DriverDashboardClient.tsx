@@ -15,10 +15,10 @@ const STATUS_LABELS: Record<string, string> = {
 type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done' | null
 
 const RIDE_STATUS_STEPS: { key: RideStatus; label: string; icon: string; next: RideStatus }[] = [
-  { key: null,       label: 'יצאתי לנסיעה',      icon: '🚗', next: 'en_route' },
-  { key: 'en_route', label: 'הגעתי למקום',        icon: '📍', next: 'arrived'  },
-  { key: 'arrived',  label: 'אספתי נוסעים — יוצאים!', icon: '✅', next: 'onboard'  },
-  { key: 'onboard',  label: 'נסיעה הסתיימה',      icon: '🏁', next: 'done'     },
+  { key: null,       label: 'יצאתי לנסיעה',                    icon: '🚗', next: 'en_route' },
+  { key: 'en_route', label: 'הגעתי למקום',                     icon: '📍', next: 'arrived'  },
+  { key: 'arrived',  label: 'אספתי את הנוסעים — יוצאים לדרך', icon: '✅', next: 'onboard'  },
+  { key: 'onboard',  label: 'סיום נסיעה',                      icon: '🏁', next: 'done'     },
 ]
 
 export default function DriverDashboardClient({ driver: initialDriver }: { driver: Driver }) {

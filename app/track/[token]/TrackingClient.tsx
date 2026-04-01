@@ -23,10 +23,10 @@ interface Props {
 const STEPS: { key: string; label: string; sublabel: string; icon: string }[] = [
   { key: 'approved',  label: 'ההזמנה אושרה',       sublabel: 'הנסיעה אושרה על ידי המוקד', icon: '✅' },
   { key: 'claimed',   label: 'נהג שובץ',            sublabel: 'נהג שריין את הנסיעה שלך',   icon: '🚕' },
-  { key: 'en_route',  label: 'הנהג בדרך',           sublabel: 'הנהג יוצא לאסוף אותך',      icon: '🚗' },
-  { key: 'arrived',   label: 'הנהג הגיע',           sublabel: 'הנהג ממתין בכתובת האיסוף',  icon: '📍' },
+  { key: 'en_route',  label: 'הנהג בדרך אליך',       sublabel: 'הנהג יצא לאסוף אותך',       icon: '🚗' },
+  { key: 'arrived',   label: 'הנהג הגיע!',          sublabel: 'הנהג ממתין למטה',            icon: '📍' },
   { key: 'onboard',   label: 'יוצאים לדרך!',        sublabel: 'הנוסעים עלו לרכב',          icon: '🛫' },
-  { key: 'done',      label: 'הנסיעה הסתיימה',      sublabel: 'נסיעה טובה! תודה',          icon: '🏁' },
+  { key: 'done',      label: 'הנסיעה הסתיימה',      sublabel: 'תודה שבחרתם במוניות סבבה',  icon: '🏁' },
 ]
 
 function getActiveStepIndex(status: BookingStatus, rideStatus: RideStatus): number {

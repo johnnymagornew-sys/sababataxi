@@ -342,23 +342,23 @@ export default function IntercityMapSelector({
                 {phase === 'destination' && pickup ? (
                   <motion.div
                     initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
+                    onClick={() => openEdit('pickup')}
+                    whileHover={{ background: 'rgba(255,209,0,0.1)' }}
+                    whileTap={{ scale: 0.98 }}
                     style={{
                       display: 'flex', alignItems: 'center', gap: 8,
                       background: 'rgba(255,209,0,0.07)', border: '1px solid rgba(255,209,0,0.2)',
-                      borderRadius: 10, padding: '8px 12px',
+                      borderRadius: 10, padding: '8px 12px', cursor: 'pointer',
                     }}
                   >
                     <span style={{ fontSize: 13, flexShrink: 0 }}>📍</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 10, color: '#FFD100', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 1 }}>איסוף</div>
+                      <div style={{ fontSize: 10, color: '#FFD100', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 1 }}>איסוף — לחץ לשינוי</div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#E8E8E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {pickupDisplay}
                       </div>
                     </div>
-                    <motion.button type="button" onClick={() => openEdit('pickup')}
-                      style={{ background: 'none', border: 'none', color: 'rgba(255,255,255,0.3)', fontSize: 13, cursor: 'pointer', padding: '2px 6px', flexShrink: 0 }}
-                      whileTap={{ scale: 0.9 }}
-                    >✏️</motion.button>
+                    <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>✏️</span>
                   </motion.div>
                 ) : phase === 'pickup' ? (
                   <SearchField
@@ -428,70 +428,88 @@ export default function IntercityMapSelector({
                 transition={{ duration: 0.25 }}
                 style={{ position: 'absolute', inset: 0, zIndex: 10 }}
               >
-                {/* Top section — pickup */}
+                {/* Top row — pickup (full row clickable) */}
                 <motion.div
                   initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.05, type: 'spring', stiffness: 300, damping: 24 }}
+                  onClick={e => { e.stopPropagation(); openEdit('pickup') }}
+                  whileHover={{ background: 'rgba(255,209,0,0.05)' }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
                     position: 'absolute', top: 0, left: 0, right: 0, height: '50%',
-                    display: 'flex', alignItems: 'center', padding: '0 14px',
+                    display: 'flex', alignItems: 'center', padding: '0 12px 0 40px',
                     borderBottom: '1px solid rgba(255,255,255,0.06)',
+                    cursor: 'pointer',
                   }}
                 >
-                  <div style={{ flex: 1, direction: 'rtl', textAlign: 'right' }}>
+                  <div style={{ flex: 1, direction: 'rtl', textAlign: 'right', minWidth: 0 }}>
                     <div style={{ fontSize: 9, color: '#FFD100', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 3 }}>📍 איסוף</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EFEFEF', lineHeight: 1.3 }}>{pickupDisplay}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EFEFEF', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pickupDisplay}</div>
                   </div>
-                  <motion.button type="button" onClick={e => { e.stopPropagation(); openEdit('pickup') }}
-                    initial={{ opacity: 0 }} animate={{ opacity: hovered ? 1 : 0 }}
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, color: 'rgba(255,255,255,0.35)', fontSize: 11, cursor: 'pointer', padding: '3px 8px', marginRight: 10, flexShrink: 0, whiteSpace: 'nowrap' }}
-                    whileTap={{ scale: 0.9 }}
-                  >✏️ שנה</motion.button>
+                  <motion.div animate={{ opacity: hovered ? 0.5 : 0.2 }} style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', flexShrink: 0, paddingRight: 4 }}>✏️</motion.div>
                 </motion.div>
 
-                {/* Bottom section — destination */}
+                {/* Bottom row — destination (full row clickable) */}
                 <motion.div
                   initial={{ opacity: 0, x: 12 }} animate={{ opacity: 1, x: 0 }}
                   transition={{ delay: 0.12, type: 'spring', stiffness: 300, damping: 24 }}
+                  onClick={e => { e.stopPropagation(); openEdit('destination') }}
+                  whileHover={{ background: 'rgba(59,130,246,0.05)' }}
+                  whileTap={{ scale: 0.98 }}
                   style={{
                     position: 'absolute', bottom: 0, left: 0, right: 0, height: '50%',
-                    display: 'flex', alignItems: 'center', padding: '0 14px',
+                    display: 'flex', alignItems: 'center', padding: '0 12px 0 40px',
+                    cursor: 'pointer',
                   }}
                 >
-                  <div style={{ flex: 1, direction: 'rtl', textAlign: 'right' }}>
+                  <div style={{ flex: 1, direction: 'rtl', textAlign: 'right', minWidth: 0 }}>
                     <div style={{ fontSize: 9, color: '#3B82F6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 3 }}>🎯 יעד</div>
-                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EFEFEF', lineHeight: 1.3 }}>{destDisplay}</div>
+                    <div style={{ fontSize: 13, fontWeight: 700, color: '#EFEFEF', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{destDisplay}</div>
                   </div>
-                  <motion.button type="button" onClick={e => { e.stopPropagation(); openEdit('destination') }}
-                    initial={{ opacity: 0 }} animate={{ opacity: hovered ? 1 : 0 }}
-                    style={{ background: 'rgba(255,255,255,0.06)', border: '1px solid rgba(255,255,255,0.1)', borderRadius: 7, color: 'rgba(255,255,255,0.35)', fontSize: 11, cursor: 'pointer', padding: '3px 8px', marginRight: 10, flexShrink: 0, whiteSpace: 'nowrap' }}
-                    whileTap={{ scale: 0.9 }}
-                  >✏️ שנה</motion.button>
+                  <motion.div animate={{ opacity: hovered ? 0.5 : 0.2 }} style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', flexShrink: 0, paddingRight: 4 }}>✏️</motion.div>
                 </motion.div>
+
+                {/* Swap button — center divider */}
+                <motion.button
+                  type="button"
+                  initial={{ opacity: 0, scale: 0.5 }}
+                  animate={{ opacity: 1, scale: 1 }}
+                  transition={{ delay: 0.2, type: 'spring', stiffness: 400, damping: 20 }}
+                  onClick={e => {
+                    e.stopPropagation()
+                    if (!pickup || !destination) return
+                    const p = pickup, d = destination
+                    const ph = pickupHouseNumber, dh = destinationHouseNumber
+                    onPickupClear(); onDestinationClear()
+                    setTimeout(() => {
+                      onPickupSelect({ ...d, houseNumber: dh || d.houseNumber })
+                      onDestinationSelect({ ...p, houseNumber: ph || p.houseNumber })
+                    }, 10)
+                  }}
+                  whileHover={{ scale: 1.15, background: 'rgba(255,255,255,0.14)' }}
+                  whileTap={{ scale: 0.88, rotate: 180 }}
+                  style={{
+                    position: 'absolute', left: 10, top: '50%', transform: 'translateY(-50%)',
+                    zIndex: 20, width: 28, height: 28,
+                    background: 'rgba(255,255,255,0.08)',
+                    border: '1px solid rgba(255,255,255,0.15)',
+                    borderRadius: '50%', cursor: 'pointer',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center',
+                    fontSize: 14, color: 'rgba(255,255,255,0.6)',
+                    padding: 0,
+                  }}
+                >⇅</motion.button>
 
                 {/* Price chip */}
                 {priceChip && (
                   <motion.div
                     initial={{ opacity: 0, scale: 0.8 }} animate={{ opacity: 1, scale: 1 }}
                     transition={{ delay: 0.2 }}
-                    style={{ position: 'absolute', top: 8, left: 12, zIndex: 5 }}
+                    style={{ position: 'absolute', top: 7, left: 44, zIndex: 5, pointerEvents: 'none' }}
                   >
                     {priceChip}
                   </motion.div>
                 )}
-
-                {/* Pins */}
-                <div style={{ position: 'absolute', left: '50%', top: '50%', transform: 'translate(-50%,-50%)', zIndex: 5, pointerEvents: 'none', display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 2 }}>
-                  <svg width="16" height="20" viewBox="0 0 24 30" fill="none" style={{ filter: 'drop-shadow(0 1px 6px #FFD10088)' }}>
-                    <path d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 21 9 21s9-14.25 9-21c0-4.97-4.03-9-9-9z" fill="#FFD100" />
-                    <circle cx="12" cy="9" r="3.5" fill="#0d0d0d" />
-                  </svg>
-                  <div style={{ width: 1, height: 8, background: 'rgba(255,255,255,0.2)' }} />
-                  <svg width="16" height="20" viewBox="0 0 24 30" fill="none" style={{ filter: 'drop-shadow(0 1px 6px #3B82F688)' }}>
-                    <path d="M12 0C7.03 0 3 4.03 3 9c0 6.75 9 21 9 21s9-14.25 9-21c0-4.97-4.03-9-9-9z" fill="#3B82F6" />
-                    <circle cx="12" cy="9" r="3.5" fill="#0d0d0d" />
-                  </svg>
-                </div>
               </motion.div>
             )}
           </AnimatePresence>

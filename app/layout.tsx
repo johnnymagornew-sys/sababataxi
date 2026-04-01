@@ -9,8 +9,12 @@ const heebo = Heebo({
 })
 
 export const metadata: Metadata = {
-  title: 'סבבה טקסי – מוניות לנתב״ג ונסיעות בין עירוניות',
+  title: 'מוניות סבבה – מוניות לנתב״ג ומעיר לעיר',
   description: 'מוניות לנתב״ג ומעיר לעיר במחירים קבועים מראש. ללא פרטי אשראי, תשלום ישירות לנהג. נהגים מקצועיים, הגעה בזמן, שירות אמין ואדיב.',
+  icons: {
+    icon: '/sababa_logo.png',
+    apple: '/sababa_logo.png',
+  },
 }
 
 export default function RootLayout({ children }: { children: React.ReactNode }) {

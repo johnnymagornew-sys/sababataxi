@@ -1,4 +1,5 @@
 export type BookingStatus = 'pending' | 'approved' | 'rejected' | 'claimed' | 'completed' | 'cancelled'
+export type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done'
 export type PaymentMethod = 'cash' | 'bit'
 export type VehicleType = 'regular' | 'minivan' | 'luxury'
 export type TransactionType = 'admin_load' | 'ride_commission'
@@ -39,6 +40,8 @@ export interface Booking {
   status: BookingStatus
   driver_id?: string | null
   admin_notes?: string | null
+  tracking_token?: string | null
+  ride_status?: RideStatus | null
 }
 
 export type BookingInsert = Omit<Booking, 'id' | 'created_at'>

@@ -98,7 +98,11 @@ create table bookings (
   -- Driver assignment
   driver_id uuid references drivers(id),
 
-  admin_notes text
+  admin_notes text,
+
+  -- Live ride tracking
+  tracking_token uuid default gen_random_uuid() unique,
+  ride_status text check (ride_status in ('en_route','arrived','onboard','done')) default null
 );
 
 -- Credit transactions

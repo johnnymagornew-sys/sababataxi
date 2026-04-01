@@ -106,7 +106,7 @@ export async function POST(request: NextRequest) {
         price,
         status: 'pending',
       })
-      .select('id')
+      .select('id, tracking_token')
       .single()
 
     if (error) {
@@ -170,6 +170,9 @@ export async function POST(request: NextRequest) {
       try {
         const dateStr = new Date(travel_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' })
         const payLabel = (payment_method ?? 'cash') === 'bit' ? 'ביט' : 'מזומן'
+        const trackingLink = data.tracking_token
+          ? `\n\n🔍 מעקב נסיעה בזמן אמת:\nhttps://sababataxi.vercel.app/track/${data.tracking_token}`
+          : ''
         const waMsg =
           `✅ ההזמנה שלך התקבלה!\n\n` +
           `📍 כתובת: ${[pickup_street, pickup_house_number, pickup_city].filter(Boolean).join(' ')}\n` +
@@ -178,7 +181,8 @@ export async function POST(request: NextRequest) {
           `💰 מחיר: ₪${price}\n` +
           `💳 תשלום: ${payLabel} לנהג\n` +
           (return_trip ? `✈️ כולל חזרה מהשדה\n` : '') +
-          `\nנהג יאשר איתך בקרוב 🚕\n` +
+          trackingLink +
+          `\n\nנהג יאשר איתך בקרוב 🚕\n` +
           `*מוניות סבבה*`
         await fetch(`${waUrl}/send`, {
           method: 'POST',

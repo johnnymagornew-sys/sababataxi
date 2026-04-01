@@ -12,12 +12,22 @@ const STATUS_LABELS: Record<string, string> = {
   completed: 'הושלם', rejected: 'נדחה', cancelled: 'בוטל',
 }
 
+type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done' | null
+
+const RIDE_STATUS_STEPS: { key: RideStatus; label: string; icon: string; next: RideStatus }[] = [
+  { key: null,       label: 'יצאתי לנסיעה',      icon: '🚗', next: 'en_route' },
+  { key: 'en_route', label: 'הגעתי למקום',        icon: '📍', next: 'arrived'  },
+  { key: 'arrived',  label: 'אספתי נוסעים — יוצאים!', icon: '✅', next: 'onboard'  },
+  { key: 'onboard',  label: 'נסיעה הסתיימה',      icon: '🏁', next: 'done'     },
+]
+
 export default function DriverDashboardClient({ driver: initialDriver }: { driver: Driver }) {
   const [driver, setDriver] = useState<Driver>(initialDriver)
   const [tab, setTab] = useState<'available' | 'mine' | 'history'>('available')
   const [availableRides, setAvailableRides] = useState<Booking[]>([])
   const [myRides, setMyRides] = useState<Booking[]>([])
   const [claiming, setClaiming] = useState<string | null>(null)
+  const [updatingRideStatus, setUpdatingRideStatus] = useState<string | null>(null)
   const [msg, setMsg] = useState<{ text: string; type: 'ok' | 'err' } | null>(null)
   const supabase = createClient()
   const router = useRouter()
@@ -108,6 +118,28 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         body: JSON.stringify({ bookingId, driverId: driver.id }),
       }).catch(() => {})
     }
+    setTimeout(() => setMsg(null), 4000)
+  }
+
+  async function updateRideStatus(bookingId: string, nextStatus: RideStatus) {
+    setUpdatingRideStatus(bookingId)
+    try {
+      const res = await fetch('/api/driver/ride-status', {
+        method: 'PATCH',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ booking_id: bookingId, ride_status: nextStatus }),
+      })
+      const data = await res.json()
+      if (!res.ok) {
+        setMsg({ text: data.error ?? 'שגיאה בעדכון', type: 'err' })
+      } else {
+        setMsg({ text: nextStatus === 'done' ? '🏁 נסיעה הסתיימה!' : '✅ סטטוס עודכן', type: 'ok' })
+        await loadRides()
+      }
+    } catch {
+      setMsg({ text: 'שגיאת רשת', type: 'err' })
+    }
+    setUpdatingRideStatus(null)
     setTimeout(() => setMsg(null), 4000)
   }
 
@@ -291,6 +323,8 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   claiming={false}
                   showStatus
                   onCancel={ride.status === 'claimed' ? () => cancelRide(ride.id, ride.travel_date, ride.travel_time) : undefined}
+                  onUpdateRideStatus={ride.status === 'claimed' ? (next) => updateRideStatus(ride.id, next) : undefined}
+                  updatingRideStatus={updatingRideStatus === ride.id}
                 />
               ))
             )}
@@ -323,7 +357,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
 // ─── RideCard ─────────────────────────────────────────────────────
 
-function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus, timeConflict }: {
+function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus, timeConflict, onUpdateRideStatus, updatingRideStatus }: {
   ride: Booking
   driverId: string
   driverCredits: number
@@ -333,6 +367,8 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
   onCancel?: () => void
   showStatus?: boolean
   timeConflict?: boolean
+  onUpdateRideStatus?: (next: RideStatus) => void
+  updatingRideStatus?: boolean
 }) {
   const commission = getCommission(ride.price)
   const canClaim = isSubscribed && driverCredits >= commission && ride.status === 'approved' && !timeConflict
@@ -473,9 +509,80 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
         </div>
       )}
 
+      {/* Ride status progression */}
+      {onUpdateRideStatus && ride.status === 'claimed' && (
+        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 14, marginTop: 4 }}>
+          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 10 }}>
+            עדכון סטטוס נסיעה
+          </div>
+          {(() => {
+            const currentRideStatus = (ride as Booking & { ride_status?: RideStatus }).ride_status ?? null
+            const currentStep = RIDE_STATUS_STEPS.find(s => s.key === currentRideStatus)
+            const nextStep = currentStep
+              ? RIDE_STATUS_STEPS.find(s => s.key === currentStep.next)
+              : RIDE_STATUS_STEPS[0]
+
+            if (!nextStep) return (
+              <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--txt3)', padding: '8px 0' }}>
+                ✅ הנסיעה עודכנה
+              </div>
+            )
+
+            // Show mini progress + next button
+            return (
+              <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
+                {/* Mini step indicators */}
+                <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
+                  {RIDE_STATUS_STEPS.map((step, i) => {
+                    const stepKeys = [null, 'en_route', 'arrived', 'onboard'] as RideStatus[]
+                    const stepDone = stepKeys.indexOf(currentRideStatus) >= i || currentRideStatus === step.key
+                    return (
+                      <div key={step.next ?? 'done'} style={{ display: 'flex', alignItems: 'center', gap: 4, flex: 1 }}>
+                        <div style={{
+                          flex: 1, height: 3, borderRadius: 99,
+                          background: stepDone ? 'var(--y)' : 'var(--border)',
+                          transition: 'background 0.3s',
+                        }} />
+                        {i === RIDE_STATUS_STEPS.length - 1 && (
+                          <div style={{
+                            width: 8, height: 8, borderRadius: '50%',
+                            background: currentRideStatus === 'done' ? 'var(--y)' : 'var(--border)',
+                          }} />
+                        )}
+                      </div>
+                    )
+                  })}
+                </div>
+                {/* Next action button */}
+                <button
+                  onClick={() => onUpdateRideStatus(nextStep.next)}
+                  disabled={updatingRideStatus}
+                  style={{
+                    width: '100%', padding: '12px',
+                    borderRadius: 10, border: 'none',
+                    background: nextStep.next === 'done' ? 'rgba(39,174,96,0.15)' : 'var(--y)',
+                    color: nextStep.next === 'done' ? '#27AE60' : '#000',
+                    fontWeight: 800, fontSize: 15,
+                    cursor: updatingRideStatus ? 'wait' : 'pointer',
+                    fontFamily: 'inherit',
+                    display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
+                    outline: nextStep.next === 'done' ? '1px solid rgba(39,174,96,0.3)' : 'none',
+                    opacity: updatingRideStatus ? 0.7 : 1,
+                    transition: 'opacity 0.15s',
+                  } as React.CSSProperties}
+                >
+                  <span style={{ fontSize: 18 }}>{nextStep.icon}</span>
+                  {updatingRideStatus ? '...' : nextStep.label}
+                </button>
+              </div>
+            )
+          })()}
+        </div>
+      )}
+
       {/* Cancel button — only for claimed rides */}
       {onCancel && (
-        <div style={{ borderTop: '1px solid var(--border)', paddingTop: 12, marginTop: 4 }}>
+        <div style={{ paddingTop: 10, marginTop: 4 }}>
           <button
             onClick={onCancel}
             style={{

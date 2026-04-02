@@ -26,6 +26,8 @@ export async function POST(request: NextRequest) {
     } = sanitized
 
     const trip_type = body.trip_type === 'intercity' ? 'intercity' : 'airport'
+    const airport_direction: 'to_airport' | 'from_airport' = body.airport_direction === 'from_airport' ? 'from_airport' : 'to_airport'
+    const flight_number = sanitizeString(body.flight_number, 20) // flight arriving on (from_airport only)
     const destination_city = sanitizeString(body.destination_city ?? '', 100)
     const destination_street = sanitizeString(body.destination_street ?? '', 200)
     const destination_house_number = sanitizeString(body.destination_house_number ?? '', 20)
@@ -39,6 +41,20 @@ export async function POST(request: NextRequest) {
     const payment_method = body.payment_method === 'bit' ? 'bit' : 'cash'
     const extras = body.extras && typeof body.extras === 'object' ? body.extras : {}
     const locale = ['he', 'en', 'ru', 'ar'].includes(body.locale) ? body.locale : 'he'
+
+    // For from_airport: customer entered THEIR CITY as pickup_city in the form.
+    // We swap so the DB stores: pickup = Ben Gurion, destination = their home address.
+    const isFromAirport = trip_type === 'airport' && airport_direction === 'from_airport'
+    const db_pickup_city         = isFromAirport ? 'נמל תעופה בן גוריון' : pickup_city
+    const db_pickup_street       = isFromAirport ? '' : pickup_street
+    const db_pickup_house_number = isFromAirport ? '' : pickup_house_number
+    const db_destination         = isFromAirport
+      ? [pickup_street, pickup_house_number, pickup_city].filter(Boolean).join(' ')
+      : trip_type === 'intercity'
+        ? [destination_street, destination_house_number, destination_city].filter(Boolean).join(' ')
+        : 'נמל תעופה בן גוריון'
+    // For from_airport, the incoming flight number goes into return_flight_number (the only flight field we have)
+    const db_return_flight_number = isFromAirport ? (flight_number || null) : (return_flight_number || null)
 
     // Build return address display string
     const return_address = return_city
@@ -86,12 +102,10 @@ export async function POST(request: NextRequest) {
         customer_name,
         customer_phone,
         customer_email: customer_email || null,
-        pickup_city,
-        pickup_street,
-        pickup_house_number,
-        destination: trip_type === 'intercity'
-          ? [destination_street, destination_house_number, destination_city].filter(Boolean).join(' ')
-          : 'נמל תעופה בן גוריון',
+        pickup_city: db_pickup_city,
+        pickup_street: db_pickup_street,
+        pickup_house_number: db_pickup_house_number,
+        destination: db_destination,
         travel_date,
         travel_time,
         passengers: passengers ?? 1,
@@ -99,7 +113,7 @@ export async function POST(request: NextRequest) {
         trolley: trolley ?? 0,
         return_trip: return_trip ?? false,
         return_address: return_address || null,
-        return_flight_number: return_flight_number || null,
+        return_flight_number: db_return_flight_number,
         return_date: return_date || null,
         return_time: return_time || null,
         extras: extras ?? {},

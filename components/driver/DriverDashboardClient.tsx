@@ -450,6 +450,11 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
   const canClaim = isSubscribed && driverCredits >= commission && ride.status === 'approved' && !timeConflict
 
   const isClaimed = !!showStatus // after claiming → show full details
+  const isFromAirport = ride.pickup_city === 'נמל תעופה בן גוריון'
+  // For from-airport trips, extract destination city (last word of destination address)
+  const destCity = isFromAirport
+    ? (ride.destination ?? '').trim().split(/\s+/).pop() ?? ''
+    : ''
 
   return (
     <div style={{
@@ -463,11 +468,14 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--txt)' }}>
-            {ride.pickup_city} ← {t('benGurion')}
+            {isFromAirport
+              ? <>{t('benGurion')} → {destCity}</>
+              : <>{ride.pickup_city} ← {t('benGurion')}</>
+            }
           </div>
           {isClaimed ? (
             <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 2 }}>
-              {ride.pickup_street} {ride.pickup_house_number}
+              {isFromAirport ? ride.destination : `${ride.pickup_street} ${ride.pickup_house_number}`}
             </div>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--txt2)', marginTop: 4, opacity: 0.5 }}>

@@ -51,6 +51,7 @@
       "terminal": "Terminal 3",
       "swapDirection": "⇅ Swap Direction",
       "flightNumber": "Flight Number *",
+      "flightTrackingNote": "Your driver tracks your flight and will be notified of any changes to your landing time — he'll wait for you until you exit the arrivals hall 🛬",
       "dateLabel": "Date",
       "datePlaceholder": "Select Date",
       "timeLabel": "Time",

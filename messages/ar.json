@@ -51,6 +51,7 @@
       "terminal": "مبنى 3",
       "swapDirection": "⇅ تبديل الاتجاه",
       "flightNumber": "رقم الرحلة *",
+      "flightTrackingNote": "السائق يتابع رحلتك الجوية وسيعلم بأي تغيير في موعد الهبوط — سينتظرك حتى تخرج من صالة الوصول 🛬",
       "dateLabel": "التاريخ",
       "datePlaceholder": "اختر تاريخ",
       "timeLabel": "الوقت",

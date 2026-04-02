@@ -669,17 +669,30 @@ export default function BookingForm() {
 
                     {/* Flight number — required when from_airport */}
                     {form.airport_direction === 'from_airport' && (
-                      <div>
-                        <label>{t('step1.flightNumber')}</label>
-                        <input
-                          type="text"
-                          placeholder="LY123"
-                          value={form.flight_number}
-                          onChange={e => setField('flight_number', e.target.value)}
-                          dir="ltr"
-                          style={{ textAlign: 'right', fontSize: 16, height: 48 }}
-                        />
-                      </div>
+                      <>
+                        <div>
+                          <label>{t('step1.flightNumber')}</label>
+                          <input
+                            type="text"
+                            placeholder="LY123"
+                            value={form.flight_number}
+                            onChange={e => setField('flight_number', e.target.value)}
+                            dir="ltr"
+                            style={{ textAlign: 'right', fontSize: 16, height: 48 }}
+                          />
+                        </div>
+                        <div style={{
+                          display: 'flex', alignItems: 'flex-start', gap: 10,
+                          background: 'rgba(52,211,153,0.07)',
+                          border: '1px solid rgba(52,211,153,0.25)',
+                          borderRadius: 12, padding: '12px 14px',
+                        }}>
+                          <span style={{ fontSize: 18, flexShrink: 0 }}>✈️</span>
+                          <span style={{ fontSize: 13, color: 'var(--txt2)', lineHeight: 1.55 }}>
+                            {t('step1.flightTrackingNote')}
+                          </span>
+                        </div>
+                      </>
                     )}
                   </div>
                 ) : (

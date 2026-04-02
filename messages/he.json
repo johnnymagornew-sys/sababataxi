@@ -51,6 +51,7 @@
       "terminal": "טרמינל 3",
       "swapDirection": "⇅ החלף כיוון",
       "flightNumber": "מספר טיסה *",
+      "flightTrackingNote": "הנהג עוקב אחר הטיסה שלך ויודע על כל שינוי בזמן הנחיתה — הוא יחכה לך עד שתצא משער היציאה 🛬",
       "dateLabel": "תאריך",
       "datePlaceholder": "בחר תאריך",
       "timeLabel": "שעה",

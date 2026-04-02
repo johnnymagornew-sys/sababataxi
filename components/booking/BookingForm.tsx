@@ -517,17 +517,49 @@ export default function BookingForm() {
                   </div>
                 )}
 
-                <div className="field-enter date-time-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
+                <div className="field-enter" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
+                  {/* Date */}
                   <div style={{ minWidth: 0 }}>
-                    <label>תאריך נסיעה *</label>
-                    <input type="date" min={new Date().toISOString().split('T')[0]}
-                      value={form.travel_date} onChange={e => setField('travel_date', e.target.value)}
-                      style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>תאריך</div>
+                    <div style={{ position: 'relative' }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        background: form.travel_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
+                        border: `1px solid ${form.travel_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
+                        borderRadius: 12, padding: '10px 12px',
+                        pointerEvents: 'none',
+                      }}>
+                        <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                          {form.travel_date
+                            ? new Date(form.travel_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                            : 'בחר תאריך'}
+                        </span>
+                      </div>
+                      <input type="date" min={new Date().toISOString().split('T')[0]}
+                        value={form.travel_date} onChange={e => setField('travel_date', e.target.value)}
+                        style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                    </div>
                   </div>
+                  {/* Time */}
                   <div style={{ minWidth: 0 }}>
-                    <label>שעת נסיעה *</label>
-                    <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
-                      style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>שעה</div>
+                    <div style={{ position: 'relative' }}>
+                      <div style={{
+                        display: 'flex', alignItems: 'center', gap: 8,
+                        background: form.travel_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
+                        border: `1px solid ${form.travel_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
+                        borderRadius: 12, padding: '10px 12px',
+                        pointerEvents: 'none',
+                      }}>
+                        <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
+                        <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_time ? 'var(--txt)' : 'var(--txt3)' }}>
+                          {form.travel_time || 'בחר שעה'}
+                        </span>
+                      </div>
+                      <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
+                        style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                    </div>
                   </div>
                 </div>
 
@@ -570,18 +602,32 @@ export default function BookingForm() {
                           onChange={e => setField('return_flight_number', e.target.value)}
                           dir="ltr" style={{ textAlign: 'right', fontSize: 16, height: 48 }} />
                       </div>}
-                      <div className="date-time-grid" style={{ display: 'grid', gap: 12, gridTemplateColumns: '1fr 1fr' }}>
+                      <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
                         <div style={{ minWidth: 0 }}>
-                          <label>תאריך חזרה</label>
-                          <input type="date" value={form.return_date}
-                            onChange={e => setField('return_date', e.target.value)}
-                            style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>תאריך חזרה</div>
+                          <div style={{ position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', pointerEvents: 'none' }}>
+                              <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: form.return_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                                {form.return_date ? new Date(form.return_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'בחר תאריך'}
+                              </span>
+                            </div>
+                            <input type="date" value={form.return_date} onChange={e => setField('return_date', e.target.value)}
+                              style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                          </div>
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <label>שעה משוערת</label>
-                          <input type="time" value={form.return_time}
-                            onChange={e => setField('return_time', e.target.value)}
-                            style={{ fontSize: 16, height: 48, padding: '0 12px', width: '100%', display: 'block' }} />
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>שעה משוערת</div>
+                          <div style={{ position: 'relative' }}>
+                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', pointerEvents: 'none' }}>
+                              <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
+                              <span style={{ fontSize: 14, fontWeight: 600, color: form.return_time ? 'var(--txt)' : 'var(--txt3)' }}>
+                                {form.return_time || 'בחר שעה'}
+                              </span>
+                            </div>
+                            <input type="time" value={form.return_time} onChange={e => setField('return_time', e.target.value)}
+                              style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                          </div>
                         </div>
                       </div>
                     </div>

@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { createClient } from '@supabase/supabase-js'
 import { createClient as createServerClient } from '@/lib/supabase/server'
+import { buildRideStatus } from '@/lib/waMessages'
 
 const VALID_STATUSES = ['en_route', 'arrived', 'onboard', 'done'] as const
 type RideStatus = typeof VALID_STATUSES[number]
@@ -45,7 +46,7 @@ export async function PATCH(request: NextRequest) {
     // Verify this booking belongs to this driver
     const { data: booking, error: bookingError } = await adminSupabase
       .from('bookings')
-      .select('id, driver_id, status, customer_phone, tracking_token, pickup_city, pickup_street, pickup_house_number, travel_date, travel_time')
+      .select('id, driver_id, status, customer_phone, tracking_token, pickup_city, pickup_street, pickup_house_number, travel_date, travel_time, locale')
       .eq('id', booking_id)
       .eq('driver_id', driver.id)
       .eq('status', 'claimed')
@@ -70,18 +71,13 @@ export async function PATCH(request: NextRequest) {
 
     // Send WhatsApp notification at key stages
     const waUrl = process.env.WHATSAPP_SERVICE_URL
-    if (waUrl && booking.customer_phone) {
+    if (waUrl && booking.customer_phone && ['en_route', 'arrived', 'done'].includes(ride_status)) {
       const trackUrl = `https://sababataxi.vercel.app/track/${booking.tracking_token}`
-      let waMsg: string | null = null
-
-      if (ride_status === 'en_route') {
-        waMsg = `🚗 הנהג שלך בדרך!\n\nעקוב בזמן אמת:\n${trackUrl}\n\n*מוניות סבבה*`
-      } else if (ride_status === 'arrived') {
-        waMsg = `📍 הנהג הגיע לכתובת האיסוף!\n\nעקוב בזמן אמת:\n${trackUrl}\n\n*מוניות סבבה*`
-      } else if (ride_status === 'done') {
-        waMsg = `🙏 תודה רבה שנסעתם עם מוניות סבבה!\n\nנשמח לשמוע על חווית הנסיעה שלך — לוקח רק שניות:\n${trackUrl}\n\n*מוניות סבבה*`
-      }
-
+      const waMsg = buildRideStatus({
+        locale: booking.locale,
+        ride_status: ride_status as 'en_route' | 'arrived' | 'done',
+        tracking_url: trackUrl,
+      })
       if (waMsg) {
         fetch(`${waUrl}/send`, {
           method: 'POST',

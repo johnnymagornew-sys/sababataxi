@@ -5,6 +5,7 @@ import { TIER_PRICES } from '@/lib/tierPrices'
 import { getIntercityPrice } from '@/lib/intercityPrices'
 import { sendBookingConfirmation } from '@/lib/email'
 import { validateBookingInput, sanitizeString } from '@/lib/validate'
+import { buildBookingConfirmation } from '@/lib/waMessages'
 
 export async function POST(request: NextRequest) {
   try {
@@ -37,6 +38,7 @@ export async function POST(request: NextRequest) {
     const return_time = sanitizeString(body.return_time, 5)
     const payment_method = body.payment_method === 'bit' ? 'bit' : 'cash'
     const extras = body.extras && typeof body.extras === 'object' ? body.extras : {}
+    const locale = ['he', 'en', 'ru', 'ar'].includes(body.locale) ? body.locale : 'he'
 
     // Build return address display string
     const return_address = return_city
@@ -104,6 +106,7 @@ export async function POST(request: NextRequest) {
         special_requests: special_requests || null,
         payment_method: payment_method ?? 'cash',
         price,
+        locale,
         status: 'pending',
       })
       .select('id, tracking_token')
@@ -168,22 +171,19 @@ export async function POST(request: NextRequest) {
     const waUrl = process.env.WHATSAPP_SERVICE_URL
     if (waUrl) {
       try {
-        const dateStr = new Date(travel_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' })
-        const payLabel = (payment_method ?? 'cash') === 'bit' ? 'ביט' : 'מזומן'
-        const trackingLink = data.tracking_token
-          ? `\n\n🔍 מעקב נסיעה בזמן אמת:\nhttps://sababataxi.vercel.app/track/${data.tracking_token}`
-          : ''
-        const waMsg =
-          `✅ ההזמנה שלך התקבלה!\n\n` +
-          `📍 כתובת: ${[pickup_street, pickup_house_number, pickup_city].filter(Boolean).join(' ')}\n` +
-          `📅 תאריך: ${dateStr} בשעה ${travel_time.slice(0, 5)}\n` +
-          `👥 נוסעים: ${passengers ?? 1}\n` +
-          `💰 מחיר: ₪${price}\n` +
-          `💳 תשלום: ${payLabel} לנהג\n` +
-          (return_trip ? `✈️ כולל חזרה מהשדה\n` : '') +
-          trackingLink +
-          `\n\nנהג יאשר איתך בקרוב 🚕\n` +
-          `*מוניות סבבה*`
+        const waMsg = buildBookingConfirmation({
+          locale,
+          pickup_street,
+          pickup_house_number,
+          pickup_city,
+          travel_date,
+          travel_time,
+          passengers: passengers ?? 1,
+          price,
+          payment_method: payment_method ?? 'cash',
+          return_trip: return_trip ?? false,
+          tracking_token: data.tracking_token,
+        })
         await fetch(`${waUrl}/send`, {
           method: 'POST',
           headers: { 'Content-Type': 'application/json' },

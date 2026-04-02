@@ -4,6 +4,7 @@ import { createClient as createAdminClient } from '@supabase/supabase-js'
 import { cookies } from 'next/headers'
 import { sendBookingApproved } from '@/lib/email'
 import { sendWhatsApp } from '@/lib/whatsapp'
+import { buildBookingApproved } from '@/lib/waMessages'
 
 export async function POST(request: NextRequest) {
   const cookieStore = await cookies()
@@ -35,7 +36,7 @@ export async function POST(request: NextRequest) {
   if (status === 'approved') {
     const { data: booking } = await adminSupabase
       .from('bookings')
-      .select('customer_name, customer_email, customer_phone, travel_date, travel_time, pickup_city')
+      .select('customer_name, customer_email, customer_phone, travel_date, travel_time, pickup_city, locale')
       .eq('id', bookingId)
       .single()
 
@@ -54,15 +55,12 @@ export async function POST(request: NextRequest) {
       }
     }
     if (booking?.customer_phone) {
-      const time = booking.travel_time?.slice(0, 5) ?? ''
-      const dateStr = new Date(booking.travel_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'numeric', year: 'numeric' })
-      await sendWhatsApp(booking.customer_phone,
-        `✅ הזמנתך אושרה!\n\n` +
-        `הנסיעה שלך מ-${booking.pickup_city} לנמל תעופה בן גוריון\n` +
-        `📅 ${dateStr} בשעה ${time}\n\n` +
-        `אנו מחפשים עבורך נהג — נעדכן אותך ברגע שנהג ישוריין 🚕\n` +
-        `*מוניות סבבה*`
-      )
+      await sendWhatsApp(booking.customer_phone, buildBookingApproved({
+        locale: booking.locale,
+        pickup_city: booking.pickup_city,
+        travel_date: booking.travel_date,
+        travel_time: booking.travel_time,
+      }))
     }
   }
 

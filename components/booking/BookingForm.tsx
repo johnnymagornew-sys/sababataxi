@@ -10,7 +10,7 @@ import { calculatePrice, getTimeSurcharges } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
 import { INTERCITY_PRICES, getIntercityPrice, getIntercityTierIndex, INTERCITY_VEHICLE_TIERS } from '@/lib/intercityPrices'
 import type { BookingExtras } from '@/types/database'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
 
 // ─── City normalisation ───────────────────────────────────────────
 const CITY_NAME_MAP: Record<string, string> = {
@@ -102,6 +102,7 @@ export default function BookingForm() {
   const t = useTranslations('booking')
   const tCommon = useTranslations('common')
   const tV = useTranslations('vehicles')
+  const locale = useLocale()
   const STEPS = [
     { label: t('steps.details'), icon: '👤' },
     { label: t('steps.trip'), icon: '✈️' },
@@ -348,6 +349,7 @@ export default function BookingForm() {
           price: (price?.total ?? 0) + (returnPrice?.total ?? 0),
           price_outbound: price?.total ?? 0,
           price_return: returnPrice?.total ?? 0,
+          locale,
         }),
       })
       const data = await res.json()

@@ -30,7 +30,7 @@ const IATA_TO_ICAO: Record<string, string> = {
   AY: 'FIN', SK: 'SAS', IB: 'IBE', LO: 'LOT', OK: 'CSA', AZ: 'ITY',
   PS: 'AUI', JU: 'ASL', RO: 'ROT', A3: 'AEE', OA: 'OAL', FB: 'LZB',
   // Asian / African
-  AI: 'AIC', UL: 'ALK', ET: 'ETH', KQ: 'KQA', WB: 'RWD',
+  AI: 'AIC', UL: 'ALK', KQ: 'KQA', WB: 'RWD',
   // Charter / leisure
   XQ: 'SXS', HH: 'HHN',
 }

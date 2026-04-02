@@ -375,6 +375,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   isSubscribed={isSubActive}
                   claiming={false}
                   showStatus
+                  hideActions
                 />
               ))
             )}
@@ -387,7 +388,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
 // ─── RideCard ─────────────────────────────────────────────────────
 
-function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus, timeConflict, onUpdateRideStatus, updatingRideStatus }: {
+function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus, timeConflict, onUpdateRideStatus, updatingRideStatus, hideActions }: {
   ride: Booking
   driverId: string
   driverCredits: number
@@ -399,6 +400,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
   timeConflict?: boolean
   onUpdateRideStatus?: (next: RideStatus) => void
   updatingRideStatus?: boolean
+  hideActions?: boolean
 }) {
   const commission = getCommission(ride.price)
   const canClaim = isSubscribed && driverCredits >= commission && ride.status === 'approved' && !timeConflict
@@ -468,7 +470,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
             <div style={{ fontSize: 13, color: 'var(--txt2)' }}>{ride.customer_email}</div>
           )}
           {/* Action buttons */}
-          <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10 }}>
+          {!hideActions && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10 }}>
             <a
               href={`tel:${ride.customer_phone.replace(/\s/g, '')}`}
               style={{
@@ -509,7 +511,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
               <span style={{ fontSize: 22 }}>🗺️</span>
               וויז
             </a>
-          </div>
+          </div>}
         </div>
       )}
 

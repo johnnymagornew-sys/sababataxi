@@ -561,30 +561,9 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
         </div>
       )}
 
-      {/* Flight number — from airport trips */}
+      {/* Flight number + live status — from airport trips */}
       {isClaimed && ride.pickup_city === 'נמל תעופה בן גוריון' && ride.return_flight_number && (
-        <div style={{
-          display: 'flex', alignItems: 'center', gap: 10,
-          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
-          borderRadius: 10, padding: '10px 14px', marginBottom: 12,
-        }}>
-          <span style={{ fontSize: 20 }}>✈️</span>
-          <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--txt)', letterSpacing: 1 }}>
-            {ride.return_flight_number}
-          </span>
-          <a
-            href={`https://www.flightradar24.com/${ride.return_flight_number.replace(/\s/g, '')}`}
-            target="_blank" rel="noopener noreferrer"
-            style={{
-              marginRight: 'auto', background: 'rgba(59,130,246,0.15)',
-              color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)',
-              borderRadius: 7, padding: '5px 12px',
-              fontSize: 13, fontWeight: 600, textDecoration: 'none',
-            }}
-          >
-            מעקב טיסה →
-          </a>
-        </div>
+        <FlightStatusBox flightNumber={ride.return_flight_number} />
       )}
 
       {/* Return trip */}
@@ -798,6 +777,100 @@ function StatusBadge({ label, color }: { label: string; color: string }) {
     }}>
       {label}
     </span>
+  )
+}
+
+// ─── FlightStatusBox ──────────────────────────────────────────────
+
+interface FlightData {
+  flight: string
+  status: string
+  arr_time: string | null
+  arr_actual: string | null
+  arr_estimated: string | null
+  delayed: number | null
+}
+
+function formatUtcToLocal(utc: string | null): string {
+  if (!utc) return ''
+  try {
+    return new Date(utc).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', timeZone: 'Asia/Jerusalem' })
+  } catch { return '' }
+}
+
+function FlightStatusBox({ flightNumber }: { flightNumber: string }) {
+  const [data, setData] = useState<FlightData | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [error, setError] = useState(false)
+
+  useEffect(() => {
+    fetch(`/api/flight-status?flight=${encodeURIComponent(flightNumber)}`)
+      .then(r => r.ok ? r.json() : Promise.reject())
+      .then(d => { setData(d); setLoading(false) })
+      .catch(() => { setError(true); setLoading(false) })
+  }, [flightNumber])
+
+  const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
+    scheduled:  { label: 'מתוזמן',  color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+    'en-route': { label: 'בדרך',    color: '#60a5fa', bg: 'rgba(59,130,246,0.1)'  },
+    landed:     { label: 'נחתה ✅', color: '#34d399', bg: 'rgba(52,211,153,0.1)'  },
+    cancelled:  { label: 'בוטל ❌', color: '#f87171', bg: 'rgba(248,113,113,0.1)' },
+    diverted:   { label: 'הוסט',    color: '#fb923c', bg: 'rgba(251,146,60,0.1)'  },
+    unknown:    { label: 'לא ידוע', color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
+  }
+
+  const cfg = data ? (statusConfig[data.status] ?? statusConfig.unknown) : null
+  const arrTime = data ? (data.arr_actual ?? data.arr_estimated ?? data.arr_time) : null
+  const isDelayed = data?.delayed && data.delayed > 5
+
+  return (
+    <div style={{
+      background: cfg?.bg ?? 'rgba(59,130,246,0.08)',
+      border: `1px solid ${cfg ? cfg.color + '44' : 'rgba(59,130,246,0.25)'}`,
+      borderRadius: 10, padding: '12px 14px', marginBottom: 12,
+    }}>
+      <div style={{ display: 'flex', alignItems: 'center', gap: 8, marginBottom: loading || error ? 0 : 8 }}>
+        <span style={{ fontSize: 18 }}>✈️</span>
+        <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--txt)', letterSpacing: 1 }}>
+          {flightNumber}
+        </span>
+        {cfg && (
+          <span style={{
+            marginRight: 'auto', fontSize: 12, fontWeight: 700,
+            color: cfg.color, background: cfg.bg,
+            border: `1px solid ${cfg.color}44`,
+            borderRadius: 20, padding: '2px 10px',
+          }}>
+            {cfg.label}
+          </span>
+        )}
+        {loading && <span style={{ marginRight: 'auto', fontSize: 12, color: 'var(--txt3)' }}>טוען...</span>}
+        {error && <span style={{ marginRight: 'auto', fontSize: 12, color: 'var(--txt3)' }}>לא נמצא מידע</span>}
+      </div>
+
+      {data && !loading && !error && (
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+          {arrTime && (
+            <div>
+              <div style={{ fontSize: 10, color: 'var(--txt3)', marginBottom: 1 }}>
+                {data.arr_actual ? 'נחיתה בפועל' : data.arr_estimated ? 'נחיתה משוערת' : 'נחיתה מתוכננת'}
+              </div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: cfg?.color }}>
+                {formatUtcToLocal(arrTime)}
+              </div>
+            </div>
+          )}
+          {isDelayed && (
+            <div>
+              <div style={{ fontSize: 10, color: 'var(--txt3)', marginBottom: 1 }}>עיכוב</div>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#fb923c' }}>
+                +{data.delayed} דק׳
+              </div>
+            </div>
+          )}
+        </div>
+      )}
+    </div>
   )
 }
 

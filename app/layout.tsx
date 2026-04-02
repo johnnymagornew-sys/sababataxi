@@ -14,9 +14,10 @@ export const metadata: Metadata = {
   metadataBase: new URL('https://sababataxi.vercel.app'),
   title: 'מוניות סבבה – מוניות לנתב״ג ומעיר לעיר',
   description: 'מוניות לנתב״ג ומעיר לעיר במחירים קבועים מראש. ללא פרטי אשראי, תשלום ישירות לנהג. נהגים מקצועיים, הגעה בזמן, שירות אמין ואדיב.',
+  manifest: '/manifest.json',
   icons: {
-    icon: '/sababa_logo.png',
-    apple: '/sababa_logo.png',
+    icon: '/icon-512.png',
+    apple: '/icon-512.png',
   },
   openGraph: {
     title: 'מוניות סבבה – מוניות לנתב״ג ומעיר לעיר',
@@ -36,6 +37,13 @@ export default async function RootLayout({ children }: { children: React.ReactNo
 
   return (
     <html lang={locale} dir={isRtl ? 'rtl' : 'ltr'} className={heebo.className}>
+      <head>
+        <meta name="theme-color" content="#FFD100" />
+        <meta name="mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-capable" content="yes" />
+        <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent" />
+        <meta name="apple-mobile-web-app-title" content="Sababa Taxi" />
+      </head>
       <body>
         <NextIntlClientProvider messages={messages}>
           {children}

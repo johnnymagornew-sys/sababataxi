@@ -618,8 +618,13 @@ export default function BookingForm() {
                       <button
                         type="button"
                         onClick={() => {
-                          setField('airport_direction', form.airport_direction === 'to_airport' ? 'from_airport' : 'to_airport')
+                          const newDir = form.airport_direction === 'to_airport' ? 'from_airport' : 'to_airport'
+                          setField('airport_direction', newDir)
                           setField('flight_number', '')
+                          if (newDir === 'from_airport') {
+                            setReturnAddressDisplay('')
+                            setForm(prev => ({ ...prev, return_trip: false, return_city: '', return_street: '', return_house_number: '' }))
+                          }
                         }}
                         style={{
                           background: 'var(--card2)', border: '1px solid var(--border)',
@@ -745,7 +750,8 @@ export default function BookingForm() {
                   </div>
                 </div>
 
-                {/* Return trip toggle */}
+                {/* Return trip toggle — hidden when booking from airport (already a return trip) */}
+                {form.trip_type !== 'airport' || form.airport_direction !== 'from_airport' ? (
                 <div className="field-enter">
                   <div
                     onClick={() => {
@@ -774,6 +780,7 @@ export default function BookingForm() {
                     </div>
                   </div>
                 </div>
+                ) : null}
 
                 {form.return_trip && (
                   <div style={{ display: 'grid', gap: 14, padding: '4px 0' }}>

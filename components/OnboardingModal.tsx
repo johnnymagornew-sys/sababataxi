@@ -1,13 +1,36 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
+import { useRouter } from 'next/navigation'
+
+const LANGS = [
+  { code: 'he', label: 'עב' },
+  { code: 'en', label: 'EN' },
+  { code: 'ru', label: 'RU' },
+  { code: 'ar', label: 'عر' },
+]
 
 export default function OnboardingModal() {
   const [visible, setVisible] = useState(false)
   const [step, setStep] = useState(0)
   const [sliding, setSliding] = useState(false)
+  const [switching, setSwitching] = useState(false)
   const t = useTranslations('onboarding')
+  const locale = useLocale()
+  const router = useRouter()
+
+  async function switchLang(code: string) {
+    if (code === locale || switching) return
+    setSwitching(true)
+    await fetch('/api/set-locale', {
+      method: 'POST',
+      headers: { 'Content-Type': 'application/json' },
+      body: JSON.stringify({ locale: code }),
+    })
+    router.refresh()
+    setSwitching(false)
+  }
 
   const STEPS = [
     {
@@ -146,15 +169,36 @@ export default function OnboardingModal() {
             }}>
               {s.badge}
             </span>
-            <button
-              onClick={close}
-              style={{
-                background: 'var(--card2)', border: '1px solid var(--border)',
-                borderRadius: '50%', width: 30, height: 30,
-                display: 'flex', alignItems: 'center', justifyContent: 'center',
-                cursor: 'pointer', color: 'var(--txt2)', fontSize: 16, lineHeight: 1,
-              }}
-            >×</button>
+            <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+              {/* Language pills */}
+              <div style={{ display: 'flex', gap: 4 }}>
+                {LANGS.map(l => (
+                  <button
+                    key={l.code}
+                    onClick={() => switchLang(l.code)}
+                    style={{
+                      background: l.code === locale ? s.color : 'var(--card2)',
+                      border: `1px solid ${l.code === locale ? s.color : 'var(--border)'}`,
+                      borderRadius: 6, padding: '3px 8px',
+                      fontSize: 11, fontWeight: 700,
+                      color: l.code === locale ? '#000' : 'var(--txt3)',
+                      cursor: l.code === locale ? 'default' : 'pointer',
+                      transition: 'all 0.18s',
+                      opacity: switching ? 0.5 : 1,
+                    }}
+                  >{l.label}</button>
+                ))}
+              </div>
+              <button
+                onClick={close}
+                style={{
+                  background: 'var(--card2)', border: '1px solid var(--border)',
+                  borderRadius: '50%', width: 30, height: 30,
+                  display: 'flex', alignItems: 'center', justifyContent: 'center',
+                  cursor: 'pointer', color: 'var(--txt2)', fontSize: 16, lineHeight: 1,
+                }}
+              >×</button>
+            </div>
           </div>
 
           {/* Icon area */}

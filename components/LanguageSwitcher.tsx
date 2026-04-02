@@ -12,6 +12,7 @@ const LANGS = [
 
 export default function LanguageSwitcher({ current }: { current: string }) {
   const [open, setOpen] = useState(false)
+  const [btnRect, setBtnRect] = useState<DOMRect | null>(null)
   const router = useRouter()
 
   async function switchLang(locale: string) {
@@ -29,7 +30,7 @@ export default function LanguageSwitcher({ current }: { current: string }) {
   return (
     <div style={{ position: 'relative' }}>
       <button
-        onClick={() => setOpen(o => !o)}
+        onClick={e => { setBtnRect((e.currentTarget as HTMLButtonElement).getBoundingClientRect()); setOpen(o => !o) }}
         style={{
           background: 'var(--card)',
           border: '1px solid var(--border)',
@@ -57,9 +58,9 @@ export default function LanguageSwitcher({ current }: { current: string }) {
           />
           {/* Dropdown */}
           <div style={{
-            position: 'absolute',
-            top: 'calc(100% + 6px)',
-            right: 0,
+            position: 'fixed',
+            top: btnRect ? btnRect.bottom + 6 : 0,
+            right: btnRect ? window.innerWidth - btnRect.right : 0,
             background: 'var(--card)',
             border: '1px solid var(--border)',
             borderRadius: 10,

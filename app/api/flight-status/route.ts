@@ -27,22 +27,51 @@ export async function GET(req: Request) {
   if (!key) return NextResponse.json({ error: 'no api key' }, { status: 500 })
 
   try {
-    const res = await fetch(
+    // Try /schedules first (works for future & recent flights arriving at TLV)
+    const schedRes = await fetch(
+      `https://airlabs.co/api/v9/schedules?flight_iata=${encodeURIComponent(flight)}&arr_iata=TLV&api_key=${key}`,
+      { next: { revalidate: 0 } }
+    )
+    const schedJson = await schedRes.json()
+    const schedFlights: Record<string, string>[] = schedJson.response ?? []
+    // Pick the closest upcoming (or most recent) flight
+    const f = schedFlights.sort((a, b) => {
+      const ta = new Date(a.arr_time_utc ?? a.dep_time_utc ?? '').getTime()
+      const tb = new Date(b.arr_time_utc ?? b.dep_time_utc ?? '').getTime()
+      const now = Date.now()
+      return Math.abs(ta - now) - Math.abs(tb - now)
+    })[0]
+
+    if (f) {
+      const data: FlightStatus = {
+        flight,
+        status: f.status ?? 'scheduled',
+        arr_time: f.arr_time_utc ?? null,
+        arr_actual: f.arr_time_real ?? null,
+        arr_estimated: f.arr_estimated_utc ?? null,
+        delayed: f.delayed ? Number(f.delayed) : null,
+      }
+      cache.set(flight, { data, fetchedAt: Date.now() })
+      return NextResponse.json(data)
+    }
+
+    // Fallback: /flight for currently airborne flights
+    const liveRes = await fetch(
       `https://airlabs.co/api/v9/flight?flight_iata=${encodeURIComponent(flight)}&api_key=${key}`,
       { next: { revalidate: 0 } }
     )
-    const json = await res.json()
-    const f = json.response
+    const liveJson = await liveRes.json()
+    const lf = liveJson.response
 
-    if (!f) return NextResponse.json({ error: 'flight not found' }, { status: 404 })
+    if (!lf) return NextResponse.json({ error: 'flight not found' }, { status: 404 })
 
     const data: FlightStatus = {
       flight,
-      status: f.status ?? 'unknown',
-      arr_time: f.arr_time ?? null,
-      arr_actual: f.arr_actual ?? null,
-      arr_estimated: f.arr_estimated ?? null,
-      delayed: f.delayed ?? null,
+      status: lf.status ?? 'unknown',
+      arr_time: lf.arr_time ?? null,
+      arr_actual: lf.arr_actual ?? null,
+      arr_estimated: lf.arr_estimated ?? null,
+      delayed: lf.delayed ?? null,
     }
 
     cache.set(flight, { data, fetchedAt: Date.now() })

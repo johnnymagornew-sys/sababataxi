@@ -783,7 +783,7 @@ export default function BookingForm() {
                       transition: 'all 0.2s',
                     }}>
                     <span style={{ fontWeight: 600, color: 'var(--txt)', fontSize: 15 }}>
-                      {form.trip_type === 'intercity' ? t('step1.returnTripIntercity') : t('step1.returnTripAirport')}
+                      {t('step1.returnTripAirport')}
                     </span>
                     <div className={`toggle-track ${form.return_trip ? 'on' : ''}`}>
                       <div className="toggle-thumb" />

@@ -106,7 +106,6 @@ export default function PickupMapSelector({
     onClear()
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => search(val), 380)
-    updateDropRect()
   }
 
   function handleSelect(r: NominatimResult) {

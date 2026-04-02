@@ -584,7 +584,7 @@ import { useTranslations as useT } from 'next-intl'
 const SearchField = forwardRef<HTMLInputElement, {
   label: string; labelColor: string; placeholder: string
   query: string; loading: boolean
-  onChange: (v: string) => void; onFocus: () => void; onEnter?: () => void
+  onChange: (v: string) => void; onFocus?: () => void; onEnter?: () => void
 }>(({ label, labelColor, placeholder, query, loading, onChange, onFocus, onEnter }, ref) => {
   const tMap = useT('mapSelector')
   return (

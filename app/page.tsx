@@ -35,61 +35,6 @@ export default function HomePage() {
         </div>
       </header>
 
-      {/* Hero */}
-      <div style={{
-        background: 'linear-gradient(180deg, rgba(255,209,0,0.07) 0%, transparent 100%)',
-        padding: '40px 20px 28px',
-        textAlign: 'center',
-      }}>
-        {/* Badge row */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 18 }}>
-          <span style={{
-            background: 'var(--y-dim)', border: '1px solid rgba(255,209,0,0.25)',
-            borderRadius: 20, padding: '4px 14px', fontSize: 13, color: 'var(--y)', fontWeight: 600,
-          }}>✈️ נתב״ג</span>
-          <span style={{
-            background: 'var(--y-dim)', border: '1px solid rgba(255,209,0,0.25)',
-            borderRadius: 20, padding: '4px 14px', fontSize: 13, color: 'var(--y)', fontWeight: 600,
-          }}>🚗 מעיר לעיר</span>
-        </div>
-
-        <h1 style={{
-          fontSize: 'clamp(26px, 5vw, 40px)',
-          fontWeight: 800,
-          color: 'var(--txt)',
-          margin: '0 0 10px',
-          letterSpacing: '-1px',
-          lineHeight: 1.2,
-        }}>
-          מוניות לנתב״ג ונסיעות בין עירוניות
-        </h1>
-        <p style={{ color: 'var(--txt2)', fontSize: 16, margin: '0 0 20px', lineHeight: 1.6 }}>
-          מחיר קבוע מראש • ללא הפתעות • נהגים מקצועיים ואדיבים
-        </p>
-
-        {/* Feature chips */}
-        <div style={{ display: 'flex', justifyContent: 'center', gap: 8, flexWrap: 'wrap', marginBottom: 4 }}>
-          {[
-            { icon: '💳', text: 'ללא פרטי אשראי', sub: 'תשלום ישירות לנהג' },
-            { icon: '⏱️', text: 'הגעה בזמן', sub: 'ראש שקט ללא דאגות' },
-            { icon: '⭐', text: 'שירות אמין ואדיב', sub: 'נהגים מנוסים' },
-          ].map(({ icon, text, sub }) => (
-            <div key={text} style={{
-              display: 'flex', alignItems: 'center', gap: 10,
-              background: 'rgba(255,255,255,0.07)',
-              border: '1px solid rgba(255,255,255,0.14)',
-              borderRadius: 14, padding: '10px 16px',
-            }}>
-              <span style={{ fontSize: 20 }}>{icon}</span>
-              <div style={{ textAlign: 'right' }}>
-                <div style={{ fontSize: 14, fontWeight: 800, color: '#F2F2F2' }}>{text}</div>
-                <div style={{ fontSize: 12, color: '#A0A0A0', marginTop: 1 }}>{sub}</div>
-              </div>
-            </div>
-          ))}
-        </div>
-      </div>
-
       {/* Booking Form */}
       <div style={{ maxWidth: 780, margin: '0 auto', padding: '0 20px 60px' }}>
         <BookingForm />

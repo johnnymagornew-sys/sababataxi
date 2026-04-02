@@ -31,14 +31,26 @@ function iataToCallsign(flight: string): string | null {
   return icao ? icao + m[2] : null
 }
 
-// OpenSky: fetch flights in Israeli airspace (bounding box ≈ 63 results)
+// LLBG (Ben Gurion airport) coordinates
+const LLBG_LAT = 32.0112
+const LLBG_LON = 34.8866
+
+function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): number {
+  const R = 6371
+  const dLat = (lat2 - lat1) * Math.PI / 180
+  const dLon = (lon2 - lon1) * Math.PI / 180
+  const a = Math.sin(dLat / 2) ** 2 + Math.cos(lat1 * Math.PI / 180) * Math.cos(lat2 * Math.PI / 180) * Math.sin(dLon / 2) ** 2
+  return R * 2 * Math.asin(Math.sqrt(a))
+}
+
+// OpenSky: wider bounding box covers Mediterranean approach corridor to Israel
 async function lookupOpenSky(flight: string): Promise<FlightStatus | null> {
   const callsign = iataToCallsign(flight)
   if (!callsign) return null
 
   try {
     const res = await fetch(
-      'https://opensky-network.org/api/states/all?lamin=28&lomin=28&lamax=36&lomax=42',
+      'https://opensky-network.org/api/states/all?lamin=28&lomin=25&lamax=36&lomax=42',
       { next: { revalidate: 0 } }
     )
     if (!res.ok) return null
@@ -49,13 +61,25 @@ async function lookupOpenSky(flight: string): Promise<FlightStatus | null> {
     const match = states.find(s => typeof s[1] === 'string' && s[1].trim() === callsign)
     if (!match) return null
 
+    const lon      = match[5] as number | null
+    const lat      = match[6] as number | null
     const onGround = match[8] === true
+    const velocity = match[9] as number | null  // m/s
+
+    // Calculate ETA to LLBG from current position + speed
+    let arr_estimated: string | null = null
+    if (!onGround && lat != null && lon != null && velocity && velocity > 10) {
+      const distKm = haversineKm(lat, lon, LLBG_LAT, LLBG_LON)
+      const etaMs = Date.now() + (distKm / (velocity * 3.6)) * 3600 * 1000
+      arr_estimated = new Date(etaMs).toISOString()
+    }
+
     return {
       flight,
       status: onGround ? 'landed' : 'en-route',
       arr_time: null,
-      arr_actual: null,
-      arr_estimated: null,
+      arr_actual: onGround ? new Date().toISOString() : null,
+      arr_estimated,
       delayed: null,
     }
   } catch {

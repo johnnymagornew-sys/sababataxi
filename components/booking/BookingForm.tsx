@@ -604,7 +604,7 @@ export default function BookingForm() {
               </div>
               <div className="card field-enter" style={{ animationDelay: '0.08s' }}>
                 <StepTitle icon="⭐" title="תוספות שירות" />
-                <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(3,1fr)' }}>
+                <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(3,1fr)', overflow: 'hidden' }}>
                   <ExtraIcon
                     icon="📍" label="עצירה נוספת" price="+₪20"
                     note="באותו ישוב · 20₪/3 ק״מ"
@@ -996,19 +996,19 @@ function Stepper({ label, value, min, onChange, icon, sub }: { label: string; va
     <div style={{
       background: value > min ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
       border: `1px solid ${value > min ? 'rgba(255,209,0,0.25)' : 'var(--border)'}`,
-      borderRadius: 12, padding: '12px 10px',
-      transition: 'all 0.2s ease',
+      borderRadius: 12, padding: '10px 8px',
+      transition: 'all 0.2s ease', boxSizing: 'border-box',
     }}>
-      {icon && <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 4, lineHeight: 1 }}>{icon}</div>}
-      <div style={{ fontSize: 11, color: value > min ? 'var(--y)' : 'var(--txt2)', marginBottom: 2, fontWeight: 600, textAlign: 'center' }}>{label}</div>
-      {sub && <div style={{ fontSize: 10, color: 'var(--txt3)', textAlign: 'center', marginBottom: 8 }}>{sub}</div>}
-      {!sub && <div style={{ marginBottom: 8 }} />}
-      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
+      {icon && <div style={{ fontSize: 24, textAlign: 'center', marginBottom: 2, lineHeight: 1 }}>{icon}</div>}
+      <div style={{ fontSize: 11, color: value > min ? 'var(--y)' : 'var(--txt2)', marginBottom: 1, fontWeight: 600, textAlign: 'center', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
+      {sub && <div style={{ fontSize: 9, color: 'var(--txt3)', textAlign: 'center', marginBottom: 6 }}>{sub}</div>}
+      {!sub && <div style={{ marginBottom: 6 }} />}
+      <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 2 }}>
         <button type="button" onClick={() => onChange(-1)} disabled={value <= min}
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, width: 32, height: 32, cursor: value <= min ? 'not-allowed' : 'pointer', color: value <= min ? 'var(--txt3)' : 'var(--txt)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: value <= min ? 0.4 : 1, transition: 'all 0.15s' }}>−</button>
-        <span style={{ fontWeight: 800, fontSize: 20, color: value > min ? 'var(--y)' : 'var(--txt)', minWidth: 24, textAlign: 'center', transition: 'all 0.15s' }}>{value}</span>
+          style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, width: 28, height: 28, cursor: value <= min ? 'not-allowed' : 'pointer', color: value <= min ? 'var(--txt3)' : 'var(--txt)', fontSize: 16, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: value <= min ? 0.4 : 1, transition: 'all 0.15s' }}>−</button>
+        <span style={{ fontWeight: 800, fontSize: 18, color: value > min ? 'var(--y)' : 'var(--txt)', minWidth: 20, textAlign: 'center', transition: 'all 0.15s' }}>{value}</span>
         <button type="button" onClick={() => onChange(1)}
-          style={{ background: 'var(--y)', border: 'none', borderRadius: 6, width: 32, height: 32, cursor: 'pointer', color: '#000', fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>+</button>
+          style={{ background: 'var(--y)', border: 'none', borderRadius: 6, width: 28, height: 28, cursor: 'pointer', color: '#000', fontSize: 16, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>+</button>
       </div>
     </div>
   )
@@ -1019,31 +1019,32 @@ function ExtraIcon({ icon, label, price, note, checked, onChange }: {
 }) {
   return (
     <button type="button" onClick={() => onChange(!checked)} style={{
-      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      display: 'flex', flexDirection: 'column',
       cursor: 'pointer', userSelect: 'none', border: 'none', background: 'transparent', padding: 0,
+      width: '100%',
     }}>
       <div style={{
-        width: '100%', borderRadius: 14, padding: '14px 10px 10px',
-        background: checked ? 'rgba(255,209,0,0.12)' : 'var(--card2)',
+        width: '100%', boxSizing: 'border-box',
+        borderRadius: 12, padding: '10px 6px 8px',
+        background: checked ? 'rgba(255,209,0,0.10)' : 'var(--card2)',
         border: `2px solid ${checked ? 'var(--y)' : 'var(--border)'}`,
-        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 3,
         transition: 'all 0.18s cubic-bezier(.4,0,.2,1)',
-        transform: checked ? 'scale(1.03)' : 'scale(1)',
-        boxShadow: checked ? '0 0 18px rgba(255,209,0,0.18)' : 'none',
-        position: 'relative',
+        boxShadow: checked ? '0 0 14px rgba(255,209,0,0.15)' : 'none',
+        position: 'relative', overflow: 'hidden',
       }}>
         {checked && (
           <div style={{
-            position: 'absolute', top: 6, left: 8, width: 18, height: 18,
+            position: 'absolute', top: 5, left: 5, width: 16, height: 16,
             background: 'var(--y)', borderRadius: '50%',
             display: 'flex', alignItems: 'center', justifyContent: 'center',
-            fontSize: 11, fontWeight: 900, color: '#000',
+            fontSize: 9, fontWeight: 900, color: '#000',
           }}>✓</div>
         )}
-        <div style={{ fontSize: 34, lineHeight: 1, filter: checked ? 'none' : 'grayscale(0.3)', transition: 'filter 0.18s' }}>{icon}</div>
-        <div style={{ fontSize: 12, fontWeight: 700, color: checked ? 'var(--y)' : 'var(--txt)', textAlign: 'center', lineHeight: 1.3, transition: 'color 0.18s' }}>{label}</div>
-        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--y)', marginTop: 2 }}>{price}</div>
-        {note && <div style={{ fontSize: 10, color: 'var(--txt3)', textAlign: 'center', lineHeight: 1.3, marginTop: 2 }}>{note}</div>}
+        <div style={{ fontSize: 28, lineHeight: 1 }}>{icon}</div>
+        <div style={{ fontSize: 11, fontWeight: 700, color: checked ? 'var(--y)' : 'var(--txt)', textAlign: 'center', lineHeight: 1.25, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
+        <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--y)' }}>{price}</div>
+        {note && <div style={{ fontSize: 9, color: 'var(--txt3)', textAlign: 'center', lineHeight: 1.3, width: '100%', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{note}</div>}
       </div>
     </button>
   )

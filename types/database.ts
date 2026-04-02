@@ -23,6 +23,7 @@ export interface Booking {
   pickup_street: string
   pickup_house_number: string
   destination: string
+  trip_type?: 'airport' | 'intercity' | null
   travel_date: string
   travel_time: string
   passengers: number

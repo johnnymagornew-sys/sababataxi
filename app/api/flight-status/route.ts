@@ -116,12 +116,14 @@ export async function GET(req: Request) {
   if (!key) return NextResponse.json({ error: 'no api key' }, { status: 500 })
 
   try {
-    // 1. AirLabs /schedules — works for upcoming & recent flights
-    const schedRes = await fetch(
-      `https://airlabs.co/api/v9/schedules?flight_iata=${encodeURIComponent(flight)}&arr_iata=TLV&api_key=${key}`,
-      { next: { revalidate: 0 } }
-    )
-    const schedJson = await schedRes.json()
+    // Query /flight (live real-time) and /schedules in parallel
+    const [liveRes, schedRes] = await Promise.all([
+      fetch(`https://airlabs.co/api/v9/flight?flight_iata=${encodeURIComponent(flight)}&api_key=${key}`, { next: { revalidate: 0 } }),
+      fetch(`https://airlabs.co/api/v9/schedules?flight_iata=${encodeURIComponent(flight)}&arr_iata=TLV&api_key=${key}`, { next: { revalidate: 0 } }),
+    ])
+    const [liveJson, schedJson] = await Promise.all([liveRes.json(), schedRes.json()])
+
+    const lf = liveJson.response
     const schedFlights: Record<string, string>[] = schedJson.response ?? []
     const sf = schedFlights.sort((a, b) => {
       const ta = new Date(a.arr_time_utc ?? '').getTime()
@@ -130,6 +132,22 @@ export async function GET(req: Request) {
       return Math.abs(ta - now) - Math.abs(tb - now)
     })[0]
 
+    // Prefer /flight (live) — more accurate real-time status and ETA.
+    // Supplement with scheduled time from /schedules if available.
+    if (lf) {
+      const data: FlightStatus = {
+        flight,
+        status: lf.status ?? 'unknown',
+        arr_time: lf.arr_time ?? sf?.arr_time_utc ?? null,
+        arr_actual: lf.arr_actual ?? sf?.arr_time_real ?? null,
+        arr_estimated: lf.arr_estimated ?? sf?.arr_estimated_utc ?? null,
+        delayed: lf.delayed ?? (sf?.delayed ? Number(sf.delayed) : null),
+      }
+      cache.set(flight, { data, fetchedAt: Date.now() })
+      return NextResponse.json(data)
+    }
+
+    // /flight returned nothing — use /schedules (flight not yet airborne or already landed)
     if (sf) {
       const data: FlightStatus = {
         flight,
@@ -143,28 +161,7 @@ export async function GET(req: Request) {
       return NextResponse.json(data)
     }
 
-    // 2. AirLabs /flight — for currently airborne flights
-    const liveRes = await fetch(
-      `https://airlabs.co/api/v9/flight?flight_iata=${encodeURIComponent(flight)}&api_key=${key}`,
-      { next: { revalidate: 0 } }
-    )
-    const liveJson = await liveRes.json()
-    const lf = liveJson.response
-
-    if (lf) {
-      const data: FlightStatus = {
-        flight,
-        status: lf.status ?? 'unknown',
-        arr_time: lf.arr_time ?? null,
-        arr_actual: lf.arr_actual ?? null,
-        arr_estimated: lf.arr_estimated ?? null,
-        delayed: lf.delayed ?? null,
-      }
-      cache.set(flight, { data, fetchedAt: Date.now() })
-      return NextResponse.json(data)
-    }
-
-    // 3. ADS-B fallback via airplanes.live — covers carriers AirLabs doesn't know (e.g. Israir 6H)
+    // ADS-B fallback — covers carriers AirLabs doesn't know (e.g. Israir 6H)
     const osData = await lookupADSB(flight)
     if (osData) {
       cache.set(flight, { data: osData, fetchedAt: Date.now() })

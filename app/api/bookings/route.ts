@@ -106,6 +106,7 @@ export async function POST(request: NextRequest) {
         pickup_street: db_pickup_street,
         pickup_house_number: db_pickup_house_number,
         destination: db_destination,
+        trip_type,
         travel_date,
         travel_time,
         passengers: passengers ?? 1,

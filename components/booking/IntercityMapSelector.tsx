@@ -2,9 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion'
-import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
-
 interface NominatimResult {
   place_id: number
   display_name: string
@@ -12,7 +10,23 @@ interface NominatimResult {
     road?: string; house_number?: string; city?: string; town?: string
     village?: string; suburb?: string; municipality?: string
     county?: string; neighbourhood?: string
+    amenity?: string; tourism?: string; leisure?: string; shop?: string
+    building?: string; mall?: string; historic?: string; office?: string
   }
+}
+
+function normalizeQuery(q: string): string {
+  return q.replace(/[׳״]/g, '')
+}
+
+function addGershayim(q: string): string {
+  return q.split(/\s+/).map(word =>
+    /^[\u05D0-\u05EA]{2,6}$/.test(word) ? word.slice(0, -1) + '״' + word.slice(-1) : word
+  ).join(' ')
+}
+
+function getPoiName(a: NominatimResult['address']): string {
+  return a.amenity || a.tourism || a.leisure || a.shop || a.building || a.mall || a.historic || a.office || ''
 }
 
 export interface ParsedAddress {
@@ -53,11 +67,9 @@ export default function IntercityMapSelector({
   const [query, setQuery] = useState('')
   const [results, setResults] = useState<NominatimResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [dropRect, setDropRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const [hovered, setHovered] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const mouseX = useMotionValue(0)
@@ -82,38 +94,31 @@ export default function IntercityMapSelector({
   }
 
   const search = useCallback(async (q: string) => {
-    if (q.length < 3) { setResults([]); return }
+    if (q.length < 2) { setResults([]); return }
     setLoading(true)
     try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&countrycodes=il&limit=6&accept-language=he`,
-        { headers: { 'Accept-Language': 'he' } }
-      )
-      setResults(await r.json())
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+      const data: NominatimResult[] = await res.json()
+      setResults(Array.isArray(data) ? data : [])
     } catch { setResults([]) }
     finally { setLoading(false) }
   }, [])
-
-  function updateDropRect() {
-    if (inputRef.current) {
-      const r = inputRef.current.getBoundingClientRect()
-      setDropRect({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width })
-    }
-  }
 
   function handleChange(val: string) {
     setQuery(val)
     if (timerRef.current) clearTimeout(timerRef.current)
     timerRef.current = setTimeout(() => search(val), 380)
-    updateDropRect()
   }
 
   function handleSelect(r: NominatimResult) {
     const a = r.address
     const city = a.city || a.town || a.village || a.municipality || a.suburb || a.neighbourhood || a.county || ''
-    const street = a.road || ''
-    const num = a.house_number || query.match(/\b(\d+)\b/)?.[1] || ''
-    const display = [street, num, city].filter(Boolean).join(' ')
+    const poiName = getPoiName(a)
+    const street = poiName || a.road || ''
+    const num = poiName ? '' : (a.house_number || query.match(/\b(\d+)\b/)?.[1] || '')
+    const display = poiName
+      ? [poiName, city].filter(Boolean).join(', ')
+      : [street, num, city].filter(Boolean).join(' ')
     setResults([])
     setQuery('')
 
@@ -128,6 +133,19 @@ export default function IntercityMapSelector({
       setPhase('complete')
     }
   }
+
+  const handleEnter = useCallback(async () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (results.length > 0) { handleSelect(results[0]); return }
+    if (query.length < 2) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
+      const data: NominatimResult[] = await res.json()
+      const arr = Array.isArray(data) ? data : []
+      if (arr.length > 0) handleSelect(arr[0])
+    } catch {} finally { setLoading(false) }
+  }, [query, results]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function openEdit(target: 'pickup' | 'destination') {
     if (target === 'pickup') {
@@ -151,14 +169,12 @@ export default function IntercityMapSelector({
     }
   }
 
-  // Close on outside click — skip if click is inside the portal dropdown
+  // Close on outside click/touch
   useEffect(() => {
     if (phase !== 'pickup' && phase !== 'destination') return
-    function handler(e: MouseEvent) {
+    function handler(e: MouseEvent | TouchEvent) {
       const t = e.target as Node
-      const insideCard = containerRef.current?.contains(t)
-      const insideDropdown = dropdownRef.current?.contains(t)
-      if (!insideCard && !insideDropdown) {
+      if (!containerRef.current?.contains(t)) {
         if (pickup && destination) setPhase('complete')
         else if (pickup) setPhase('destination')
         else setPhase('idle')
@@ -166,7 +182,11 @@ export default function IntercityMapSelector({
       }
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, pickup, destination])
 
@@ -182,14 +202,13 @@ export default function IntercityMapSelector({
     ? [destination.street, destinationHouseNumber || destination.houseNumber, destination.city].filter(Boolean).join(' ')
     : ''
 
-  const dropdown = results.length > 0 && dropRect && isExpanded
-    ? createPortal(
+  const dropdown = results.length > 0 && isExpanded
+    ? (
         <motion.div
-          ref={dropdownRef}
           initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
           style={{
-            position: 'absolute', top: dropRect.top, left: dropRect.left,
-            width: dropRect.width, background: '#1a1a1a',
+            position: 'absolute', top: '100%', left: 0, right: 0,
+            marginTop: 4, background: '#1a1a1a',
             border: '1px solid rgba(255,255,255,0.1)',
             borderRadius: 12, zIndex: 9999,
             boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
@@ -198,15 +217,17 @@ export default function IntercityMapSelector({
           {results.map((r, i) => {
             const a = r.address
             const city = a.city || a.town || a.village || a.municipality || ''
+            const poiName = getPoiName(a)
             const street = a.road || ''
             const house = a.house_number || ''
-            const line1 = [street, house].filter(Boolean).join(' ') || city
-            const line2 = line1 !== city ? city : ''
+            const line1 = poiName || [street, house].filter(Boolean).join(' ') || city
+            const line2 = poiName ? [street, city].filter(Boolean).join(', ') : (line1 !== city ? city : '')
             return (
               <motion.div key={r.place_id}
                 initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onMouseDown={e => { e.preventDefault(); handleSelect(r) }}
+                onTouchStart={e => { e.preventDefault(); handleSelect(r) }}
                 style={{ padding: '11px 16px', cursor: 'pointer', borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none', display: 'flex', gap: 10, alignItems: 'center' }}
                 whileHover={{ background: 'rgba(255,255,255,0.04)' }}
               >
@@ -220,13 +241,13 @@ export default function IntercityMapSelector({
               </motion.div>
             )
           })}
-        </motion.div>,
-        document.body
+        </motion.div>
       )
     : null
 
   return (
     <div>
+      <div style={{ position: 'relative' }}>
       <div ref={containerRef} style={{ perspective: '1000px' }}
         onMouseMove={onMouseMove}
         onMouseEnter={() => setHovered(true)}
@@ -376,7 +397,7 @@ export default function IntercityMapSelector({
                     query={query}
                     loading={loading}
                     onChange={handleChange}
-                    onFocus={updateDropRect}
+                    onEnter={handleEnter}
                   />
                 ) : null}
 
@@ -402,7 +423,7 @@ export default function IntercityMapSelector({
                     query={query}
                     loading={loading}
                     onChange={handleChange}
-                    onFocus={updateDropRect}
+                    onEnter={handleEnter}
                   />
                 )}
 
@@ -527,8 +548,8 @@ export default function IntercityMapSelector({
             transition={{ duration: 0.25 }} />
         </motion.div>
       </div>
-
       {dropdown}
+      </div>
 
       {/* House number fields */}
       <AnimatePresence>
@@ -563,8 +584,8 @@ import { useTranslations as useT } from 'next-intl'
 const SearchField = forwardRef<HTMLInputElement, {
   label: string; labelColor: string; placeholder: string
   query: string; loading: boolean
-  onChange: (v: string) => void; onFocus: () => void
-}>(({ label, labelColor, placeholder, query, loading, onChange, onFocus }, ref) => {
+  onChange: (v: string) => void; onFocus: () => void; onEnter?: () => void
+}>(({ label, labelColor, placeholder, query, loading, onChange, onFocus, onEnter }, ref) => {
   const tMap = useT('mapSelector')
   return (
     <div>
@@ -579,6 +600,7 @@ const SearchField = forwardRef<HTMLInputElement, {
           value={query}
           onChange={e => onChange(e.target.value)}
           onFocus={onFocus}
+          onKeyDown={e => { if (e.key === 'Enter' && onEnter) { e.preventDefault(); onEnter() } }}
           autoComplete="off"
           style={{
             width: '100%', boxSizing: 'border-box',

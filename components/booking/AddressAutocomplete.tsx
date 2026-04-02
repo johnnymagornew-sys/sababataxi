@@ -1,8 +1,6 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
-import { createPortal } from 'react-dom'
-
 interface NominatimResult {
   place_id: number
   display_name: string
@@ -16,7 +14,31 @@ interface NominatimResult {
     municipality?: string
     county?: string
     neighbourhood?: string
+    amenity?: string
+    tourism?: string
+    leisure?: string
+    shop?: string
+    building?: string
+    mall?: string
+    historic?: string
+    office?: string
   }
+}
+
+// Strip Hebrew geresh (׳) and gershayim (״) so "תרמב" matches "תרמ״ב"
+function normalizeQuery(q: string): string {
+  return q.replace(/[׳״]/g, '')
+}
+
+// Insert ״ before last letter of short Hebrew words so "תשח" matches "תש״ח"
+function addGershayim(q: string): string {
+  return q.split(/\s+/).map(word =>
+    /^[\u05D0-\u05EA]{2,6}$/.test(word) ? word.slice(0, -1) + '״' + word.slice(-1) : word
+  ).join(' ')
+}
+
+function getPoiName(a: NominatimResult['address']): string {
+  return a.amenity || a.tourism || a.leisure || a.shop || a.building || a.mall || a.historic || a.office || ''
 }
 
 export interface ParsedAddress {
@@ -37,56 +59,57 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
   const [results, setResults] = useState<NominatimResult[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const [dropdownRect, setDropdownRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selectedRef = useRef(false)
 
-  // Close on outside click
+  // Close on outside click/touch
   useEffect(() => {
-    function handler(e: MouseEvent) {
+    function handler(e: MouseEvent | TouchEvent) {
       if (containerRef.current && !containerRef.current.contains(e.target as Node)) {
         setOpen(false)
       }
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
   }, [])
 
   // Sync external value (form reset)
   useEffect(() => { setQuery(value) }, [value])
 
-  // Recalculate dropdown position when opened
-  useEffect(() => {
-    if (open && inputRef.current) {
-      const rect = inputRef.current.getBoundingClientRect()
-      setDropdownRect({
-        top: rect.bottom + window.scrollY + 4,
-        left: rect.left + window.scrollX,
-        width: rect.width,
-      })
-    }
-  }, [open])
-
   const search = useCallback(async (q: string) => {
-    if (q.length < 3) { setResults([]); setOpen(false); return }
+    if (q.length < 2) { setResults([]); setOpen(false); return }
     setLoading(true)
     try {
-      const res = await fetch(
-        `https://nominatim.openstreetmap.org/search?` +
-        `q=${encodeURIComponent(q)}&format=json&addressdetails=1&countrycodes=il&limit=6&accept-language=he`,
-        { headers: { 'Accept-Language': 'he' } }
-      )
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
       const data: NominatimResult[] = await res.json()
-      setResults(data)
-      if (data.length > 0) setOpen(true)
+      const arr = Array.isArray(data) ? data : []
+      setResults(arr)
+      if (arr.length > 0) setOpen(true)
     } catch {
       setResults([])
     } finally {
       setLoading(false)
     }
   }, [])
+
+  const handleEnter = useCallback(async () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (results.length > 0) { handleSelect(results[0]); return }
+    if (query.length < 2) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
+      const data: NominatimResult[] = await res.json()
+      const arr = Array.isArray(data) ? data : []
+      if (arr.length > 0) handleSelect(arr[0])
+    } catch {} finally { setLoading(false) }
+  }, [query, results]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function handleChange(val: string) {
     setQuery(val)
@@ -100,23 +123,26 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
     const addr = r.address
     const city = addr.city || addr.town || addr.village || addr.municipality ||
       addr.suburb || addr.neighbourhood || addr.county || ''
-    const street = addr.road || ''
+    const poiName = getPoiName(addr)
+    const street = poiName || addr.road || ''
     const numberFromQuery = query.match(/\b(\d+)\b/)?.[1] || ''
-    const houseNumber = addr.house_number || numberFromQuery
-    const display = [street, houseNumber, city].filter(Boolean).join(' ')
+    const houseNumber = poiName ? '' : (addr.house_number || numberFromQuery)
+    const display = poiName
+      ? [poiName, city].filter(Boolean).join(', ')
+      : [street, houseNumber, city].filter(Boolean).join(' ')
     setQuery(display)
     setOpen(false)
     selectedRef.current = true
     onSelect({ city, street, houseNumber, displayName: display })
   }
 
-  const dropdown = open && results.length > 0 && dropdownRect ? createPortal(
+  const dropdown = open && results.length > 0 ? (
     <div
       style={{
         position: 'absolute',
-        top: dropdownRect.top,
-        left: dropdownRect.left,
-        width: dropdownRect.width,
+        top: '100%',
+        left: 0,
+        right: 0,
         background: 'var(--card2)',
         border: '1px solid var(--border)',
         borderRadius: 10,
@@ -124,19 +150,22 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
         boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
         maxHeight: 280,
         overflowY: 'auto',
+        marginTop: 4,
       }}
     >
       {results.map(r => {
         const addr = r.address
         const city = addr.city || addr.town || addr.village || addr.municipality || ''
+        const poiName = getPoiName(addr)
         const street = addr.road || ''
         const house = addr.house_number || ''
-        const line1 = [street, house].filter(Boolean).join(' ') || city
-        const line2 = line1 !== city ? city : ''
+        const line1 = poiName || [street, house].filter(Boolean).join(' ') || city
+        const line2 = poiName ? [street, city].filter(Boolean).join(', ') : (line1 !== city ? city : '')
         return (
           <div
             key={r.place_id}
             onMouseDown={e => { e.preventDefault(); handleSelect(r) }}
+            onTouchStart={e => { e.preventDefault(); handleSelect(r) }}
             style={{
               padding: '12px 16px', cursor: 'pointer',
               borderBottom: '1px solid var(--border)',
@@ -149,8 +178,7 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
           </div>
         )
       })}
-    </div>,
-    document.body
+    </div>
   ) : null
 
   return (
@@ -164,6 +192,7 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
         onFocus={() => {
           if (results.length > 0 && !selectedRef.current) setOpen(true)
         }}
+        onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleEnter() } }}
         autoComplete="off"
       />
       {loading && (

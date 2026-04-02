@@ -8,6 +8,10 @@ import Image from 'next/image'
 import Link from 'next/link'
 import { useTranslations, useLocale } from 'next-intl'
 import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { CITIES } from '@/lib/cities'
+
+// Sorted by length desc so "קריית מוצקין" matches before "קריית"
+const CITIES_BY_LEN = [...CITIES].sort((a, b) => b.length - a.length)
 
 type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done' | null
 
@@ -451,10 +455,25 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
 
   const isClaimed = !!showStatus // after claiming → show full details
   const isFromAirport = ride.pickup_city === 'נמל תעופה בן גוריון'
-  // For from-airport trips, extract destination city (last word of destination address)
-  const destCity = isFromAirport
-    ? (ride.destination ?? '').trim().split(/\s+/).pop() ?? ''
-    : ''
+  // For new rides: use stored trip_type. For old rides (trip_type=null): fall back to destination check
+  const tripType = ride.trip_type ?? (ride.destination === 'נמל תעופה בן גוריון' ? 'airport' : 'intercity')
+  const isToAirport = tripType === 'airport' && !isFromAirport
+  const isIntercity = tripType === 'intercity'
+
+  // Extract city from address string — first tries known city list, then regex
+  function extractCity(addr: string): string {
+    const s = (addr ?? '').trim()
+    for (const city of CITIES_BY_LEN) {
+      if (s.includes(city)) return city
+    }
+    const afterNum = s.match(/\d+\s+(.+)$/)
+    if (afterNum) return afterNum[1].split(',')[0].trim()
+    const afterComma = s.match(/,\s*(.+)$/)
+    if (afterComma) return afterComma[1].trim()
+    return s.split(/\s+/).pop() ?? s
+  }
+
+  const destCity = isFromAirport || isIntercity ? extractCity(ride.destination ?? '') : ''
 
   return (
     <div style={{
@@ -470,12 +489,14 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--txt)' }}>
             {isFromAirport
               ? <>{t('benGurion')} → {destCity}</>
-              : <>{ride.pickup_city} ← {t('benGurion')}</>
+              : isIntercity
+                ? <>{ride.pickup_city} → {destCity}</>
+                : <>{ride.pickup_city} ← {t('benGurion')}</>
             }
           </div>
           {isClaimed ? (
             <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 2 }}>
-              {isFromAirport ? ride.destination : `${ride.pickup_street} ${ride.pickup_house_number}`}
+              {isFromAirport || isIntercity ? ride.destination : `${ride.pickup_street} ${ride.pickup_house_number}`}
             </div>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--txt2)', marginTop: 4, opacity: 0.5 }}>
@@ -484,7 +505,15 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           )}
         </div>
         <div style={{ textAlign: 'left' }}>
-          <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--y)' }}>₪{ride.price}</div>
+          <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
+            {ride.payment_method === 'bit' && (
+              <span style={{ background: '#FF6B00', color: '#fff', fontWeight: 800, fontSize: 11, borderRadius: 6, padding: '2px 6px', letterSpacing: 0.5 }}>bit</span>
+            )}
+            <span style={{ fontWeight: 800, fontSize: 20, color: 'var(--y)' }}>₪{ride.price}</span>
+            {ride.payment_method === 'bit' && (
+              <span style={{ fontSize: 12, fontWeight: 600, color: '#fb923c' }}>+10 ₪</span>
+            )}
+          </div>
           {isClaimed && (
             <StatusBadge
               label={statusLabels[ride.status] ?? ride.status}
@@ -858,7 +887,8 @@ function FlightStatusBox({ flightNumber }: { flightNumber: string }) {
   }
 
   const cfg = data ? (statusConfig[data.status] ?? statusConfig.unknown) : null
-  const arrTime = data ? (data.arr_actual ?? data.arr_estimated ?? data.arr_time) : null
+  // Only show real times from AirLabs. arr_estimated without arr_time = rough ADS-B calculation, don't show it.
+  const arrTime = data ? (data.arr_actual ?? (data.arr_time ? (data.arr_estimated ?? data.arr_time) : null)) : null
   const isDelayed = data?.delayed && data.delayed > 5
 
   return (
@@ -891,7 +921,7 @@ function FlightStatusBox({ flightNumber }: { flightNumber: string }) {
           {arrTime && (
             <div>
               <div style={{ fontSize: 10, color: 'var(--txt3)', marginBottom: 1 }}>
-                {data.arr_actual ? 'נחיתה בפועל' : data.arr_estimated ? 'נחיתה משוערת' : 'נחיתה מתוכננת'}
+                {data.arr_actual ? 'זמן נחיתה סופי' : data.arr_estimated ? 'נחיתה משוערת' : 'נחיתה מתוכננת'}
               </div>
               <div style={{ fontSize: 18, fontWeight: 800, color: cfg?.color }}>
                 {formatUtcToLocal(arrTime)}

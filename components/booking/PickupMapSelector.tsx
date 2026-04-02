@@ -2,9 +2,7 @@
 
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion'
-import { createPortal } from 'react-dom'
 import { useTranslations } from 'next-intl'
-
 interface NominatimResult {
   place_id: number
   display_name: string
@@ -12,7 +10,23 @@ interface NominatimResult {
     road?: string; house_number?: string; city?: string; town?: string
     village?: string; suburb?: string; municipality?: string
     county?: string; neighbourhood?: string
+    amenity?: string; tourism?: string; leisure?: string; shop?: string
+    building?: string; mall?: string; historic?: string; office?: string
   }
+}
+
+function normalizeQuery(q: string): string {
+  return q.replace(/[׳״]/g, '')
+}
+
+function addGershayim(q: string): string {
+  return q.split(/\s+/).map(word =>
+    /^[\u05D0-\u05EA]{2,6}$/.test(word) ? word.slice(0, -1) + '״' + word.slice(-1) : word
+  ).join(' ')
+}
+
+function getPoiName(a: NominatimResult['address']): string {
+  return a.amenity || a.tourism || a.leisure || a.shop || a.building || a.mall || a.historic || a.office || ''
 }
 
 export interface ParsedAddress {
@@ -50,11 +64,9 @@ export default function PickupMapSelector({
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<NominatimResult[]>([])
   const [loading, setLoading] = useState(false)
-  const [dropRect, setDropRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const [hovered, setHovered] = useState(false)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const dropdownRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
 
   const mouseX = useMotionValue(0)
@@ -79,24 +91,15 @@ export default function PickupMapSelector({
   }
 
   const search = useCallback(async (q: string) => {
-    if (q.length < 3) { setResults([]); return }
+    if (q.length < 2) { setResults([]); return }
     setLoading(true)
     try {
-      const r = await fetch(
-        `https://nominatim.openstreetmap.org/search?q=${encodeURIComponent(q)}&format=json&addressdetails=1&countrycodes=il&limit=6&accept-language=he`,
-        { headers: { 'Accept-Language': 'he' } }
-      )
-      setResults(await r.json())
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
+      const data: NominatimResult[] = await res.json()
+      setResults(Array.isArray(data) ? data : [])
     } catch { setResults([]) }
     finally { setLoading(false) }
   }, [])
-
-  function updateDropRect() {
-    if (inputRef.current) {
-      const r = inputRef.current.getBoundingClientRect()
-      setDropRect({ top: r.bottom + window.scrollY + 4, left: r.left + window.scrollX, width: r.width })
-    }
-  }
 
   function handleChange(val: string) {
     setQuery(val)
@@ -109,14 +112,30 @@ export default function PickupMapSelector({
   function handleSelect(r: NominatimResult) {
     const a = r.address
     const city = a.city || a.town || a.village || a.municipality || a.suburb || a.neighbourhood || a.county || ''
-    const street = a.road || ''
-    const num = a.house_number || query.match(/\b(\d+)\b/)?.[1] || ''
-    const display = [street, num, city].filter(Boolean).join(' ')
+    const poiName = getPoiName(a)
+    const street = poiName || a.road || ''
+    const num = poiName ? '' : (a.house_number || query.match(/\b(\d+)\b/)?.[1] || '')
+    const display = poiName
+      ? [poiName, city].filter(Boolean).join(', ')
+      : [street, num, city].filter(Boolean).join(' ')
     setQuery(display)
     setResults([])
     setPhase('selected')
     onSelect({ city, street, houseNumber: num, displayName: display })
   }
+
+  const handleEnter = useCallback(async () => {
+    if (timerRef.current) clearTimeout(timerRef.current)
+    if (results.length > 0) { handleSelect(results[0]); return }
+    if (query.length < 2) return
+    setLoading(true)
+    try {
+      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
+      const data: NominatimResult[] = await res.json()
+      const arr = Array.isArray(data) ? data : []
+      if (arr.length > 0) handleSelect(arr[0])
+    } catch {} finally { setLoading(false) }
+  }, [query, results]) // eslint-disable-line react-hooks/exhaustive-deps
 
   function openSearch() {
     setPhase('searching')
@@ -128,17 +147,19 @@ export default function PickupMapSelector({
     setResults([])
   }
 
-  // Close on outside click — skip if click is inside the portal dropdown
+  // Close on outside click/touch
   useEffect(() => {
     if (phase !== 'searching') return
-    function handler(e: MouseEvent) {
+    function handler(e: MouseEvent | TouchEvent) {
       const t = e.target as Node
-      const insideCard = containerRef.current?.contains(t)
-      const insideDropdown = dropdownRef.current?.contains(t)
-      if (!insideCard && !insideDropdown) closeSearch()
+      if (!containerRef.current?.contains(t)) closeSearch()
     }
     document.addEventListener('mousedown', handler)
-    return () => document.removeEventListener('mousedown', handler)
+    document.addEventListener('touchstart', handler)
+    return () => {
+      document.removeEventListener('mousedown', handler)
+      document.removeEventListener('touchstart', handler)
+    }
   // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [phase, selected])
 
@@ -147,14 +168,13 @@ export default function PickupMapSelector({
     ? [selected.street, selected.houseNumber || houseNumber, selected.city].filter(Boolean).join(' ')
     : ''
 
-  const dropdown = results.length > 0 && dropRect && phase === 'searching'
-    ? createPortal(
+  const dropdown = results.length > 0 && phase === 'searching'
+    ? (
         <motion.div
-          ref={dropdownRef}
           initial={{ opacity: 0, y: -6 }} animate={{ opacity: 1, y: 0 }}
           style={{
-            position: 'absolute', top: dropRect.top, left: dropRect.left,
-            width: dropRect.width, background: '#1a1a1a',
+            position: 'absolute', top: '100%', left: 0, right: 0,
+            marginTop: 4, background: '#1a1a1a',
             border: '1px solid rgba(255,209,0,0.2)',
             borderRadius: 12, zIndex: 9999,
             boxShadow: '0 16px 48px rgba(0,0,0,0.8)',
@@ -163,15 +183,17 @@ export default function PickupMapSelector({
           {results.map((r, i) => {
             const a = r.address
             const city = a.city || a.town || a.village || a.municipality || ''
+            const poiName = getPoiName(a)
             const street = a.road || ''
             const house = a.house_number || ''
-            const line1 = [street, house].filter(Boolean).join(' ') || city
-            const line2 = line1 !== city ? city : ''
+            const line1 = poiName || [street, house].filter(Boolean).join(' ') || city
+            const line2 = poiName ? [street, city].filter(Boolean).join(', ') : (line1 !== city ? city : '')
             return (
               <motion.div key={r.place_id}
                 initial={{ opacity: 0, x: 8 }} animate={{ opacity: 1, x: 0 }}
                 transition={{ delay: i * 0.04 }}
                 onMouseDown={e => { e.preventDefault(); handleSelect(r) }}
+                onTouchStart={e => { e.preventDefault(); handleSelect(r) }}
                 style={{
                   padding: '12px 16px', cursor: 'pointer',
                   borderBottom: i < results.length - 1 ? '1px solid rgba(255,255,255,0.05)' : 'none',
@@ -187,8 +209,7 @@ export default function PickupMapSelector({
               </motion.div>
             )
           })}
-        </motion.div>,
-        document.body
+        </motion.div>
       )
     : null
 
@@ -196,6 +217,7 @@ export default function PickupMapSelector({
     <div>
       <label style={{ display: 'block', marginBottom: 8 }}>{resolvedLabel}</label>
 
+      <div style={{ position: 'relative' }}>
       <div ref={containerRef} style={{ perspective: '1000px' }}
         onMouseMove={onMouseMove}
         onMouseEnter={() => setHovered(true)}
@@ -363,7 +385,7 @@ export default function PickupMapSelector({
                     placeholder={resolvedPlaceholder}
                     value={query}
                     onChange={e => handleChange(e.target.value)}
-                    onFocus={updateDropRect}
+                    onKeyDown={e => { if (e.key === 'Enter') { e.preventDefault(); handleEnter() } }}
                     autoComplete="off"
                     style={{
                       width: '100%', boxSizing: 'border-box',
@@ -464,8 +486,8 @@ export default function PickupMapSelector({
           />
         </motion.div>
       </div>
-
       {dropdown}
+      </div>
 
       {/* House number */}
       <AnimatePresence>

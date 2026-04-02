@@ -760,8 +760,8 @@ export default function BookingForm() {
                   </div>
                 </div>
 
-                {/* Return trip toggle — hidden when booking from airport (already a return trip) */}
-                {form.trip_type !== 'airport' || form.airport_direction !== 'from_airport' ? (
+                {/* Return trip toggle — only for airport to_airport bookings */}
+                {form.trip_type === 'airport' && form.airport_direction !== 'from_airport' ? (
                 <div className="field-enter">
                   <div
                     onClick={() => {

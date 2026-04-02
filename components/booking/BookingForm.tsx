@@ -10,6 +10,7 @@ import { calculatePrice, getTimeSurcharges } from '@/lib/pricing'
 import { getTierIndex, getTierBasePrice, TIER_LABELS, TIER_PRICES } from '@/lib/tierPrices'
 import { INTERCITY_PRICES, getIntercityPrice, getIntercityTierIndex, INTERCITY_VEHICLE_TIERS } from '@/lib/intercityPrices'
 import type { BookingExtras } from '@/types/database'
+import { useTranslations } from 'next-intl'
 
 // ─── City normalisation ───────────────────────────────────────────
 const CITY_NAME_MAP: Record<string, string> = {
@@ -96,15 +97,16 @@ const initialForm: FormData = {
   payment_method: 'cash', special_requests: '', extras: {},
 }
 
-const STEPS = [
-  { label: 'פרטים', icon: '👤' },
-  { label: 'נסיעה', icon: '✈️' },
-  { label: 'נוסעים', icon: '🧳' },
-  { label: 'תשלום', icon: '💳' },
-]
-
 // ─── Component ────────────────────────────────────────────────────
 export default function BookingForm() {
+  const t = useTranslations('booking')
+  const tCommon = useTranslations('common')
+  const STEPS = [
+    { label: t('steps.details'), icon: '👤' },
+    { label: t('steps.trip'), icon: '✈️' },
+    { label: t('steps.passengers'), icon: '🧳' },
+    { label: t('steps.payment'), icon: '💳' },
+  ]
   const [form, setForm] = useState<FormData>(initialForm)
   const [addressDisplay, setAddressDisplay] = useState('')
   const [selectedPickup, setSelectedPickup] = useState<ParsedAddress | null>(null)
@@ -295,17 +297,17 @@ export default function BookingForm() {
 
   function validateStep(): string | null {
     if (step === 0) {
-      if (!form.customer_name.trim()) return 'נא להזין שם מלא'
-      if (!form.customer_phone.trim()) return 'נא להזין טלפון'
-      if (!phoneValid) return 'נא להזין מספר טלפון תקין'
+      if (!form.customer_name.trim()) return t('validation.nameRequired')
+      if (!form.customer_phone.trim()) return t('validation.phoneRequired')
+      if (!phoneValid) return t('validation.phoneInvalid')
     }
     if (step === 1) {
-      if (!form.pickup_city) return 'נא לבחור כתובת מהרשימה'
-      if (form.trip_type === 'intercity' && !form.destination_city) return 'נא לבחור עיר יעד'
-      if (!form.travel_date) return 'נא לבחור תאריך נסיעה'
-      if (!form.travel_time) return 'נא להזין שעת נסיעה'
-      if (form.trip_type === 'airport' && form.airport_direction === 'from_airport' && !form.flight_number.trim()) return 'נא להזין מספר טיסה'
-      if (form.return_trip && form.trip_type === 'airport' && !form.return_flight_number.trim()) return 'נא להזין מספר טיסה לחזרה'
+      if (!form.pickup_city) return t('validation.pickupRequired')
+      if (form.trip_type === 'intercity' && !form.destination_city) return t('validation.destinationRequired')
+      if (!form.travel_date) return t('validation.dateRequired')
+      if (!form.travel_time) return t('validation.timeRequired')
+      if (form.trip_type === 'airport' && form.airport_direction === 'from_airport' && !form.flight_number.trim()) return t('validation.flightRequired')
+      if (form.return_trip && form.trip_type === 'airport' && !form.return_flight_number.trim()) return t('validation.returnFlightRequired')
     }
     return null
   }
@@ -342,10 +344,10 @@ export default function BookingForm() {
         }),
       })
       const data = await res.json()
-      if (!res.ok) throw new Error(data.error || 'שגיאה בשליחה')
+      if (!res.ok) throw new Error(data.error || t('validation.sendError'))
       setSubmitted(true)
     } catch (err: unknown) {
-      setError(err instanceof Error ? err.message : 'שגיאה בשליחה')
+      setError(err instanceof Error ? err.message : t('validation.sendError'))
     } finally {
       setSubmitting(false)
     }
@@ -356,14 +358,14 @@ export default function BookingForm() {
     return (
       <div className="card" style={{ textAlign: 'center', padding: '48px 24px', marginTop: 24 }}>
         <div style={{ fontSize: 64, marginBottom: 16 }}>✅</div>
-        <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 12px', color: 'var(--txt)' }}>ההזמנה התקבלה!</h2>
-        <p style={{ color: 'var(--txt2)', fontSize: 16, margin: '0 0 8px' }}>תאשר איתך בקרוב טלפונית.</p>
+        <h2 style={{ fontSize: 24, fontWeight: 800, margin: '0 0 12px', color: 'var(--txt)' }}>{t('success.title')}</h2>
+        <p style={{ color: 'var(--txt2)', fontSize: 16, margin: '0 0 8px' }}>{t('success.message')}</p>
         {form.customer_email && (
-          <p style={{ color: 'var(--txt2)', fontSize: 14 }}>אישור ישלח ל: {form.customer_email}</p>
+          <p style={{ color: 'var(--txt2)', fontSize: 14 }}>{t('success.emailConfirm', { email: form.customer_email })}</p>
         )}
         <button className="btn-yellow" style={{ margin: '24px auto 0', maxWidth: 200 }}
           onClick={() => { setForm(initialForm); setAddressDisplay(''); setReturnAddressDisplay(''); setStep(0); setSubmitted(false) }}>
-          הזמנה חדשה
+          {t('success.newBooking')}
         </button>
       </div>
     )
@@ -466,7 +468,7 @@ export default function BookingForm() {
                   boxShadow: '0 4px 20px rgba(255,209,0,0.25)',
                 }}>
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{returnPrice?.diffCity ? 'הלוך' : 'מחיר משוער'}</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{returnPrice?.diffCity ? t('step3.outboundLabel') : t('step3.estimatedPrice')}</div>
                   <div style={{ fontSize: returnPrice?.diffCity ? 22 : 26, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
                 </div>
                 <div style={{ textAlign: 'left', fontSize: 11, color: 'rgba(0,0,0,0.6)' }}>
@@ -481,8 +483,8 @@ export default function BookingForm() {
                   )}
                   <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
                   {returnPrice && !returnPrice.diffCity && (
-                    <div style={{ fontSize: 9, color: 'rgba(0,0,0,0.45)', marginTop: 3, lineHeight: 1.3 }}>
-                      *נסיעת חזור +10₪<br/>עקב עמלות שדה תעופה
+                    <div style={{ fontSize: 9, color: 'rgba(0,0,0,0.45)', marginTop: 3, lineHeight: 1.3, whiteSpace: 'pre-line' }}>
+                      {t('step3.returnBarNote')}
                     </div>
                   )}
                 </div>
@@ -496,13 +498,13 @@ export default function BookingForm() {
                   border: '1px solid rgba(255,209,0,0.4)',
                 }}>
                   <div>
-                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--y)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>חזור</div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--y)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{t('step3.returnLabel')}</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--y)', lineHeight: 1 }}>₪{returnPrice.total}</div>
-                    <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>*כולל עמלות שדה תעופה</div>
+                    <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>{t('step3.returnIncludesFee')}</div>
                   </div>
                   <div style={{ textAlign: 'left', fontSize: 10, color: 'var(--txt3)' }}>
                     <div style={{ fontWeight: 600 }}>{form.return_city} ← נתב״ג</div>
-                    <div style={{ fontWeight: 800, color: 'var(--y)', fontSize: 13, marginTop: 4 }}>סה״כ: ₪{price.total + returnPrice.total}</div>
+                    <div style={{ fontWeight: 800, color: 'var(--y)', fontSize: 13, marginTop: 4 }}>{t('step3.totalLabel')} ₪{price.total + returnPrice.total}</div>
                   </div>
                 </div>
               )}
@@ -519,22 +521,22 @@ export default function BookingForm() {
           {/* STEP 0 – Personal ──────────────────────────────── */}
           {step === 0 && (
             <div className="card" style={{ marginBottom: 16 }}>
-              <StepTitle icon="👤" title="פרטים אישיים" />
+              <StepTitle icon="👤" title={t('step0.title')} />
               <div style={{ display: 'grid', gap: 14 }}>
                 <div className="field-enter">
-                  <label>שם מלא *</label>
-                  <input type="text" placeholder="ישראל ישראלי" value={form.customer_name}
+                  <label>{t('step0.nameLabel')}</label>
+                  <input type="text" placeholder={t('step0.namePlaceholder')} value={form.customer_name}
                     onChange={e => setField('customer_name', e.target.value)} />
                 </div>
                 <div className="field-enter">
-                  <label>טלפון *</label>
+                  <label>{t('step0.phoneLabel')}</label>
                   <PhoneInput
                     value={form.customer_phone}
                     onChange={(val, valid) => { setField('customer_phone', val); setPhoneValid(valid) }}
                   />
                 </div>
                 <div className="field-enter">
-                  <label>אימייל (אופציונלי)</label>
+                  <label>{t('step0.emailLabel')}</label>
                   <input type="email" placeholder="your@email.com" value={form.customer_email}
                     onChange={e => setField('customer_email', e.target.value)} dir="ltr" style={{ textAlign: 'right' }} />
                 </div>
@@ -545,26 +547,26 @@ export default function BookingForm() {
           {/* STEP 1 – Trip ──────────────────────────────────── */}
           {step === 1 && (
             <div className="card" style={{ marginBottom: 16, position: 'relative', zIndex: 10 }}>
-              <StepTitle icon={form.trip_type === 'intercity' ? '🚗' : '✈️'} title="פרטי נסיעה" />
+              <StepTitle icon={form.trip_type === 'intercity' ? '🚗' : '✈️'} title={t('step1.title')} />
               <div style={{ display: 'grid', gap: 14 }}>
 
                 {/* Trip type selector */}
                 <div className="field-enter" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
-                  {(['airport', 'intercity'] as const).map(t => (
-                    <button key={t} type="button"
-                      onClick={() => { setField('trip_type', t); if (t === 'airport') { setField('destination_city', ''); setField('destination_street', ''); setField('destination_house_number', ''); setDestinationAddressDisplay('') } }}
+                  {(['airport', 'intercity'] as const).map(tripType => (
+                    <button key={tripType} type="button"
+                      onClick={() => { setField('trip_type', tripType); if (tripType === 'airport') { setField('destination_city', ''); setField('destination_street', ''); setField('destination_house_number', ''); setDestinationAddressDisplay('') } }}
                       style={{
-                        background: form.trip_type === t ? 'var(--y-dim)' : 'var(--card2)',
-                        border: `2px solid ${form.trip_type === t ? 'var(--y)' : 'var(--border)'}`,
+                        background: form.trip_type === tripType ? 'var(--y-dim)' : 'var(--card2)',
+                        border: `2px solid ${form.trip_type === tripType ? 'var(--y)' : 'var(--border)'}`,
                         borderRadius: 12, padding: '12px 8px', cursor: 'pointer', textAlign: 'center',
                         transition: 'all 0.15s',
                       }}>
-                      <div style={{ fontSize: 24, marginBottom: 4 }}>{t === 'airport' ? '✈️' : '🚗'}</div>
-                      <div style={{ fontWeight: 700, color: form.trip_type === t ? 'var(--y)' : 'var(--txt)', fontSize: 14 }}>
-                        {t === 'airport' ? 'לשדה תעופה' : 'בין עירונית'}
+                      <div style={{ fontSize: 24, marginBottom: 4 }}>{tripType === 'airport' ? '✈️' : '🚗'}</div>
+                      <div style={{ fontWeight: 700, color: form.trip_type === tripType ? 'var(--y)' : 'var(--txt)', fontSize: 14 }}>
+                        {tripType === 'airport' ? t('step1.tripTypeAirport') : t('step1.tripTypeIntercity')}
                       </div>
                       <div style={{ fontSize: 11, color: 'var(--txt2)', marginTop: 2 }}>
-                        {t === 'airport' ? 'בן גוריון' : 'עיר לעיר'}
+                        {tripType === 'airport' ? t('step1.tripTypeAirportSub') : t('step1.tripTypeIntercitySub')}
                       </div>
                     </button>
                   ))}
@@ -575,7 +577,7 @@ export default function BookingForm() {
                     {/* From box */}
                     <div style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>
-                        {form.airport_direction === 'to_airport' ? 'מאיפה יוצאים' : 'נקודת מוצא'}
+                        {form.airport_direction === 'to_airport' ? t('step1.fromLabel') : t('step1.fromLabelAlt')}
                       </div>
                       {form.airport_direction === 'to_airport' ? (
                         <PickupMapSelector
@@ -587,16 +589,16 @@ export default function BookingForm() {
                           onHouseNumberChange={v => setField('pickup_house_number', v)}
                           priceChip={form.pickup_city
                             ? (CITY_PRICES[form.pickup_city]
-                                ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</span>
-                                : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>)
+                                ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>{t('step1.priceBase', { price: CITY_PRICES[form.pickup_city] })}</span>
+                                : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>{t('step1.priceByPhone')}</span>)
                             : undefined}
                         />
                       ) : (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
                           <span style={{ fontSize: 22 }}>✈️</span>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)' }}>נמל התעופה בן גוריון</div>
-                            <div style={{ fontSize: 12, color: 'var(--txt3)' }}>טרמינל 3</div>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)' }}>{t('step1.airportName')}</div>
+                            <div style={{ fontSize: 12, color: 'var(--txt3)' }}>{t('step1.terminal')}</div>
                           </div>
                         </div>
                       )}
@@ -617,21 +619,21 @@ export default function BookingForm() {
                           display: 'flex', alignItems: 'center', gap: 6,
                         }}
                       >
-                        ⇅ החלף כיוון
+                        {t('step1.swapDirection')}
                       </button>
                     </div>
 
                     {/* To box */}
                     <div style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
                       <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>
-                        {form.airport_direction === 'to_airport' ? 'יעד' : 'לאן מגיעים'}
+                        {form.airport_direction === 'to_airport' ? t('step1.toLabel') : t('step1.toLabelAlt')}
                       </div>
                       {form.airport_direction === 'to_airport' ? (
                         <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
                           <span style={{ fontSize: 22 }}>✈️</span>
                           <div>
-                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)' }}>נמל התעופה בן גוריון</div>
-                            <div style={{ fontSize: 12, color: 'var(--txt3)' }}>טרמינל 3</div>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)' }}>{t('step1.airportName')}</div>
+                            <div style={{ fontSize: 12, color: 'var(--txt3)' }}>{t('step1.terminal')}</div>
                           </div>
                         </div>
                       ) : (
@@ -644,8 +646,8 @@ export default function BookingForm() {
                           onHouseNumberChange={v => setField('pickup_house_number', v)}
                           priceChip={form.pickup_city
                             ? (CITY_PRICES[form.pickup_city]
-                                ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</span>
-                                : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>)
+                                ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>{t('step1.priceBase', { price: CITY_PRICES[form.pickup_city] })}</span>
+                                : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>{t('step1.priceByPhone')}</span>)
                             : undefined}
                         />
                       )}
@@ -654,7 +656,7 @@ export default function BookingForm() {
                     {/* Flight number — required when from_airport */}
                     {form.airport_direction === 'from_airport' && (
                       <div>
-                        <label>מספר טיסה *</label>
+                        <label>{t('step1.flightNumber')}</label>
                         <input
                           type="text"
                           placeholder="LY123"
@@ -681,8 +683,8 @@ export default function BookingForm() {
                       onDestinationHouseNumberChange={v => setField('destination_house_number', v)}
                       priceChip={form.pickup_city && form.destination_city
                         ? (getIntercityPrice(form.pickup_city, form.destination_city)
-                            ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{getIntercityPrice(form.pickup_city, form.destination_city)}</span>
-                            : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מסלול לא ברשימה — מחיר יתואם</span>)
+                            ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>{t('step1.priceBase', { price: getIntercityPrice(form.pickup_city, form.destination_city) ?? 0 })}</span>
+                            : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>{t('step1.routeNotListed')}</span>)
                         : undefined}
                     />
                   </div>
@@ -691,7 +693,7 @@ export default function BookingForm() {
                 <div className="field-enter" style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {/* Date */}
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>תאריך</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.dateLabel')}</div>
                     <div style={{ position: 'relative' }}>
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 8,
@@ -704,7 +706,7 @@ export default function BookingForm() {
                         <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                           {form.travel_date
                             ? new Date(form.travel_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                            : 'בחר תאריך'}
+                            : t('step1.datePlaceholder')}
                         </span>
                       </div>
                       <input type="date" min={new Date().toISOString().split('T')[0]}
@@ -714,7 +716,7 @@ export default function BookingForm() {
                   </div>
                   {/* Time */}
                   <div style={{ minWidth: 0 }}>
-                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>שעה</div>
+                    <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.timeLabel')}</div>
                     <div style={{ position: 'relative' }}>
                       <div style={{
                         display: 'flex', alignItems: 'center', gap: 8,
@@ -725,7 +727,7 @@ export default function BookingForm() {
                       }}>
                         <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
                         <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_time ? 'var(--txt)' : 'var(--txt3)' }}>
-                          {form.travel_time || 'בחר שעה'}
+                          {form.travel_time || t('step1.timePlaceholder')}
                         </span>
                       </div>
                       <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
@@ -756,7 +758,7 @@ export default function BookingForm() {
                       transition: 'all 0.2s',
                     }}>
                     <span style={{ fontWeight: 600, color: 'var(--txt)', fontSize: 15 }}>
-                      {form.trip_type === 'intercity' ? '🔄 אני צריך גם חזרה' : '✈️ אני צריך גם חזרה מהשדה'}
+                      {form.trip_type === 'intercity' ? t('step1.returnTripIntercity') : t('step1.returnTripAirport')}
                     </span>
                     <div className={`toggle-track ${form.return_trip ? 'on' : ''}`}>
                       <div className="toggle-thumb" />
@@ -767,7 +769,7 @@ export default function BookingForm() {
                 {form.return_trip && (
                   <div style={{ display: 'grid', gap: 14, padding: '4px 0' }}>
                     <div className="field-enter">
-                      <label>{form.trip_type === 'intercity' ? 'כתובת יעד לחזרה *' : 'כתובת יעד לחזרה *'}</label>
+                      <label>{t('step1.returnAddress')}</label>
                       <AddressAutocomplete value={returnAddressDisplay} onSelect={handleReturnAddressSelect} onClear={handleReturnAddressClear} />
                     </div>
                     {form.return_city && (
@@ -778,19 +780,19 @@ export default function BookingForm() {
                     )}
                     <div className="field-enter" style={{ display: 'grid', gap: 12 }}>
                       {form.trip_type === 'airport' && <div>
-                        <label>מספר טיסה *</label>
+                        <label>{t('step1.flightNumber')}</label>
                         <input type="text" placeholder="LY123" value={form.return_flight_number}
                           onChange={e => setField('return_flight_number', e.target.value)}
                           dir="ltr" style={{ textAlign: 'right', fontSize: 16, height: 48 }} />
                       </div>}
                       <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>תאריך חזרה</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.returnDate')}</div>
                           <div style={{ position: 'relative' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', pointerEvents: 'none' }}>
                               <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
                               <span style={{ fontSize: 14, fontWeight: 600, color: form.return_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {form.return_date ? new Date(form.return_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : 'בחר תאריך'}
+                                {form.return_date ? new Date(form.return_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : t('step1.datePlaceholder')}
                               </span>
                             </div>
                             <input type="date" value={form.return_date} onChange={e => setField('return_date', e.target.value)}
@@ -798,12 +800,12 @@ export default function BookingForm() {
                           </div>
                         </div>
                         <div style={{ minWidth: 0 }}>
-                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>שעה משוערת</div>
+                          <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.returnTime')}</div>
                           <div style={{ position: 'relative' }}>
                             <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', pointerEvents: 'none' }}>
                               <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
                               <span style={{ fontSize: 14, fontWeight: 600, color: form.return_time ? 'var(--txt)' : 'var(--txt3)' }}>
-                                {form.return_time || 'בחר שעה'}
+                                {form.return_time || t('step1.timePlaceholder')}
                               </span>
                             </div>
                             <input type="time" value={form.return_time} onChange={e => setField('return_time', e.target.value)}
@@ -822,39 +824,39 @@ export default function BookingForm() {
           {step === 2 && (
             <div style={{ display: 'grid', gap: 16 }}>
               <div className="card field-enter">
-                <StepTitle icon="🧳" title="נוסעים ומטען" />
+                <StepTitle icon="🧳" title={t('step2.passengersTitle')} />
                 <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(3,1fr)' }}>
-                  <Stepper label="נוסעים" value={form.passengers} min={1} onChange={d => stepChange('passengers', d)} icon="👥" />
-                  <Stepper label="מזוודה" value={form.large_luggage} min={0} onChange={d => stepChange('large_luggage', d)} icon="🧳" sub="עד 20 ק״ג" />
-                  <Stepper label="טרולי" value={form.trolley} min={0} onChange={d => stepChange('trolley', d)} icon="🛄" sub="עד 8 ק״ג" />
+                  <Stepper label={t('step2.passengersLabel')} value={form.passengers} min={1} onChange={d => stepChange('passengers', d)} icon="👥" />
+                  <Stepper label={t('step2.luggageLabel')} value={form.large_luggage} min={0} onChange={d => stepChange('large_luggage', d)} icon="🧳" sub={t('step2.luggageSub')} />
+                  <Stepper label={t('step2.trolleyLabel')} value={form.trolley} min={0} onChange={d => stepChange('trolley', d)} icon="🛄" sub={t('step2.trolleySub')} />
                 </div>
               </div>
               <div className="card field-enter" style={{ animationDelay: '0.08s' }}>
-                <StepTitle icon="⭐" title="תוספות שירות" />
+                <StepTitle icon="⭐" title={t('step2.extrasTitle')} />
                 <div style={{ display: 'grid', gap: 8, gridTemplateColumns: 'repeat(3,1fr)', overflow: 'hidden' }}>
                   <ExtraIcon
-                    icon="📍" label="עצירה נוספת" price="+₪20"
-                    note="באותו ישוב · 20₪/3 ק״מ"
+                    icon="📍" label={t('step2.extraStop')} price={t('step2.extraStopPrice')}
+                    note={t('step2.extraStopNote')}
                     checked={!!form.extras.additional_stop} onChange={v => setExtra('additional_stop', v)} />
                   <ExtraIcon
-                    icon="🗺️" label="ישוב סמוך" price="+₪40"
-                    note="עד 6 ק״מ · +20₪/3 ק״מ"
+                    icon="🗺️" label={t('step2.extraNearby')} price={t('step2.extraNearbyPrice')}
+                    note={t('step2.extraNearbyNote')}
                     checked={!!form.extras.nearby_city_stop} onChange={v => setExtra('nearby_city_stop', v)} />
                   <ExtraIcon
-                    icon="👶" label="ילד עד גיל 4" price="+₪10"
-                    note="מותר ע״פ חוק במוניות"
+                    icon="👶" label={t('step2.extraChild')} price={t('step2.extraChildPrice')}
+                    note={t('step2.extraChildNote')}
                     checked={!!form.extras.child_under4} onChange={v => setExtra('child_under4', v)} />
                   <ExtraIcon
-                    iconSrc="/baby_sit.png" label="כיסא בטיחות" price="+₪40–70"
-                    note="לא חובה במונית · מומלץ לתאם מראש"
+                    iconSrc="/baby_sit.png" label={t('step2.extraSafetySeat')} price={t('step2.extraSafetySeatPrice')}
+                    note={t('step2.extraSafetySeatNote')}
                     checked={!!form.extras.safety_seat} onChange={v => setExtra('safety_seat', v)} />
                   <ExtraIcon
-                    icon="⛷️" label="ציוד סקי / גלישה" price="+₪20"
-                    note="עד 3 קייסים · 2.2 מ׳ · מעבר — יש לחייג"
+                    icon="⛷️" label={t('step2.extraSki')} price={t('step2.extraSkiPrice')}
+                    note={t('step2.extraSkiNote')}
                     checked={!!form.extras.ski_equipment} onChange={v => setExtra('ski_equipment', v)} />
                   <ExtraIcon
-                    icon="🚲" label="ארגז אופניים" price="+₪50"
-                    note="חובה להתקשר למוקד"
+                    icon="🚲" label={t('step2.extraBike')} price={t('step2.extraBikePrice')}
+                    note={t('step2.extraBikeNote')}
                     checked={!!form.extras.bike_rack} onChange={v => setExtra('bike_rack', v)} />
                 </div>
               </div>
@@ -868,10 +870,10 @@ export default function BookingForm() {
               {/* Editorial header */}
               <div style={{ textAlign: 'right', padding: '4px 2px 0' }}>
                 <h2 style={{ fontSize: 'clamp(32px,8vw,44px)', fontWeight: 900, color: 'var(--txt)', margin: 0, letterSpacing: '-1.5px', lineHeight: 1.1 }}>
-                  סיכום נסיעה
+                  {t('step3.title')}
                 </h2>
                 <p style={{ fontSize: 14, color: 'var(--txt3)', margin: '6px 0 0', fontWeight: 500 }}>
-                  בדקו את הפרטים לפני ההזמנה
+                  {t('step3.subtitle')}
                 </p>
               </div>
 
@@ -908,10 +910,10 @@ export default function BookingForm() {
                         <div style={{ width: 1.5, height: 40, background: 'linear-gradient(to bottom, #FFD700, rgba(255,255,255,0.1))', margin: '3px 0' }} />
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>נקודת איסוף</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>{t('step3.pickupLabel')}</div>
                         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--txt)', lineHeight: 1.25 }}>
                           {form.trip_type === 'airport' && form.airport_direction === 'from_airport'
-                            ? 'נמל התעופה בן גוריון, טרמינל 3'
+                            ? `${t('step1.airportName')}, ${t('step1.terminal')}`
                             : (form.pickup_street ? `${form.pickup_street} ${form.pickup_house_number}, ${form.pickup_city}` : form.pickup_city || '—')}
                         </div>
                       </div>
@@ -922,11 +924,11 @@ export default function BookingForm() {
                         <div style={{ fontSize: 18, color: 'var(--txt)', lineHeight: 1, marginRight: 0 }}>📍</div>
                       </div>
                       <div style={{ flex: 1 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>יעד סופי</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>{t('step3.destinationLabel')}</div>
                         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--txt)', lineHeight: 1.25 }}>
                           {form.trip_type === 'airport'
                             ? (form.airport_direction === 'to_airport'
-                                ? 'נמל התעופה בן גוריון, טרמינל 3'
+                                ? `${t('step1.airportName')}, ${t('step1.terminal')}`
                                 : (form.pickup_street ? `${form.pickup_street} ${form.pickup_house_number}, ${form.pickup_city}` : form.pickup_city || '—'))
                             : (form.destination_street
                                 ? `${form.destination_street} ${form.destination_house_number}, ${form.destination_city}`
@@ -939,7 +941,7 @@ export default function BookingForm() {
                   {/* Date + Time */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: '14px 16px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>תאריך</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>{t('step3.dateLabel')}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontSize: 14 }}>📅</span>
                         <span style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14 }}>
@@ -950,7 +952,7 @@ export default function BookingForm() {
                       </div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.05)', borderRadius: 14, padding: '14px 16px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>שעה</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>{t('step3.timeLabel')}</div>
                       <div style={{ display: 'flex', alignItems: 'center', gap: 6 }}>
                         <span style={{ fontSize: 14 }}>🕐</span>
                         <span style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14 }}>
@@ -963,16 +965,16 @@ export default function BookingForm() {
                   {/* Passengers + luggage row */}
                   <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
                     <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
-                      👥 {form.passengers} נוסע{form.passengers !== 1 ? 'ים' : ''}
+                      👥 {form.passengers !== 1 ? t('passengerCountPlural', { count: form.passengers }) : t('passengerCount', { count: form.passengers })}
                     </span>
                     {form.large_luggage > 0 && (
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
-                        🧳 {form.large_luggage} מזווד{form.large_luggage !== 1 ? 'ות' : 'ה'}
+                        🧳 {form.large_luggage !== 1 ? t('luggageCountPlural', { count: form.large_luggage }) : t('luggageCount', { count: form.large_luggage })}
                       </span>
                     )}
                     {form.trolley > 0 && (
                       <span style={{ fontSize: 12, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.06)', borderRadius: 20, padding: '4px 12px' }}>
-                        🎒 {form.trolley} טרולי
+                        🎒 {form.trolley} {t('step2.trolleyLabel')}
                       </span>
                     )}
                     {price && (
@@ -985,14 +987,14 @@ export default function BookingForm() {
                   {/* Extras */}
                   {Object.values(form.extras).some(Boolean) && (
                     <div>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>תוספות</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>{t('step3.extrasLabel')}</div>
                       <div style={{ display: 'flex', gap: 6, flexWrap: 'wrap' }}>
-                        {form.extras.additional_stop && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>📍 נקודה נוספת באותו ישוב</span>}
-                        {form.extras.nearby_city_stop && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>📍 נקודה בישוב סמוך</span>}
-                        {form.extras.child_under4 && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>👶 ילד עד גיל 4</span>}
-                        {form.extras.safety_seat && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>💺 כיסא בטיחות</span>}
-                        {form.extras.ski_equipment && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>⛷️ ציוד סקי</span>}
-                        {form.extras.bike_rack && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>🚲 ארגז אופניים</span>}
+                        {form.extras.additional_stop && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>{t('extraChips.additionalStop')}</span>}
+                        {form.extras.nearby_city_stop && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>{t('extraChips.nearbyCity')}</span>}
+                        {form.extras.child_under4 && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>{t('extraChips.childUnder4')}</span>}
+                        {form.extras.safety_seat && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>{t('extraChips.safetySeat')}</span>}
+                        {form.extras.ski_equipment && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>{t('extraChips.skiEquipment')}</span>}
+                        {form.extras.bike_rack && <span style={{ fontSize: 11, fontWeight: 600, color: 'var(--txt2)', background: 'rgba(255,255,255,0.05)', borderRadius: 16, padding: '3px 10px', border: '1px solid rgba(255,255,255,0.08)' }}>{t('extraChips.bikeRack')}</span>}
                       </div>
                     </div>
                   )}
@@ -1001,10 +1003,10 @@ export default function BookingForm() {
                   {form.return_trip && (
                     <div style={{ background: 'rgba(255,209,0,0.06)', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(255,209,0,0.2)' }}>
                       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🔄 נסיעת חזרה</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>{t('step3.returnTripLabel')}</div>
                         {returnPrice && (
                           <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--y)' }}>₪{returnPrice.total}
-                            <span style={{ fontSize: 9, color: 'var(--txt3)', fontWeight: 500, marginRight: 4 }}>כולל +10₪</span>
+                            <span style={{ fontSize: 9, color: 'var(--txt3)', fontWeight: 500, marginRight: 4 }}>{t('step3.returnIncluded')}</span>
                           </div>
                         )}
                       </div>
@@ -1027,11 +1029,11 @@ export default function BookingForm() {
                   {/* Personal details */}
                   <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                     <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px 14px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 5 }}>שם</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 5 }}>{t('step3.nameLabel')}</div>
                       <div style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14 }}>{form.customer_name || '—'}</div>
                     </div>
                     <div style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 12, padding: '12px 14px' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 5 }}>טלפון</div>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 5 }}>{t('step3.phoneLabel')}</div>
                       <div style={{ fontWeight: 700, color: 'var(--txt)', fontSize: 14, direction: 'ltr', textAlign: 'right' }}>{form.customer_phone || '—'}</div>
                     </div>
                   </div>
@@ -1042,38 +1044,38 @@ export default function BookingForm() {
               <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-end', padding: '0 4px' }}>
                 <button type="button" onClick={() => goTo(1)}
                   style={{ background: 'none', border: 'none', color: 'var(--y)', fontSize: 14, fontWeight: 700, cursor: 'pointer', display: 'flex', alignItems: 'center', gap: 5, padding: 0 }}>
-                  <span>✏️</span> עריכה
+                  {t('step3.editButton')}
                 </button>
                 <div style={{ textAlign: 'left' }}>
                   {returnPrice ? (
                     <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
                       {/* Outbound */}
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>נסיעה הלוך</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>{t('step3.priceOutbound')}</div>
                         <span style={{ fontSize: 38, fontWeight: 900, color: '#FFD700', letterSpacing: '-1px', lineHeight: 1 }}>₪{price?.total}</span>
                       </div>
                       {/* Return */}
                       <div>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>נסיעה חזור</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>{t('step3.priceReturn')}</div>
                         <span style={{ fontSize: 38, fontWeight: 900, color: '#FFD700', letterSpacing: '-1px', lineHeight: 1 }}>₪{returnPrice.total}</span>
                         {!returnPrice.diffCity && (
-                          <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>*+10₪ עמלות שדה תעופה</div>
+                          <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>{t('step3.returnFeeNote')}</div>
                         )}
                       </div>
                       {/* Total */}
                       <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 2 }}>
-                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>סה״כ</div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>{t('step3.priceTotal')}</div>
                         <span style={{ fontSize: 28, fontWeight: 900, color: '#FFD700', letterSpacing: '-1px', lineHeight: 1 }}>₪{(price?.total ?? 0) + returnPrice.total}</span>
                       </div>
                     </div>
                   ) : (
                     <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 2 }}>מחיר נסיעה</div>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 2 }}>{t('step3.ridePrice')}</div>
                       <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
                         <span style={{ fontSize: 52, fontWeight: 900, color: '#FFD700', letterSpacing: '-2px', lineHeight: 1 }}>
                           ₪{price?.total ?? '—'}
                         </span>
-                        <span style={{ fontSize: 13, color: 'var(--txt3)', fontWeight: 500 }}>כולל מע״מ</span>
+                        <span style={{ fontSize: 13, color: 'var(--txt3)', fontWeight: 500 }}>{t('step3.inclVat')}</span>
                       </div>
                     </>
                   )}
@@ -1083,7 +1085,7 @@ export default function BookingForm() {
               {/* Payment method */}
               <div>
                 <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 12, paddingRight: 4 }}>
-                  אמצעי תשלום
+                  {t('step3.paymentMethod')}
                 </div>
                 <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr', gap: 10 }}>
                   {/* Bit */}
@@ -1133,8 +1135,8 @@ export default function BookingForm() {
                       fontSize: 22,
                     }}>💵</div>
                     <div>
-                      <div style={{ fontWeight: 800, fontSize: 15, color: form.payment_method === 'cash' ? 'var(--txt)' : 'var(--txt2)' }}>מזומן</div>
-                      <div style={{ fontSize: 11, color: 'var(--txt3)' }}>ישירות לנהג</div>
+                      <div style={{ fontWeight: 800, fontSize: 15, color: form.payment_method === 'cash' ? 'var(--txt)' : 'var(--txt2)' }}>{t('step3.cashLabel')}</div>
+                      <div style={{ fontSize: 11, color: 'var(--txt3)' }}>{t('step3.cashSub')}</div>
                     </div>
                   </button>
                 </div>
@@ -1143,9 +1145,9 @@ export default function BookingForm() {
               {/* Special requests */}
               <div>
                 <label style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', display: 'block', marginBottom: 8, paddingRight: 4 }}>
-                  הערות מיוחדות
+                  {t('step3.specialRequests')}
                 </label>
-                <textarea rows={2} placeholder="בקשות מיוחדות, הנחיות גישה..."
+                <textarea rows={2} placeholder={t('step3.specialRequestsPlaceholder')}
                   value={form.special_requests} onChange={e => setField('special_requests', e.target.value)}
                   style={{
                     resize: 'none', width: '100%', boxSizing: 'border-box',
@@ -1179,7 +1181,7 @@ export default function BookingForm() {
                 borderRadius: 14, padding: '14px 20px', color: 'var(--txt2)',
                 fontSize: 15, fontWeight: 600, cursor: 'pointer', flexShrink: 0,
               }}>
-              → חזור
+              → {tCommon('back')}
             </button>
           )}
           {step < STEPS.length - 1 ? (
@@ -1189,7 +1191,7 @@ export default function BookingForm() {
                 padding: '14px 20px', color: '#000', fontSize: 16, fontWeight: 800,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
-              הבא
+              {tCommon('next')}
               <span style={{
                 background: 'rgba(0,0,0,0.15)', borderRadius: '50%', width: 28, height: 28,
                 display: 'flex', alignItems: 'center', justifyContent: 'center', fontSize: 14,
@@ -1202,9 +1204,9 @@ export default function BookingForm() {
                 padding: '14px 20px', color: '#000', fontSize: 16, fontWeight: 800,
                 cursor: 'pointer', display: 'flex', alignItems: 'center', justifyContent: 'center', gap: 8,
               }}>
-              {submitting ? 'שולח...' : (
+              {submitting ? t('submit.submitting') : (
                 <>
-                  {price ? `הזמן עכשיו – ₪${price.total}` : 'הזמן עכשיו'}
+                  {price ? t('submit.bookNowWithPrice', { price: price.total }) : t('submit.bookNow')}
                   <span style={{
                     background: 'rgba(0,0,0,0.15)', borderRadius: '50%', width: 28, height: 28,
                     display: 'flex', alignItems: 'center', justifyContent: 'center',

@@ -1,5 +1,7 @@
 import type { Metadata } from 'next'
 import { Heebo } from 'next/font/google'
+import { NextIntlClientProvider } from 'next-intl'
+import { getLocale, getMessages } from 'next-intl/server'
 import './globals.css'
 
 const heebo = Heebo({
@@ -27,10 +29,18 @@ export const metadata: Metadata = {
   },
 }
 
-export default function RootLayout({ children }: { children: React.ReactNode }) {
+export default async function RootLayout({ children }: { children: React.ReactNode }) {
+  const locale = await getLocale()
+  const messages = await getMessages()
+  const isRtl = locale === 'he' || locale === 'ar'
+
   return (
-    <html lang="he" dir="rtl" className={heebo.className}>
-      <body>{children}</body>
+    <html lang={locale} dir={isRtl ? 'rtl' : 'ltr'} className={heebo.className}>
+      <body>
+        <NextIntlClientProvider messages={messages}>
+          {children}
+        </NextIntlClientProvider>
+      </body>
     </html>
   )
 }

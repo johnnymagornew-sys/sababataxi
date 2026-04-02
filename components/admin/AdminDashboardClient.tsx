@@ -1,6 +1,7 @@
 'use client'
 
 import { useState } from 'react'
+import { useTranslations } from 'next-intl'
 import { createClient } from '@/lib/supabase/client'
 import type { Booking, Driver } from '@/types/database'
 import { useRouter } from 'next/navigation'
@@ -28,10 +29,6 @@ type Review = {
   } | null
 }
 
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'ממתין', approved: 'מאושר', claimed: 'שורין',
-  completed: 'הושלם', rejected: 'נדחה', cancelled: 'בוטל',
-}
 const STATUS_COLORS: Record<string, string> = {
   pending: '#FFD100', approved: '#27AE60', claimed: '#3B82F6',
   completed: '#6B7280', rejected: '#EF4444', cancelled: '#6B7280',
@@ -48,6 +45,16 @@ export default function AdminDashboardClient({
   initialLeads?: Lead[]
   initialReviews?: Review[]
 }) {
+  const t = useTranslations('admin')
+  const tCommon = useTranslations('common')
+  const STATUS_LABELS: Record<string, string> = {
+    pending: t('statusLabels.pending'),
+    approved: t('statusLabels.approved'),
+    claimed: t('statusLabels.claimed'),
+    completed: t('statusLabels.completed'),
+    rejected: t('statusLabels.rejected'),
+    cancelled: t('statusLabels.cancelled'),
+  }
   const [tab, setTab] = useState<AdminTab>('dashboard')
   const [bookings, setBookings] = useState<Booking[]>(initialBookings)
   const [drivers, setDrivers] = useState<Driver[]>(initialDrivers)
@@ -105,9 +112,9 @@ export default function AdminDashboardClient({
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ bookingId: id, status }),
     })
-    if (!res.ok) { showMsg('שגיאה בעדכון', 'err'); return }
+    if (!res.ok) { showMsg(t('errorUpdate'), 'err'); return }
     setBookings(prev => prev.map(b => b.id === id ? { ...b, status: status as Booking['status'] } : b))
-    showMsg(`סטטוס עודכן: ${STATUS_LABELS[status]}`, 'ok')
+    showMsg(`${t('statusUpdated')} ${STATUS_LABELS[status]}`, 'ok')
   }
 
   async function saveDriverEdit(driverId: string) {
@@ -116,10 +123,10 @@ export default function AdminDashboardClient({
       vehicle_number: editDriverData.vehicle_number || null,
       vehicle_model: editDriverData.vehicle_model || null,
     }).eq('id', driverId)
-    if (error) { showMsg('שגיאה בעדכון', 'err'); return }
+    if (error) { showMsg(t('errorUpdate'), 'err'); return }
     setDrivers(prev => prev.map(d => d.id === driverId ? { ...d, vehicle_type: editDriverData.vehicle_type as Driver['vehicle_type'], vehicle_number: editDriverData.vehicle_number, vehicle_model: editDriverData.vehicle_model } : d))
     setEditingDriver(null)
-    showMsg('פרטי רכב עודכנו', 'ok')
+    showMsg(t('vehicleUpdated'), 'ok')
   }
 
   async function toggleSubscription(driver: Driver) {
@@ -129,7 +136,7 @@ export default function AdminDashboardClient({
       subscription_active: newVal,
       subscription_expires_at: expires,
     }).eq('id', driver.id)
-    if (error) { showMsg('שגיאה בעדכון מנוי', 'err'); return }
+    if (error) { showMsg(t('errorSubscription'), 'err'); return }
     // Log subscription payment when activating
     if (newVal) {
       await supabase.from('subscription_payments').insert({ driver_id: driver.id, amount: 300 })
@@ -157,8 +164,8 @@ export default function AdminDashboardClient({
 
   async function loadCredit() {
     const amount = parseFloat(creditInputs.amount)
-    if (!creditInputs.driverId) { showMsg('בחר נהג', 'err'); return }
-    if (isNaN(amount) || amount <= 0) { showMsg('הכנס סכום תקין', 'err'); return }
+    if (!creditInputs.driverId) { showMsg(t('errorSelectDriver'), 'err'); return }
+    if (isNaN(amount) || amount <= 0) { showMsg(t('errorInvalidAmount'), 'err'); return }
     setLoadingCredit(true)
     const { data } = await supabase.rpc('admin_load_credits', {
       p_driver_id: creditInputs.driverId,
@@ -166,16 +173,16 @@ export default function AdminDashboardClient({
       p_notes: creditInputs.notes || undefined,
     })
     setLoadingCredit(false)
-    if (!data?.success) { showMsg('שגיאה בטעינת קרדיט', 'err'); return }
+    if (!data?.success) { showMsg(t('errorLoadCredit'), 'err'); return }
     const d = drivers.find(dr => dr.id === creditInputs.driverId)
     setDrivers(prev => prev.map(dr => dr.id === creditInputs.driverId ? { ...dr, credits: dr.credits + amount } : dr))
     setCreditInputs({ driverId: '', amount: '', notes: '' })
-    showMsg(`₪${amount} נוספו ל${d?.full_name ?? 'נהג'}`, 'ok')
+    showMsg(t('creditAdded', { amount, name: d?.full_name ?? '' }), 'ok')
   }
 
   async function createDriver() {
     const { email, password, full_name, phone, vehicle_type } = newDriver
-    if (!email || !password || !full_name || !phone) { showMsg('מלא את כל השדות', 'err'); return }
+    if (!email || !password || !full_name || !phone) { showMsg(t('errorMissingFields'), 'err'); return }
     setCreatingDriver(true)
     try {
       const res = await fetch('/api/admin/create-driver', {
@@ -190,9 +197,9 @@ export default function AdminDashboardClient({
       if (updated) setDrivers(updated as Driver[])
       setNewDriver({ email: '', password: '', full_name: '', phone: '', vehicle_type: 'regular', vehicle_number: '', vehicle_model: '' })
       setShowNewDriverForm(false)
-      showMsg(`נהג ${full_name} נוצר בהצלחה!`, 'ok')
+      showMsg(t('driverCreated', { name: full_name }), 'ok')
     } catch (err: unknown) {
-      showMsg(err instanceof Error ? err.message : 'שגיאה ביצירת נהג', 'err')
+      showMsg(err instanceof Error ? err.message : t('errorCreateDriver'), 'err')
     } finally {
       setCreatingDriver(false)
     }
@@ -206,14 +213,14 @@ export default function AdminDashboardClient({
   const filteredBookings = statusFilter === 'all' ? bookings : bookings.filter(b => b.status === statusFilter)
 
   const sidebarItems: { key: AdminTab; icon: string; label: string; badge?: number }[] = [
-    { key: 'dashboard', icon: '📊', label: 'דשבורד' },
-    { key: 'bookings', icon: '🗂', label: 'הזמנות', badge: pendingCount || undefined },
-    { key: 'drivers', icon: '👥', label: 'נהגים' },
-    { key: 'credits', icon: '💰', label: 'קרדיטים' },
-    { key: 'revenue', icon: '📈', label: 'רווחים' },
-    { key: 'history', icon: '📋', label: 'היסטוריה' },
-    { key: 'leads', icon: '🎯', label: 'לידים' },
-    { key: 'reviews', icon: '⭐', label: 'חוות דעת', badge: reviews.length || undefined },
+    { key: 'dashboard', icon: '📊', label: t('tabs.dashboard') },
+    { key: 'bookings', icon: '🗂', label: t('tabs.bookings'), badge: pendingCount || undefined },
+    { key: 'drivers', icon: '👥', label: t('tabs.drivers') },
+    { key: 'credits', icon: '💰', label: t('tabs.credits') },
+    { key: 'revenue', icon: '📈', label: t('tabs.revenue') },
+    { key: 'history', icon: '📋', label: t('tabs.history') },
+    { key: 'leads', icon: '🎯', label: t('tabs.leads') },
+    { key: 'reviews', icon: '⭐', label: t('tabs.reviews'), badge: reviews.length || undefined },
   ]
 
   return (
@@ -481,7 +488,7 @@ export default function AdminDashboardClient({
           </button>
           <div style={{ display: 'flex', alignItems: 'center', gap: 12 }}>
             <span style={{ fontSize: 12, color: '#888' }}>מנהל ראשי</span>
-            <button className="btn-ghost-sm btn-ghost-red" onClick={handleLogout}>התנתק</button>
+            <button className="btn-ghost-sm btn-ghost-red" onClick={handleLogout}>{tCommon('logout')}</button>
           </div>
         </header>
 
@@ -520,24 +527,24 @@ export default function AdminDashboardClient({
                   <div className="stat-card" onClick={() => { setStatusFilter('pending'); setTab('bookings') }}>
                     <div className="stat-icon y">⏳</div>
                     <div className="stat-num" style={{ color: '#FFD100' }}>{pendingCount}</div>
-                    <div className="stat-label">הזמנות ממתינות</div>
+                    <div className="stat-label">{t('stats.pending')}</div>
                   </div>
                   <div className="stat-card" onClick={() => setTab('drivers')}>
                     <div className="stat-icon g">🚕</div>
                     <div className="stat-num">{activeDrivers}</div>
-                    <div className="stat-label">נהגים פעילים</div>
+                    <div className="stat-label">{t('stats.activeDrivers')}</div>
                   </div>
                   <div className="stat-card" onClick={() => { setStatusFilter('all'); setTab('bookings') }}>
                     <div className="stat-icon b">✅</div>
                     <div className="stat-num">{todayRides}</div>
-                    <div className="stat-label">נסיעות היום</div>
+                    <div className="stat-label">{t('stats.todayRides')}</div>
                   </div>
                   <div className="stat-card" onClick={() => { setStatusFilter('all'); setTab('bookings') }}>
                     <div className="stat-icon r">💰</div>
                     <div className="stat-num" style={{ fontSize: monthRevenue > 9999 ? 26 : 36 }}>
                       {monthRevenue.toLocaleString('he-IL')}
                     </div>
-                    <div className="stat-label">הכנסות החודש (₪)</div>
+                    <div className="stat-label">{t('stats.monthRevenue')}</div>
                   </div>
                 </div>
 
@@ -1132,11 +1139,11 @@ export default function AdminDashboardClient({
                 zIndex: 199, padding: '8px 0',
               }}>
                 {([
-                  ['revenue',   '📈',  'רווחים',    0],
-                  ['history',   '📋',  'היסטוריה',  0],
-                  ['leads',     '🎯',  'לידים',     leads.length],
-                  ['reviews',   '⭐',  'חוות דעת',  reviews.length],
-                ] as const).map(([key, icon, label, badge]) => (
+                  ['revenue',   '📈',  t('tabs.revenue'),  0],
+                  ['history',   '📋',  t('tabs.history'),  0],
+                  ['leads',     '🎯',  t('tabs.leads'),    leads.length],
+                  ['reviews',   '⭐',  t('tabs.reviews'),  reviews.length],
+                ] as [AdminTab, string, string, number][]).map(([key, icon, label, badge]) => (
                   <button
                     key={key}
                     onClick={() => { setTab(key); setShowMoreMenu(false) }}
@@ -1160,11 +1167,11 @@ export default function AdminDashboardClient({
           )}
           <div className="bottom-nav-inner">
             {([
-              ['dashboard', '📊', 'דשבורד', 0],
-              ['bookings',  '🗂',  'הזמנות', pendingCount],
-              ['drivers',   '👥',  'נהגים',  0],
-              ['credits',   '💳',  'קרדיט',  0],
-            ] as const).map(([key, icon, label, badge]) => (
+              ['dashboard', '📊', t('tabs.dashboard'), 0],
+              ['bookings',  '🗂',  t('tabs.bookings'), pendingCount],
+              ['drivers',   '👥',  t('tabs.drivers'),  0],
+              ['credits',   '💳',  t('tabs.credits'),  0],
+            ] as [AdminTab, string, string, number][]).map(([key, icon, label, badge]) => (
               <button
                 key={key}
                 className={`bottom-nav-btn${tab === key ? ' active' : ''}`}
@@ -1181,7 +1188,7 @@ export default function AdminDashboardClient({
               onClick={() => setShowMoreMenu(v => !v)}
             >
               <span className="nav-icon">⋯</span>
-              <span className="nav-label">עוד</span>
+              <span className="nav-label">{t('tabs.more')}</span>
               {(leads.length + reviews.length) > 0 && !['revenue','history','leads','reviews'].includes(tab) && (
                 <span className="nav-badge">{leads.length + reviews.length}</span>
               )}

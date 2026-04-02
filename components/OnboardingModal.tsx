@@ -1,46 +1,48 @@
 'use client'
 
 import { useState, useEffect } from 'react'
-
-const STEPS = [
-  {
-    emoji: '📋',
-    color: '#FFD100',
-    glow: 'rgba(255,209,0,0.18)',
-    badge: 'שלב 1 מתוך 3',
-    title: 'ממלאים פרטים בשניות',
-    desc: 'מזינים כתובת, בוחרים תאריך ושעה — ומקבלים מחיר סופי וקבוע מיד על המסך.',
-    features: null,
-  },
-  {
-    emoji: '🚖',
-    color: '#60A5FA',
-    glow: 'rgba(96,165,250,0.18)',
-    badge: 'שלב 2 מתוך 3',
-    title: 'נהג מקצועי מאשר',
-    desc: 'נהג מוסמך ומנוסה רואה את ההזמנה ומאשר אותה. תקבלו אישור ישירות.',
-    features: null,
-  },
-  {
-    emoji: '✈️',
-    color: '#34D399',
-    glow: 'rgba(52,211,153,0.18)',
-    badge: 'שלב 3 מתוך 3',
-    title: 'מגיעים בזמן, בראש שקט',
-    desc: 'מחיר ידוע מראש, שירות אקסקלוסיבי ומחירים מוזלים — בלי הפתעות.',
-    features: [
-      { icon: '💰', text: 'מחיר קבוע מראש' },
-      { icon: '⭐', text: 'שירות אקסקלוסיבי' },
-      { icon: '🎯', text: 'הגעה מדויקת בזמן' },
-      { icon: '🔒', text: 'ללא עלויות נסתרות' },
-    ],
-  },
-]
+import { useTranslations } from 'next-intl'
 
 export default function OnboardingModal() {
   const [visible, setVisible] = useState(false)
   const [step, setStep] = useState(0)
   const [sliding, setSliding] = useState(false)
+  const t = useTranslations('onboarding')
+
+  const STEPS = [
+    {
+      emoji: '📋',
+      color: '#FFD100',
+      glow: 'rgba(255,209,0,0.18)',
+      badge: t('step1Badge'),
+      title: t('step1Title'),
+      desc: t('step1Desc'),
+      features: null,
+    },
+    {
+      emoji: '🚖',
+      color: '#60A5FA',
+      glow: 'rgba(96,165,250,0.18)',
+      badge: t('step2Badge'),
+      title: t('step2Title'),
+      desc: t('step2Desc'),
+      features: null,
+    },
+    {
+      emoji: '✈️',
+      color: '#34D399',
+      glow: 'rgba(52,211,153,0.18)',
+      badge: t('step3Badge'),
+      title: t('step3Title'),
+      desc: t('step3Desc'),
+      features: [
+        { icon: '💰', text: t('feature1') },
+        { icon: '⭐', text: t('feature2') },
+        { icon: '🎯', text: t('feature3') },
+        { icon: '🔒', text: t('feature4') },
+      ],
+    },
+  ]
 
   useEffect(() => {
     if (!localStorage.getItem('sababa_onboarding_never')) setVisible(true)
@@ -249,7 +251,7 @@ export default function OnboardingModal() {
                 ;(e.currentTarget as HTMLButtonElement).style.boxShadow = `0 4px 20px ${s.glow}`
               }}
             >
-              {isLast ? 'יאללה, נסע!' : 'הבא'}
+              {isLast ? t('letsGo') : t('nextButton')}
               <span style={{
                 background: 'rgba(0,0,0,0.15)', borderRadius: '50%',
                 width: 28, height: 28,
@@ -264,11 +266,11 @@ export default function OnboardingModal() {
             <div style={{ display: 'flex', justifyContent: 'space-between', marginTop: 12 }}>
               {!isLast ? (
                 <button onClick={close} style={{ background: 'none', border: 'none', color: 'var(--txt3)', fontSize: 13, cursor: 'pointer', padding: '6px' }}>
-                  דלג
+                  {t('skip')}
                 </button>
               ) : <span />}
               <button onClick={neverShow} style={{ background: 'none', border: 'none', color: 'var(--txt3)', fontSize: 12, cursor: 'pointer', padding: '6px', textDecoration: 'underline', textDecorationStyle: 'dotted' }}>
-                אל תראה שוב
+                {t('neverShow')}
               </button>
             </div>
           </div>

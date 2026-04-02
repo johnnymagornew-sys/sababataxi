@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
+import { useTranslations } from 'next-intl'
 
 type BookingStatus = 'pending' | 'approved' | 'rejected' | 'claimed' | 'completed' | 'cancelled'
 type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done' | null
@@ -52,15 +53,6 @@ interface Props {
   initialHasReview: boolean
 }
 
-const STEPS: { key: string; label: string; sublabel: string; icon: string }[] = [
-  { key: 'approved',  label: 'ההזמנה אושרה',       sublabel: 'הנסיעה אושרה על ידי המוקד', icon: '✅' },
-  { key: 'claimed',   label: 'נהג שובץ',            sublabel: 'נהג שריין את הנסיעה שלך',   icon: '🚕' },
-  { key: 'en_route',  label: 'הנהג בדרך אליך',       sublabel: 'הנהג יצא לאסוף אותך',       icon: '🚗' },
-  { key: 'arrived',   label: 'הנהג הגיע!',          sublabel: 'הנהג ממתין למטה',            icon: '📍' },
-  { key: 'onboard',   label: 'יוצאים לדרך!',        sublabel: 'הנוסעים עלו לרכב',          icon: '🛫' },
-  { key: 'done',      label: 'הנסיעה הסתיימה',      sublabel: 'תודה שבחרתם במוניות סבבה',  icon: '🏁' },
-]
-
 function getActiveStepIndex(status: BookingStatus, rideStatus: RideStatus): number {
   if (rideStatus === 'done' || status === 'completed') return 5
   if (rideStatus === 'onboard') return 4
@@ -78,6 +70,17 @@ export default function TrackingClient({
   destination, travelDate, travelTime, passengers,
   driverFirstName, initialHasReview,
 }: Props) {
+  const t = useTranslations('tracking')
+
+  const STEPS = [
+    { key: 'approved',  label: t('steps.approved.label'),  sublabel: t('steps.approved.sublabel'),  icon: '✅' },
+    { key: 'claimed',   label: t('steps.claimed.label'),   sublabel: t('steps.claimed.sublabel'),   icon: '🚕' },
+    { key: 'en_route',  label: t('steps.enRoute.label'),   sublabel: t('steps.enRoute.sublabel'),   icon: '🚗' },
+    { key: 'arrived',   label: t('steps.arrived.label'),   sublabel: t('steps.arrived.sublabel'),   icon: '📍' },
+    { key: 'onboard',   label: t('steps.onboard.label'),   sublabel: t('steps.onboard.sublabel'),   icon: '🛫' },
+    { key: 'done',      label: t('steps.done.label'),      sublabel: t('steps.done.sublabel'),      icon: '🏁' },
+  ]
+
   const [status, setStatus] = useState<BookingStatus>(initialStatus)
   const [rideStatus, setRideStatus] = useState<RideStatus>(initialRideStatus)
   const [driver, setDriver] = useState<string | null>(driverFirstName)
@@ -181,7 +184,7 @@ export default function TrackingClient({
                 <div style={{ width: 1.5, height: 36, background: 'linear-gradient(to bottom, #FFD700, rgba(255,255,255,0.08))', margin: '3px 0' }} />
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>נקודת איסוף</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>{t('pickupLabel')}</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--txt)' }}>{pickupAddress}</div>
               </div>
             </div>
@@ -190,7 +193,7 @@ export default function TrackingClient({
                 <span style={{ fontSize: 16, lineHeight: 1 }}>📍</span>
               </div>
               <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>יעד</div>
+                <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 3 }}>{t('destinationLabel')}</div>
                 <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--txt)' }}>{destination}</div>
               </div>
             </div>
@@ -201,7 +204,7 @@ export default function TrackingClient({
             {[
               { icon: '📅', value: dateStr },
               { icon: '🕐', value: travelTime.slice(0, 5) },
-              { icon: '👥', value: `${passengers} נוסעים` },
+              { icon: '👥', value: t('passengersCount', { count: passengers }) },
             ].map(({ icon, value }) => (
               <div key={value} style={{ background: 'rgba(255,255,255,0.04)', borderRadius: 10, padding: '10px 10px', textAlign: 'center' }}>
                 <div style={{ fontSize: 16, marginBottom: 4 }}>{icon}</div>
@@ -227,7 +230,7 @@ export default function TrackingClient({
             fontWeight: 800, fontSize: 18, flexShrink: 0,
           }}>{driver[0]}</div>
           <div>
-            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>הנהג שלך</div>
+            <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 2 }}>{t('yourDriver')}</div>
             <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--txt)' }}>{driver}</div>
           </div>
         </div>
@@ -237,16 +240,16 @@ export default function TrackingClient({
       {isPending && (
         <div style={{ background: 'rgba(255,255,255,0.04)', border: '1px solid var(--border)', borderRadius: 14, padding: '20px', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>⏳</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>ממתין לאישור</div>
-          <div style={{ fontSize: 13, color: 'var(--txt3)' }}>ההזמנה ממתינה לאישור המוקד</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>{t('pendingTitle')}</div>
+          <div style={{ fontSize: 13, color: 'var(--txt3)' }}>{t('pendingDesc')}</div>
         </div>
       )}
 
       {isCancelled && (
         <div style={{ background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.25)', borderRadius: 14, padding: '20px', textAlign: 'center' }}>
           <div style={{ fontSize: 32, marginBottom: 10 }}>❌</div>
-          <div style={{ fontSize: 16, fontWeight: 700, color: '#E74C3C', marginBottom: 4 }}>הנסיעה בוטלה</div>
-          <div style={{ fontSize: 13, color: 'var(--txt3)' }}>לפרטים נוספים צור קשר עם המוקד</div>
+          <div style={{ fontSize: 16, fontWeight: 700, color: '#E74C3C', marginBottom: 4 }}>{t('cancelledTitle')}</div>
+          <div style={{ fontSize: 13, color: 'var(--txt3)' }}>{t('cancelledDesc')}</div>
         </div>
       )}
 
@@ -258,17 +261,17 @@ export default function TrackingClient({
         }}>
           <div style={{ fontSize: 36, marginBottom: 12 }}>⏰</div>
           <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--txt)', marginBottom: 6 }}>
-            המעקב החי יפתח בשעה {trackingOpenAt}
+            {t('trackingOpensAt', { time: trackingOpenAt })}
           </div>
           <div style={{ fontSize: 13, color: 'var(--txt3)', lineHeight: 1.5 }}>
-            30 דקות לפני הנסיעה תוכל לעקוב<br />אחרי הנהג בזמן אמת
+            {t('trackingDesc')}
           </div>
           <div style={{
             marginTop: 16, display: 'inline-flex', alignItems: 'center', gap: 6,
             background: 'rgba(255,209,0,0.08)', border: '1px solid rgba(255,209,0,0.2)',
             borderRadius: 20, padding: '6px 14px', fontSize: 13, color: 'var(--y)', fontWeight: 600,
           }}>
-            ✈️ שעת נסיעה: {travelTime.slice(0, 5)}
+            {t('rideTime', { time: travelTime.slice(0, 5) })}
           </div>
         </div>
       )}
@@ -282,7 +285,7 @@ export default function TrackingClient({
           padding: '20px',
         }}>
           <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 16 }}>
-            סטטוס נסיעה
+            {t('statusTitle')}
           </div>
           <div style={{ display: 'flex', flexDirection: 'column', gap: 0 }}>
             {STEPS.map((step, i) => {
@@ -358,33 +361,33 @@ export default function TrackingClient({
             <div style={{ textAlign: 'center', padding: '8px 0' }}>
               <div style={{ fontSize: 36, marginBottom: 10 }}>🙏</div>
               <div style={{ fontSize: 16, fontWeight: 800, color: 'var(--txt)', marginBottom: 6 }}>
-                תודה על המשוב!
+                {t('reviewDoneTitle')}
               </div>
-              <div style={{ fontSize: 13, color: 'var(--txt3)' }}>חוות הדעת שלך עוזרת לנו להשתפר</div>
+              <div style={{ fontSize: 13, color: 'var(--txt3)' }}>{t('reviewDoneDesc')}</div>
             </div>
           ) : (
             <>
               <div style={{ fontSize: 12, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 16 }}>
-                איך הייתה הנסיעה?
+                {t('reviewTitle')}
               </div>
               <StarRating
-                label="שירות הנהג"
+                label={t('reviewDriver')}
                 value={driverRating}
                 onChange={setDriverRating}
               />
               <StarRating
-                label="ניקיון המונית"
+                label={t('reviewCleanliness')}
                 value={cleanlinessRating}
                 onChange={setCleanlinessRating}
               />
               <div style={{ marginBottom: 16 }}>
                 <div style={{ fontSize: 13, fontWeight: 700, color: 'var(--txt2)', marginBottom: 8 }}>
-                  חוות דעת (אופציונלי)
+                  {t('reviewComment')}
                 </div>
                 <textarea
                   value={comment}
                   onChange={e => setComment(e.target.value)}
-                  placeholder="ספר לנו על הנסיעה..."
+                  placeholder={t('reviewCommentPlaceholder')}
                   rows={3}
                   style={{
                     width: '100%', borderRadius: 10, padding: '10px 12px',
@@ -408,7 +411,7 @@ export default function TrackingClient({
                   opacity: submittingReview ? 0.7 : 1,
                 }}
               >
-                {submittingReview ? '...' : '📤 שלח משוב'}
+                {submittingReview ? '...' : t('reviewSubmit')}
               </button>
             </>
           )}
@@ -418,7 +421,7 @@ export default function TrackingClient({
       {/* Live indicator */}
       <div style={{ textAlign: 'center', fontSize: 11, color: 'var(--txt3)' }}>
         <span style={{ display: 'inline-block', width: 6, height: 6, borderRadius: '50%', background: '#27AE60', marginLeft: 5, verticalAlign: 'middle' }} />
-        מתעדכן אוטומטית · עדכון אחרון: {new Date(lastPoll).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
+        {t('liveIndicator')} {new Date(lastPoll).toLocaleTimeString('he-IL', { hour: '2-digit', minute: '2-digit', second: '2-digit' })}
       </div>
 
       <style>{`

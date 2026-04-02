@@ -5,6 +5,9 @@ import { createClient } from '@/lib/supabase/client'
 import { useRouter } from 'next/navigation'
 import Link from 'next/link'
 import Image from 'next/image'
+import { useTranslations } from 'next-intl'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
+import { useLocale } from 'next-intl'
 
 export default function LoginClient() {
   const [identifier, setIdentifier] = useState('')
@@ -15,6 +18,9 @@ export default function LoginClient() {
   const [error, setError] = useState('')
   const router = useRouter()
   const supabase = createClient()
+  const t = useTranslations('login')
+  const tNav = useTranslations('nav')
+  const locale = useLocale()
 
   // On mount: check for existing session → redirect automatically
   useEffect(() => {
@@ -57,7 +63,7 @@ export default function LoginClient() {
       })
       if (!res.ok) {
         const { error: msg } = await res.json()
-        setError(msg || 'מספר טלפון לא נמצא')
+        setError(msg || t('errorPhone'))
         setLoading(false)
         return
       }
@@ -71,7 +77,7 @@ export default function LoginClient() {
     })
 
     if (authError) {
-      setError('סיסמה שגויה')
+      setError(t('errorPassword'))
       setLoading(false)
       return
     }
@@ -92,7 +98,7 @@ export default function LoginClient() {
         minHeight: '100vh', background: 'var(--bg)',
         display: 'flex', alignItems: 'center', justifyContent: 'center',
       }}>
-        <div style={{ color: 'var(--txt2)', fontSize: 15 }}>טוען...</div>
+        <div style={{ color: 'var(--txt2)', fontSize: 15 }}>{t('loading')}</div>
       </div>
     )
   }
@@ -113,20 +119,23 @@ export default function LoginClient() {
             <Image src="/sababa_logo.png" alt="מוניות סבבה" width={200} height={80} style={{ objectFit: 'contain' }} priority />
           </button>
           <h1 style={{ fontSize: 24, fontWeight: 800, margin: 0, color: 'var(--txt)' }}>
-            כניסה לנהגים
+            {t('title')}
           </h1>
           <p style={{ color: 'var(--txt2)', marginTop: 6, fontSize: 14 }}>
-            פאנל ניהול נסיעות
+            {t('subtitle')}
           </p>
+          <div style={{ display: 'flex', justifyContent: 'center', marginTop: 12 }}>
+            <LanguageSwitcher current={locale} />
+          </div>
         </div>
 
         <div className="card">
           <form onSubmit={handleLogin} style={{ display: 'flex', flexDirection: 'column', gap: 16 }}>
             <div>
-              <label>טלפון או אימייל</label>
+              <label>{t('phoneEmailLabel')}</label>
               <input
                 type="text" required
-                placeholder="050-0000000 או name@example.com"
+                placeholder={t('phoneEmailPlaceholder')}
                 value={identifier}
                 onChange={e => setIdentifier(e.target.value)}
                 dir="ltr"
@@ -136,7 +145,7 @@ export default function LoginClient() {
               />
             </div>
             <div>
-              <label>סיסמה</label>
+              <label>{t('passwordLabel')}</label>
               <input
                 type="password" required
                 placeholder="••••••••"
@@ -163,9 +172,9 @@ export default function LoginClient() {
                 style={{ accentColor: 'var(--y)', width: 16, height: 16 }}
               />
               <div>
-                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>זכור אותי</div>
+                <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{t('rememberMe')}</div>
                 <div style={{ fontSize: 11, color: 'var(--txt2)', marginTop: 1 }}>
-                  כניסה אוטומטית בפעם הבאה
+                  {t('rememberMeSub')}
                 </div>
               </div>
             </label>
@@ -182,14 +191,14 @@ export default function LoginClient() {
             )}
 
             <button type="submit" className="btn-yellow" disabled={loading} style={{ marginTop: 4 }}>
-              {loading ? 'נכנס...' : 'כניסה →'}
+              {loading ? t('submitting') : t('submit')}
             </button>
           </form>
         </div>
 
         <div style={{ textAlign: 'center', marginTop: 20 }}>
           <Link href="/" style={{ color: 'var(--txt2)', fontSize: 14, textDecoration: 'none' }}>
-            ← חזרה לטופס הזמנה
+            {tNav('backToBooking')}
           </Link>
         </div>
       </div>

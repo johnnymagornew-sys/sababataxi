@@ -6,22 +6,30 @@ import type { Booking, Driver } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-
-const STATUS_LABELS: Record<string, string> = {
-  pending: 'ממתין', approved: 'זמין', claimed: 'שלי',
-  completed: 'הושלם', rejected: 'נדחה', cancelled: 'בוטל',
-}
+import { useTranslations } from 'next-intl'
 
 type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done' | null
 
-const RIDE_STATUS_STEPS: { key: RideStatus; label: string; icon: string; next: RideStatus }[] = [
-  { key: null,       label: 'יצאתי לנסיעה',                    icon: '🚗', next: 'en_route' },
-  { key: 'en_route', label: 'הגעתי למקום',                     icon: '📍', next: 'arrived'  },
-  { key: 'arrived',  label: 'אספתי את הנוסעים — יוצאים לדרך', icon: '✅', next: 'onboard'  },
-  { key: 'onboard',  label: 'סיום נסיעה',                      icon: '🏁', next: 'done'     },
-]
-
 export default function DriverDashboardClient({ driver: initialDriver }: { driver: Driver }) {
+  const t = useTranslations('driver')
+  const tCommon = useTranslations('common')
+
+  const STATUS_LABELS: Record<string, string> = {
+    pending: t('statusLabels.pending'),
+    approved: t('statusLabels.approved'),
+    claimed: t('statusLabels.claimed'),
+    completed: t('statusLabels.completed'),
+    rejected: t('statusLabels.rejected'),
+    cancelled: t('statusLabels.cancelled'),
+  }
+
+  const RIDE_STATUS_STEPS: { key: RideStatus; label: string; icon: string; next: RideStatus }[] = [
+    { key: null,       label: t('rideStatusSteps.start'),   icon: '🚗', next: 'en_route' as RideStatus },
+    { key: 'en_route', label: t('rideStatusSteps.enRoute'), icon: '📍', next: 'arrived'  as RideStatus },
+    { key: 'arrived',  label: t('rideStatusSteps.arrived'), icon: '✅', next: 'onboard'  as RideStatus },
+    { key: 'onboard',  label: t('rideStatusSteps.onboard'), icon: '🏁', next: 'done'     as RideStatus },
+  ]
+
   const [driver, setDriver] = useState<Driver>(initialDriver)
   const [tab, setTab] = useState<'available' | 'mine' | 'history'>('available')
   const [availableRides, setAvailableRides] = useState<Booking[]>([])
@@ -88,7 +96,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
     const diffHours = diffMs / (1000 * 60 * 60)
 
     if (diffHours <= 1) {
-      setMsg({ text: 'לא ניתן לבטל פחות משעה לפני הנסיעה. פנה למנהל.', type: 'err' })
+      setMsg({ text: t('cancelTooLate'), type: 'err' })
       setTimeout(() => setMsg(null), 5000)
       return
     }
@@ -98,10 +106,13 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
       p_driver_id: driver.id,
     })
     if (error || !data?.success) {
-      setMsg({ text: data?.error ?? 'שגיאה בביטול', type: 'err' })
+      setMsg({ text: data?.error ?? t('errorCancel'), type: 'err' })
     } else {
       const refund = data.refund ?? 0
-      setMsg({ text: `הנסיעה בוטלה${refund > 0 ? ` • קרדיט הוחזר: ₪${refund}` : ''}`, type: 'ok' })
+      setMsg({
+        text: t('rideCancelled') + (refund > 0 ? ` • ${t('creditRefunded', { amount: refund })}` : ''),
+        type: 'ok',
+      })
       await Promise.all([loadRides(), refreshDriver()])
     }
     setTimeout(() => setMsg(null), 5000)
@@ -115,9 +126,9 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
     })
     setClaiming(null)
     if (error || !data?.success) {
-      setMsg({ text: data?.error ?? 'שגיאה בשריון', type: 'err' })
+      setMsg({ text: data?.error ?? t('errorClaim'), type: 'err' })
     } else {
-      setMsg({ text: `הנסיעה שורינה! עמלה: ₪${data.commission ?? 0}`, type: 'ok' })
+      setMsg({ text: t('rideClaimed', { amount: data.commission ?? 0 }), type: 'ok' })
       await Promise.all([loadRides(), refreshDriver()])
       setTab('mine')
       // Notify customer by email
@@ -140,13 +151,13 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
       })
       const data = await res.json()
       if (!res.ok) {
-        setMsg({ text: data.error ?? 'שגיאה בעדכון', type: 'err' })
+        setMsg({ text: data.error ?? t('errorUpdate'), type: 'err' })
       } else {
-        setMsg({ text: nextStatus === 'done' ? '🏁 נסיעה הסתיימה!' : '✅ סטטוס עודכן', type: 'ok' })
+        setMsg({ text: nextStatus === 'done' ? t('rideFinished') : t('statusUpdated'), type: 'ok' })
         await loadRides()
       }
     } catch {
-      setMsg({ text: 'שגיאת רשת', type: 'err' })
+      setMsg({ text: t('errorNetwork'), type: 'err' })
     }
     setUpdatingRideStatus(null)
     setTimeout(() => setMsg(null), 4000)
@@ -196,7 +207,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
           onClick={handleLogout}
           style={{ background: 'none', border: 'none', color: 'var(--txt2)', cursor: 'pointer', fontSize: 14 }}
         >
-          יציאה
+          {tCommon('logout')}
         </button>
       </div>
 
@@ -223,10 +234,10 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
             <div style={{ fontWeight: 700, fontSize: 16, marginBottom: 4 }}>{driver.full_name}</div>
             <div style={{ display: 'flex', gap: 8, flexWrap: 'wrap' }}>
               <StatusBadge
-                label={isSubActive ? 'מנוי פעיל' : 'מנוי לא פעיל'}
+                label={isSubActive ? t('subscriptionActive') : t('subscriptionInactive')}
                 color={isSubActive ? 'var(--green)' : 'var(--red)'}
               />
-              <StatusBadge label={`קרדיט: ₪${driver.credits}`} color="var(--y)" />
+              <StatusBadge label={t('credit', { amount: driver.credits })} color="var(--y)" />
             </div>
             {myStats && (
               <div style={{ marginTop: 8, display: 'flex', gap: 8, flexWrap: 'wrap' }}>
@@ -235,7 +246,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   background: 'rgba(255,209,0,0.12)', border: '1px solid rgba(255,209,0,0.25)',
                   borderRadius: 20, padding: '3px 10px', color: 'var(--y)',
                 }}>
-                  ⭐ {myStats.avg} · {myStats.count} דירוגים
+                  {t('ratings', { avg: myStats.avg, count: myStats.count })}
                 </span>
                 <span style={{ fontSize: 11, color: 'var(--txt3)', alignSelf: 'center' }}>
                   🧑‍✈️ {myStats.avg_driver} · 🚕 {myStats.avg_cleanliness}
@@ -253,7 +264,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
             borderRadius: 10, padding: '12px 16px',
             color: '#E74C3C', fontSize: 14, marginBottom: 16,
           }}>
-            המנוי שלך אינו פעיל. צור קשר עם האדמין להפעלה.
+            {t('noSubscription')}
           </div>
         )}
 
@@ -280,7 +291,11 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
           marginBottom: 16,
           gap: 4,
         }}>
-          {([['available', 'זמינות', availableRides.length], ['mine', 'שלי', activeMyRides.length], ['history', 'היסטוריה', historyRides.length]] as const).map(([key, label, count]) => (
+          {([
+            ['available', t('tabs.available'), availableRides.length],
+            ['mine',      t('tabs.mine'),      activeMyRides.length],
+            ['history',   t('tabs.history'),   historyRides.length],
+          ] as const).map(([key, label, count]) => (
             <button
               key={key}
               onClick={() => setTab(key)}
@@ -313,7 +328,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         {tab === 'available' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {availableRides.length === 0 ? (
-              <EmptyState icon="🔍" text="אין נסיעות זמינות כרגע" />
+              <EmptyState icon="🔍" text={t('emptyAvailable')} />
             ) : (
               availableRides.map(ride => {
                 const conflict = myRides.filter(r => r.status === 'claimed').some(r => {
@@ -331,6 +346,8 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                     claiming={claiming === ride.id}
                     timeConflict={conflict}
                     onClaim={() => claimRide(ride.id)}
+                    statusLabels={STATUS_LABELS}
+                    rideStatusSteps={RIDE_STATUS_STEPS}
                   />
                 )
               })
@@ -341,7 +358,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         {tab === 'mine' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {activeMyRides.length === 0 ? (
-              <EmptyState icon="🚕" text="אין נסיעות פעילות" />
+              <EmptyState icon="🚕" text={t('emptyMine')} />
             ) : (
               activeMyRides.map(ride => (
                 <RideCard
@@ -355,6 +372,8 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   onCancel={ride.status === 'claimed' ? () => cancelRide(ride.id, ride.travel_date, ride.travel_time) : undefined}
                   onUpdateRideStatus={ride.status === 'claimed' ? (next) => updateRideStatus(ride.id, next) : undefined}
                   updatingRideStatus={updatingRideStatus === ride.id}
+                  statusLabels={STATUS_LABELS}
+                  rideStatusSteps={RIDE_STATUS_STEPS}
                 />
               ))
             )}
@@ -364,7 +383,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         {tab === 'history' && (
           <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             {historyRides.length === 0 ? (
-              <EmptyState icon="📋" text="אין היסטוריית נסיעות" />
+              <EmptyState icon="📋" text={t('emptyHistory')} />
             ) : (
               historyRides.map(ride => (
                 <RideCard
@@ -376,6 +395,8 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                   claiming={false}
                   showStatus
                   hideActions
+                  statusLabels={STATUS_LABELS}
+                  rideStatusSteps={RIDE_STATUS_STEPS}
                 />
               ))
             )}
@@ -388,7 +409,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
 
 // ─── RideCard ─────────────────────────────────────────────────────
 
-function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus, timeConflict, onUpdateRideStatus, updatingRideStatus, hideActions }: {
+function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onClaim, onCancel, showStatus, timeConflict, onUpdateRideStatus, updatingRideStatus, hideActions, statusLabels, rideStatusSteps }: {
   ride: Booking
   driverId: string
   driverCredits: number
@@ -401,7 +422,10 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
   onUpdateRideStatus?: (next: RideStatus) => void
   updatingRideStatus?: boolean
   hideActions?: boolean
+  statusLabels: Record<string, string>
+  rideStatusSteps: { key: RideStatus; label: string; icon: string; next: RideStatus }[]
 }) {
+  const t = useTranslations('driver')
   const commission = getCommission(ride.price)
   const canClaim = isSubscribed && driverCredits >= commission && ride.status === 'approved' && !timeConflict
 
@@ -419,7 +443,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start', marginBottom: 12 }}>
         <div>
           <div style={{ fontWeight: 700, fontSize: 18, color: 'var(--txt)' }}>
-            {ride.pickup_city} ← בן גוריון
+            {ride.pickup_city} ← {t('benGurion')}
           </div>
           {isClaimed ? (
             <div style={{ fontSize: 13, color: 'var(--txt2)', marginTop: 2 }}>
@@ -427,7 +451,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
             </div>
           ) : (
             <div style={{ fontSize: 12, color: 'var(--txt2)', marginTop: 4, opacity: 0.5 }}>
-              🔒 כתובת מלאה תוצג לאחר שריון
+              {t('addressHidden')}
             </div>
           )}
         </div>
@@ -435,7 +459,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           <div style={{ fontWeight: 800, fontSize: 20, color: 'var(--y)' }}>₪{ride.price}</div>
           {isClaimed && (
             <StatusBadge
-              label={STATUS_LABELS[ride.status] ?? ride.status}
+              label={statusLabels[ride.status] ?? ride.status}
               color={ride.status === 'completed' ? 'var(--green)' : 'var(--blue)'}
             />
           )}
@@ -449,8 +473,8 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
       }}>
         <MetaItem icon="📅" label={formatDate(ride.travel_date)} />
         <MetaItem icon="⏰" label={ride.travel_time.slice(0, 5)} />
-        <MetaItem icon="👥" label={`${ride.passengers} נוסעים`} />
-        <MetaItem icon="💼" label={`${(ride.large_luggage ?? 0) + (ride.trolley ?? 0)} מזוודות`} />
+        <MetaItem icon="👥" label={t('passengerCount', { count: ride.passengers })} />
+        <MetaItem icon="💼" label={t('luggageCount', { count: (ride.large_luggage ?? 0) + (ride.trolley ?? 0) })} />
       </div>
 
       {/* Full details — only after claiming */}
@@ -463,7 +487,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           marginBottom: 12,
           display: 'flex', flexDirection: 'column', gap: 6,
         }}>
-          <div style={{ fontSize: 12, color: 'var(--y)', fontWeight: 700, marginBottom: 4 }}>פרטי לקוח</div>
+          <div style={{ fontSize: 12, color: 'var(--y)', fontWeight: 700, marginBottom: 4 }}>{t('customerDetails')}</div>
           <div style={{ fontSize: 14, fontWeight: 700 }}>{ride.customer_name}</div>
           <div style={{ fontSize: 14, color: 'var(--txt2)', direction: 'ltr', textAlign: 'right' }}>{ride.customer_phone}</div>
           {ride.customer_email && (
@@ -482,7 +506,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
                 }}
               >
                 <span style={{ fontSize: 22 }}>📞</span>
-                התקשר
+                {t('callButton')}
               </a>
               <a
                 href={`https://wa.me/${toWhatsAppNumber(ride.customer_phone)}`}
@@ -496,7 +520,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
                 }}
               >
                 <span style={{ fontSize: 22 }}>💬</span>
-                וואטסאפ
+                {t('whatsappButton')}
               </a>
               <a
                 href={`https://waze.com/ul?q=${encodeURIComponent(buildWazeAddress(ride))}&navigate=yes`}
@@ -510,7 +534,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
                 }}
               >
                 <span style={{ fontSize: 22 }}>🗺️</span>
-                וויז
+                {t('wazeButton')}
               </a>
             </div>
           )}
@@ -584,8 +608,8 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           {(() => {
             const currentRideStatus = (ride as Booking & { ride_status?: RideStatus }).ride_status ?? null
             const nextStep = currentRideStatus !== null
-              ? RIDE_STATUS_STEPS.find(s => s.key === currentRideStatus)
-              : RIDE_STATUS_STEPS[0]
+              ? rideStatusSteps.find(s => s.key === currentRideStatus)
+              : rideStatusSteps[0]
 
             if (!nextStep) return (
               <div style={{ textAlign: 'center', fontSize: 13, color: 'var(--txt3)', padding: '8px 0' }}>
@@ -598,7 +622,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
               <div style={{ display: 'flex', flexDirection: 'column', gap: 10 }}>
                 {/* Mini step indicators */}
                 <div style={{ display: 'flex', gap: 4, alignItems: 'center' }}>
-                  {RIDE_STATUS_STEPS.map((step, i) => {
+                  {rideStatusSteps.map((step, i) => {
                     const stepKeys = [null, 'en_route', 'arrived', 'onboard'] as RideStatus[]
                     const stepDone = stepKeys.indexOf(currentRideStatus) >= i || currentRideStatus === step.key
                     return (
@@ -608,7 +632,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
                           background: stepDone ? 'var(--y)' : 'var(--border)',
                           transition: 'background 0.3s',
                         }} />
-                        {i === RIDE_STATUS_STEPS.length - 1 && (
+                        {i === rideStatusSteps.length - 1 && (
                           <div style={{
                             width: 8, height: 8, borderRadius: '50%',
                             background: currentRideStatus === 'done' ? 'var(--y)' : 'var(--border)',
@@ -658,7 +682,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
               cursor: 'pointer', fontFamily: 'inherit',
             }}
           >
-            ✗ בטל שריון והחזר קרדיט
+            {t('cancelButton')}
           </button>
         </div>
       )}
@@ -672,15 +696,25 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
               borderRadius: 8, padding: '10px 12px',
               color: '#E74C3C', fontSize: 13, fontWeight: 600, textAlign: 'center',
             }}>
-              ⏱ יש לך נסיעה בהפרש של פחות משעה
+              {t('timeConflict')}
+            </div>
+          ) : !isSubscribed ? (
+            <div style={{
+              background: 'rgba(231,76,60,0.08)', border: '1px solid rgba(231,76,60,0.25)',
+              borderRadius: 8, padding: '10px 12px',
+              color: '#E74C3C', fontSize: 13, fontWeight: 600, textAlign: 'center',
+            }}>
+              {t('requiresSubscription')}
             </div>
           ) : (
             <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
               <div style={{ fontSize: 13 }}>
-                <span style={{ color: 'var(--txt2)' }}>עמלה: </span>
                 <span style={{ color: commission > 0 ? 'var(--red)' : 'var(--green)', fontWeight: 700 }}>
-                  {commission > 0 ? `−₪${commission}` : 'ללא עמלה'}
+                  {t('commission', { amount: commission })}
                 </span>
+                {commission > 0 && (
+                  <span style={{ color: 'var(--txt3)', fontSize: 11, marginRight: 4 }}>{t('fromCredit')}</span>
+                )}
               </div>
               <button
                 className="btn-yellow"
@@ -688,7 +722,7 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
                 disabled={!canClaim || claiming}
                 onClick={onClaim}
               >
-                {claiming ? '...' : 'שריין נסיעה'}
+                {claiming ? t('claiming') : t('claimButton')}
               </button>
             </div>
           )}

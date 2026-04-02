@@ -68,6 +68,8 @@ const CITY_PRICES: Record<string, number> = {
 // ─── Types ────────────────────────────────────────────────────────
 interface FormData {
   trip_type: 'airport' | 'intercity'
+  airport_direction: 'to_airport' | 'from_airport'
+  flight_number: string
   customer_name: string; customer_phone: string; customer_email: string
   pickup_city: string; pickup_street: string; pickup_house_number: string
   destination_city: string
@@ -81,6 +83,8 @@ interface FormData {
 }
 const initialForm: FormData = {
   trip_type: 'airport',
+  airport_direction: 'to_airport',
+  flight_number: '',
   customer_name: '', customer_phone: '', customer_email: '',
   pickup_city: '', pickup_street: '', pickup_house_number: '',
   destination_city: '',
@@ -162,11 +166,12 @@ export default function BookingForm() {
     if (!form.travel_date || !form.travel_time) {
       setPrice({ total: tierBase, tierBase, vehicle, range, inTable }); return
     }
-    const { total } = calculatePrice({
+    const { total: calcTotal } = calculatePrice({
       city: form.pickup_city, basePrice: fallbackBase, passengers: form.passengers,
       travelDate: form.travel_date, travelTime: form.travel_time,
       extras: form.extras, paymentMethod: form.payment_method,
     })
+    const total = calcTotal + (form.airport_direction === 'from_airport' ? 10 : 0)
     setPrice({ total, tierBase, vehicle, range, inTable })
   }, [form.trip_type, form.pickup_city, form.destination_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
 
@@ -299,6 +304,7 @@ export default function BookingForm() {
       if (form.trip_type === 'intercity' && !form.destination_city) return 'נא לבחור עיר יעד'
       if (!form.travel_date) return 'נא לבחור תאריך נסיעה'
       if (!form.travel_time) return 'נא להזין שעת נסיעה'
+      if (form.trip_type === 'airport' && form.airport_direction === 'from_airport' && !form.flight_number.trim()) return 'נא להזין מספר טיסה'
       if (form.return_trip && form.trip_type === 'airport' && !form.return_flight_number.trim()) return 'נא להזין מספר טיסה לחזרה'
     }
     return null
@@ -466,7 +472,11 @@ export default function BookingForm() {
                 <div style={{ textAlign: 'left', fontSize: 11, color: 'rgba(0,0,0,0.6)' }}>
                   {form.pickup_city && (
                     <div style={{ fontWeight: 600, fontSize: 10 }}>
-                      {form.pickup_city} ←{' '}{form.trip_type === 'intercity' ? (form.destination_city || '?') : 'נתב״ג'}
+                      {form.trip_type === 'airport'
+                        ? (form.airport_direction === 'to_airport'
+                            ? `${form.pickup_city} ← נתב״ג`
+                            : `נתב״ג ← ${form.pickup_city}`)
+                        : `${form.pickup_city} ← ${form.destination_city || '?'}`}
                     </div>
                   )}
                   <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
@@ -561,20 +571,100 @@ export default function BookingForm() {
                 </div>
 
                 {form.trip_type === 'airport' ? (
-                  <div className="field-enter">
-                    <PickupMapSelector
-                      value={addressDisplay}
-                      selected={selectedPickup}
-                      onSelect={handleAddressSelect}
-                      onClear={handleAddressClear}
-                      houseNumber={form.pickup_house_number}
-                      onHouseNumberChange={v => setField('pickup_house_number', v)}
-                      priceChip={form.pickup_city
-                        ? (CITY_PRICES[form.pickup_city]
-                            ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</span>
-                            : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>)
-                        : undefined}
-                    />
+                  <div className="field-enter" style={{ display: 'flex', flexDirection: 'column', gap: 8 }}>
+                    {/* From box */}
+                    <div style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>
+                        {form.airport_direction === 'to_airport' ? 'מאיפה יוצאים' : 'נקודת מוצא'}
+                      </div>
+                      {form.airport_direction === 'to_airport' ? (
+                        <PickupMapSelector
+                          value={addressDisplay}
+                          selected={selectedPickup}
+                          onSelect={handleAddressSelect}
+                          onClear={handleAddressClear}
+                          houseNumber={form.pickup_house_number}
+                          onHouseNumberChange={v => setField('pickup_house_number', v)}
+                          priceChip={form.pickup_city
+                            ? (CITY_PRICES[form.pickup_city]
+                                ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</span>
+                                : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>)
+                            : undefined}
+                        />
+                      ) : (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                          <span style={{ fontSize: 22 }}>✈️</span>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)' }}>נמל התעופה בן גוריון</div>
+                            <div style={{ fontSize: 12, color: 'var(--txt3)' }}>טרמינל 3</div>
+                          </div>
+                        </div>
+                      )}
+                    </div>
+
+                    {/* Swap button */}
+                    <div style={{ display: 'flex', justifyContent: 'center' }}>
+                      <button
+                        type="button"
+                        onClick={() => {
+                          setField('airport_direction', form.airport_direction === 'to_airport' ? 'from_airport' : 'to_airport')
+                          setField('flight_number', '')
+                        }}
+                        style={{
+                          background: 'var(--card2)', border: '1px solid var(--border)',
+                          borderRadius: 20, padding: '6px 16px', cursor: 'pointer',
+                          fontSize: 13, fontWeight: 700, color: 'var(--y)',
+                          display: 'flex', alignItems: 'center', gap: 6,
+                        }}
+                      >
+                        ⇅ החלף כיוון
+                      </button>
+                    </div>
+
+                    {/* To box */}
+                    <div style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 12, padding: '10px 14px' }}>
+                      <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 6 }}>
+                        {form.airport_direction === 'to_airport' ? 'יעד' : 'לאן מגיעים'}
+                      </div>
+                      {form.airport_direction === 'to_airport' ? (
+                        <div style={{ display: 'flex', alignItems: 'center', gap: 10, padding: '4px 0' }}>
+                          <span style={{ fontSize: 22 }}>✈️</span>
+                          <div>
+                            <div style={{ fontWeight: 700, fontSize: 15, color: 'var(--txt)' }}>נמל התעופה בן גוריון</div>
+                            <div style={{ fontSize: 12, color: 'var(--txt3)' }}>טרמינל 3</div>
+                          </div>
+                        </div>
+                      ) : (
+                        <PickupMapSelector
+                          value={addressDisplay}
+                          selected={selectedPickup}
+                          onSelect={handleAddressSelect}
+                          onClear={handleAddressClear}
+                          houseNumber={form.pickup_house_number}
+                          onHouseNumberChange={v => setField('pickup_house_number', v)}
+                          priceChip={form.pickup_city
+                            ? (CITY_PRICES[form.pickup_city]
+                                ? <span style={{ fontSize: 11, fontWeight: 700, color: '#FFD100', background: 'rgba(255,209,0,0.12)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(255,209,0,0.2)' }}>מחיר בסיס: ₪{CITY_PRICES[form.pickup_city]}</span>
+                                : <span style={{ fontSize: 11, fontWeight: 700, color: '#F97316', background: 'rgba(249,115,22,0.1)', padding: '2px 8px', borderRadius: 20, border: '1px solid rgba(249,115,22,0.2)' }}>מחיר יתואם בטלפון</span>)
+                            : undefined}
+                        />
+                      )}
+                    </div>
+
+                    {/* Flight number — required when from_airport */}
+                    {form.airport_direction === 'from_airport' && (
+                      <div>
+                        <label>מספר טיסה *</label>
+                        <input
+                          type="text"
+                          placeholder="LY123"
+                          value={form.flight_number}
+                          onChange={e => setField('flight_number', e.target.value)}
+                          dir="ltr"
+                          style={{ textAlign: 'right', fontSize: 16, height: 48 }}
+                        />
+                      </div>
+                    )}
                   </div>
                 ) : (
                   <div className="field-enter">
@@ -820,7 +910,9 @@ export default function BookingForm() {
                       <div style={{ flex: 1 }}>
                         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>נקודת איסוף</div>
                         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--txt)', lineHeight: 1.25 }}>
-                          {form.pickup_street ? `${form.pickup_street} ${form.pickup_house_number}, ${form.pickup_city}` : form.pickup_city || '—'}
+                          {form.trip_type === 'airport' && form.airport_direction === 'from_airport'
+                            ? 'נמל התעופה בן גוריון, טרמינל 3'
+                            : (form.pickup_street ? `${form.pickup_street} ${form.pickup_house_number}, ${form.pickup_city}` : form.pickup_city || '—')}
                         </div>
                       </div>
                     </div>
@@ -833,7 +925,9 @@ export default function BookingForm() {
                         <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 4 }}>יעד סופי</div>
                         <div style={{ fontSize: 17, fontWeight: 800, color: 'var(--txt)', lineHeight: 1.25 }}>
                           {form.trip_type === 'airport'
-                            ? 'נמל התעופה בן גוריון, טרמינל 3'
+                            ? (form.airport_direction === 'to_airport'
+                                ? 'נמל התעופה בן גוריון, טרמינל 3'
+                                : (form.pickup_street ? `${form.pickup_street} ${form.pickup_house_number}, ${form.pickup_city}` : form.pickup_city || '—'))
                             : (form.destination_street
                                 ? `${form.destination_street} ${form.destination_house_number}, ${form.destination_city}`
                                 : form.destination_city || '—')}

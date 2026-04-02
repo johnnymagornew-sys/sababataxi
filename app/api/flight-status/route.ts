@@ -9,9 +9,9 @@ interface FlightStatus {
   delayed: number | null  // minutes delayed
 }
 
-// In-memory cache per flight number — 15 min TTL
+// In-memory cache per flight number — 2 min TTL (matches client refresh interval)
 const cache = new Map<string, { data: FlightStatus; fetchedAt: number }>()
-const CACHE_MS = 15 * 60 * 1000
+const CACHE_MS = 2 * 60 * 1000
 
 // IATA airline code → ICAO 3-letter code (for OpenSky callsign lookup)
 const IATA_TO_ICAO: Record<string, string> = {

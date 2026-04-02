@@ -806,17 +806,47 @@ function formatUtcToLocal(utc: string | null): string {
   } catch { return '' }
 }
 
+const FLIGHT_REFRESH_MS = 2 * 60 * 1000 // refresh every 2 min
+
 function FlightStatusBox({ flightNumber }: { flightNumber: string }) {
   const [data, setData] = useState<FlightData | null>(null)
   const [loading, setLoading] = useState(true)
   const [error, setError] = useState(false)
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null)
+  const [refreshing, setRefreshing] = useState(false)
 
-  useEffect(() => {
+  const fetchStatus = useCallback((isBackground = false) => {
+    if (isBackground) setRefreshing(true)
     fetch(`/api/flight-status?flight=${encodeURIComponent(flightNumber)}`)
       .then(r => r.ok ? r.json() : Promise.reject())
-      .then(d => { setData(d); setLoading(false) })
-      .catch(() => { setError(true); setLoading(false) })
+      .then(d => {
+        setData(d)
+        setLoading(false)
+        setError(false)
+        setLastUpdated(new Date())
+        setRefreshing(false)
+      })
+      .catch(() => {
+        if (!isBackground) setError(true)
+        setLoading(false)
+        setRefreshing(false)
+      })
   }, [flightNumber])
+
+  useEffect(() => {
+    fetchStatus()
+    const interval = setInterval(() => fetchStatus(true), FLIGHT_REFRESH_MS)
+    return () => clearInterval(interval)
+  }, [fetchStatus])
+
+  // Relative "updated X min ago" label (ticks every 30s)
+  const [, setTick] = useState(0)
+  useEffect(() => {
+    const t = setInterval(() => setTick(n => n + 1), 30_000)
+    return () => clearInterval(t)
+  }, [])
+
+  const minutesAgo = lastUpdated ? Math.floor((Date.now() - lastUpdated.getTime()) / 60000) : null
 
   const statusConfig: Record<string, { label: string; color: string; bg: string }> = {
     scheduled:  { label: 'מתוזמן',  color: '#94a3b8', bg: 'rgba(148,163,184,0.1)' },
@@ -857,7 +887,7 @@ function FlightStatusBox({ flightNumber }: { flightNumber: string }) {
       </div>
 
       {data && !loading && !error && (
-        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap' }}>
+        <div style={{ display: 'flex', gap: 16, flexWrap: 'wrap', alignItems: 'flex-end' }}>
           {arrTime && (
             <div>
               <div style={{ fontSize: 10, color: 'var(--txt3)', marginBottom: 1 }}>
@@ -876,6 +906,17 @@ function FlightStatusBox({ flightNumber }: { flightNumber: string }) {
               </div>
             </div>
           )}
+          {/* Last updated + refresh indicator */}
+          <div style={{ marginRight: 'auto', textAlign: 'left' }}>
+            <div style={{ fontSize: 10, color: 'var(--txt3)', display: 'flex', alignItems: 'center', gap: 4 }}>
+              {refreshing
+                ? <span style={{ color: 'var(--txt3)' }}>מתעדכן...</span>
+                : minutesAgo !== null && (
+                  <span>{minutesAgo === 0 ? 'עודכן כעת' : `עודכן לפני ${minutesAgo} דק׳`}</span>
+                )
+              }
+            </div>
+          </div>
         </div>
       )}
     </div>

@@ -410,29 +410,68 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         )}
 
         {tab === 'arrivals' && (
-          <div>
-            <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--txt2)', textAlign: 'center' }}>
-              לוח נחיתות בן גוריון — עדכון בזמן אמת
-            </div>
-            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--card)' }}>
-              <iframe
-                src="https://www.iaa.gov.il/airports/ben-gurion/flight-board/"
-                style={{ width: '100%', height: 600, border: 'none', display: 'block' }}
-                title="לוח נחיתות נתב״ג"
-              />
-            </div>
+          <div style={{ display: 'flex', flexDirection: 'column', gap: 12 }}>
             <a
               href="https://www.iaa.gov.il/airports/ben-gurion/flight-board/"
               target="_blank"
               rel="noopener noreferrer"
               style={{
-                display: 'block', marginTop: 10, textAlign: 'center',
-                padding: '12px', background: 'var(--card)',
-                border: '1px solid var(--border)', borderRadius: 10,
-                color: 'var(--txt2)', fontSize: 13, textDecoration: 'none',
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'var(--card)', border: '1px solid var(--border)',
+                borderRadius: 14, padding: '20px 18px', textDecoration: 'none',
               }}
             >
-              🔗 פתח לוח נחיתות באתר נתב״ג
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>
+                  🛬 לוח נחיתות נתב״ג
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--txt2)' }}>
+                  לוח רשמי של רשות שדות התעופה — עדכון בזמן אמת
+                </div>
+              </div>
+              <span style={{ fontSize: 22, color: 'var(--txt3)' }}>←</span>
+            </a>
+
+            <a
+              href="https://www.flightradar24.com/data/airports/tlv/arrivals"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'var(--card)', border: '1px solid var(--border)',
+                borderRadius: 14, padding: '20px 18px', textDecoration: 'none',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>
+                  📡 FlightRadar24 — TLV
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--txt2)' }}>
+                  מעקב טיסות בזמן אמת — נחיתות בן גוריון
+                </div>
+              </div>
+              <span style={{ fontSize: 22, color: 'var(--txt3)' }}>←</span>
+            </a>
+
+            <a
+              href="https://flightaware.com/live/airport/LLBG"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
+                background: 'var(--card)', border: '1px solid var(--border)',
+                borderRadius: 14, padding: '20px 18px', textDecoration: 'none',
+              }}
+            >
+              <div>
+                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>
+                  ✈️ FlightAware — LLBG
+                </div>
+                <div style={{ fontSize: 13, color: 'var(--txt2)' }}>
+                  סטטוס טיסות ועיכובים בנתב״ג
+                </div>
+              </div>
+              <span style={{ fontSize: 22, color: 'var(--txt3)' }}>←</span>
             </a>
           </div>
         )}

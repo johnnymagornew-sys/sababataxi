@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { useTranslations } from 'next-intl'
 
 interface NominatimResult {
   place_id: number
@@ -36,11 +37,15 @@ export default function PickupMapSelector({
   value, selected, onSelect, onClear,
   houseNumber, onHouseNumberChange,
   priceChip,
-  label = 'כתובת איסוף *',
-  placeholder = 'הקלד כתובת: רחוב ומספר, עיר...',
-  badgeLabel = 'כתובת איסוף',
+  label,
+  placeholder,
+  badgeLabel,
   pinColor = '#FFD100',
 }: Props) {
+  const tMap = useTranslations('mapSelector')
+  const resolvedLabel = label ?? tMap('pickupLabel') + ' *'
+  const resolvedPlaceholder = placeholder ?? tMap('pickupPlaceholder')
+  const resolvedBadgeLabel = badgeLabel ?? tMap('pickupLabel')
   const [phase, setPhase] = useState<'idle' | 'searching' | 'selected'>(selected ? 'selected' : 'idle')
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<NominatimResult[]>([])
@@ -189,7 +194,7 @@ export default function PickupMapSelector({
 
   return (
     <div>
-      <label style={{ display: 'block', marginBottom: 8 }}>{label}</label>
+      <label style={{ display: 'block', marginBottom: 8 }}>{resolvedLabel}</label>
 
       <div ref={containerRef} style={{ perspective: '1000px' }}
         onMouseMove={onMouseMove}
@@ -324,10 +329,10 @@ export default function PickupMapSelector({
                   }}
                 >
                   <span style={{ fontSize: 15 }}>📍</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: pinColor }}>לחץ לבחירת כתובת</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: pinColor }}>{tMap('clickToSelect')}</span>
                 </motion.div>
                 <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.25)', letterSpacing: '0.2px' }}>
-                  {badgeLabel}
+                  {resolvedBadgeLabel}
                 </div>
               </motion.div>
             )}
@@ -349,13 +354,13 @@ export default function PickupMapSelector({
                 }}
               >
                 <div style={{ fontSize: 10, fontWeight: 700, color: pinColor, textTransform: 'uppercase', letterSpacing: '0.8px' }}>
-                  {label}
+                  {resolvedLabel}
                 </div>
                 <div style={{ position: 'relative' }}>
                   <input
                     ref={inputRef}
                     type="text"
-                    placeholder={placeholder}
+                    placeholder={resolvedPlaceholder}
                     value={query}
                     onChange={e => handleChange(e.target.value)}
                     onFocus={updateDropRect}
@@ -373,7 +378,7 @@ export default function PickupMapSelector({
                     <motion.div
                       animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1, repeat: Infinity }}
                       style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 12, color: '#666' }}>
-                      מחפש...
+                      {tMap('searching')}
                     </motion.div>
                   )}
                 </div>
@@ -418,7 +423,7 @@ export default function PickupMapSelector({
                     animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 2, repeat: Infinity }}
                     style={{ width: 5, height: 5, borderRadius: '50%', background: pinColor }}
                   />
-                  <span style={{ fontSize: 10, fontWeight: 700, color: pinColor, letterSpacing: '0.4px' }}>{badgeLabel}</span>
+                  <span style={{ fontSize: 10, fontWeight: 700, color: pinColor, letterSpacing: '0.4px' }}>{resolvedBadgeLabel}</span>
                 </motion.div>
 
                 {/* Edit hint top-left */}
@@ -432,7 +437,7 @@ export default function PickupMapSelector({
                     display: 'flex', alignItems: 'center', gap: 4,
                     pointerEvents: 'none',
                   }}>
-                  ✏️ <span>לחץ לשינוי</span>
+                  ✏️ <span>{tMap('clickToChange')}</span>
                 </motion.div>
 
                 {/* Address bottom-right */}
@@ -471,7 +476,7 @@ export default function PickupMapSelector({
             style={{ overflow: 'hidden', marginTop: 8 }}
           >
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <label style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 12 }}>מספר בית:</label>
+              <label style={{ margin: 0, whiteSpace: 'nowrap', fontSize: 12 }}>{tMap('houseNumber')}</label>
               <input type="text" placeholder="7" value={houseNumber}
                 onChange={e => onHouseNumberChange(e.target.value)}
                 style={{ width: 80, padding: '6px 10px', fontSize: 14 }} />

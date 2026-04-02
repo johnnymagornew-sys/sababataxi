@@ -318,5 +318,42 @@
   },
   "langSwitcher": {
     "label": "🌐"
+  },
+  "vehicles": {
+    "taxi": "Такси",
+    "van": "Минивэн",
+    "vanLarge": "Большой минивэн",
+    "minibus": "Микроавтобус",
+    "minibusLarge": "Большой микроавтобус",
+    "minibusXL": "Микроавтобус XL",
+    "range04": "1–4 пасс.",
+    "range56": "5–6 пасс.",
+    "range78": "7–8 пасс.",
+    "range910": "9–10 пасс.",
+    "range1114": "11–14 пасс.",
+    "range15plus": "15+ пасс.",
+    "intercityTaxi": "Обычное такси",
+    "intercityMinibus": "Микроавтобус",
+    "intercityMinibusLarge": "Большой микроавтобус",
+    "intercityVanMinibus": "Вэн / Микроавтобус",
+    "intercitySmallBus": "Малый автобус",
+    "intercityBus": "Автобус"
+  },
+  "mapSelector": {
+    "clickToSelect": "Нажмите для выбора адреса",
+    "searching": "Поиск...",
+    "clickToChange": "Нажмите для изменения",
+    "houseNumber": "Номер дома:",
+    "intercityTitle": "Выберите маршрут",
+    "intercitySubtitle": "Нажмите для выбора адресов",
+    "pickupConfirmed": "Посадка — нажмите для изменения",
+    "pickupLabel": "Адрес посадки",
+    "pickupPlaceholder": "Введите адрес: улица и номер, город...",
+    "destLabel": "Адрес назначения",
+    "destPlaceholder": "Введите адрес назначения...",
+    "pickupPin": "📍 Посадка",
+    "destPin": "🎯 Назначение",
+    "housePickup": "Номер дома (посадка):",
+    "houseDest": "Номер дома (назначение):"
   }
 }

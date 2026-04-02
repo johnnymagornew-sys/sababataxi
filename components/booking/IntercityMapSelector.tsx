@@ -3,6 +3,7 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion'
 import { createPortal } from 'react-dom'
+import { useTranslations } from 'next-intl'
 
 interface NominatimResult {
   place_id: number
@@ -42,6 +43,7 @@ export default function IntercityMapSelector({
   onPickupHouseNumberChange, onDestinationHouseNumberChange,
   priceChip,
 }: Props) {
+  const tMap = useTranslations('mapSelector')
   const initPhase = (): Phase => {
     if (pickup && destination) return 'complete'
     if (pickup) return 'destination'
@@ -323,9 +325,9 @@ export default function IntercityMapSelector({
                   <span style={{ fontSize: 14, color: '#FFD100' }}>📍</span>
                   <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.5)', fontWeight: 500 }}>→</span>
                   <span style={{ fontSize: 14, color: '#3B82F6' }}>🎯</span>
-                  <span style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F0', marginRight: 4 }}>בחר מסלול בין עירוני</span>
+                  <span style={{ fontSize: 14, fontWeight: 700, color: '#F0F0F0', marginRight: 4 }}>{tMap('intercityTitle')}</span>
                 </motion.div>
-                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>לחץ לבחירת כתובות איסוף ויעד</div>
+                <div style={{ fontSize: 11, color: 'rgba(255,255,255,0.2)' }}>{tMap('intercitySubtitle')}</div>
               </motion.div>
             )}
           </AnimatePresence>
@@ -358,7 +360,7 @@ export default function IntercityMapSelector({
                   >
                     <span style={{ fontSize: 13, flexShrink: 0 }}>📍</span>
                     <div style={{ flex: 1, minWidth: 0 }}>
-                      <div style={{ fontSize: 10, color: '#FFD100', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 1 }}>איסוף — לחץ לשינוי</div>
+                      <div style={{ fontSize: 10, color: '#FFD100', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.5px', marginBottom: 1 }}>{tMap('pickupConfirmed')}</div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: '#E8E8E8', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
                         {pickupDisplay}
                       </div>
@@ -368,9 +370,9 @@ export default function IntercityMapSelector({
                 ) : phase === 'pickup' ? (
                   <SearchField
                     ref={inputRef}
-                    label="כתובת איסוף"
+                    label={tMap('pickupLabel')}
                     labelColor="#FFD100"
-                    placeholder="הקלד כתובת: רחוב ומספר, עיר..."
+                    placeholder={tMap('pickupPlaceholder')}
                     query={query}
                     loading={loading}
                     onChange={handleChange}
@@ -394,9 +396,9 @@ export default function IntercityMapSelector({
                 {phase === 'destination' && (
                   <SearchField
                     ref={inputRef}
-                    label="כתובת יעד"
+                    label={tMap('destLabel')}
                     labelColor="#3B82F6"
-                    placeholder="הקלד כתובת יעד..."
+                    placeholder={tMap('destPlaceholder')}
                     query={query}
                     loading={loading}
                     onChange={handleChange}
@@ -448,7 +450,7 @@ export default function IntercityMapSelector({
                   }}
                 >
                   <div style={{ flex: 1, direction: 'rtl', textAlign: 'right', minWidth: 0 }}>
-                    <div style={{ fontSize: 9, color: '#FFD100', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 3 }}>📍 איסוף</div>
+                    <div style={{ fontSize: 9, color: '#FFD100', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 3 }}>{tMap('pickupPin')}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#EFEFEF', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{pickupDisplay}</div>
                   </div>
                   <motion.div animate={{ opacity: hovered ? 0.5 : 0.2 }} style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', flexShrink: 0, paddingRight: 4 }}>✏️</motion.div>
@@ -468,7 +470,7 @@ export default function IntercityMapSelector({
                   }}
                 >
                   <div style={{ flex: 1, direction: 'rtl', textAlign: 'right', minWidth: 0 }}>
-                    <div style={{ fontSize: 9, color: '#3B82F6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 3 }}>🎯 יעד</div>
+                    <div style={{ fontSize: 9, color: '#3B82F6', fontWeight: 700, textTransform: 'uppercase', letterSpacing: '0.6px', marginBottom: 3 }}>{tMap('destPin')}</div>
                     <div style={{ fontSize: 13, fontWeight: 700, color: '#EFEFEF', lineHeight: 1.3, overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{destDisplay}</div>
                   </div>
                   <motion.div animate={{ opacity: hovered ? 0.5 : 0.2 }} style={{ fontSize: 12, color: 'rgba(255,255,255,0.4)', flexShrink: 0, paddingRight: 4 }}>✏️</motion.div>
@@ -534,14 +536,14 @@ export default function IntercityMapSelector({
           <motion.div initial={{ opacity: 0, height: 0 }} animate={{ opacity: 1, height: 'auto' }} exit={{ opacity: 0, height: 0 }}
             transition={{ duration: 0.22 }} style={{ overflow: 'hidden', marginTop: 8, display: 'flex', gap: 16, flexWrap: 'wrap' }}>
             <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-              <label style={{ margin: 0, fontSize: 12, whiteSpace: 'nowrap', color: 'rgba(255,209,0,0.8)' }}>מספר בית (איסוף):</label>
+              <label style={{ margin: 0, fontSize: 12, whiteSpace: 'nowrap', color: 'rgba(255,209,0,0.8)' }}>{tMap('housePickup')}</label>
               <input type="text" placeholder="7" value={pickupHouseNumber}
                 onChange={e => onPickupHouseNumberChange(e.target.value)}
                 style={{ width: 70, padding: '6px 10px', fontSize: 14 }} />
             </div>
             {destination?.street && (
               <div style={{ display: 'flex', alignItems: 'center', gap: 8 }}>
-                <label style={{ margin: 0, fontSize: 12, whiteSpace: 'nowrap', color: 'rgba(59,130,246,0.8)' }}>מספר בית (יעד):</label>
+                <label style={{ margin: 0, fontSize: 12, whiteSpace: 'nowrap', color: 'rgba(59,130,246,0.8)' }}>{tMap('houseDest')}</label>
                 <input type="text" placeholder="7" value={destinationHouseNumber}
                   onChange={e => onDestinationHouseNumberChange(e.target.value)}
                   style={{ width: 70, padding: '6px 10px', fontSize: 14 }} />
@@ -556,40 +558,44 @@ export default function IntercityMapSelector({
 
 // ─── SearchField sub-component ────────────────────────────────────
 import { forwardRef } from 'react'
+import { useTranslations as useT } from 'next-intl'
 
 const SearchField = forwardRef<HTMLInputElement, {
   label: string; labelColor: string; placeholder: string
   query: string; loading: boolean
   onChange: (v: string) => void; onFocus: () => void
-}>(({ label, labelColor, placeholder, query, loading, onChange, onFocus }, ref) => (
-  <div>
-    <div style={{ fontSize: 10, fontWeight: 700, color: labelColor, textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>
-      {label}
+}>(({ label, labelColor, placeholder, query, loading, onChange, onFocus }, ref) => {
+  const tMap = useT('mapSelector')
+  return (
+    <div>
+      <div style={{ fontSize: 10, fontWeight: 700, color: labelColor, textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 6 }}>
+        {label}
+      </div>
+      <div style={{ position: 'relative' }}>
+        <input
+          ref={ref}
+          type="text"
+          placeholder={placeholder}
+          value={query}
+          onChange={e => onChange(e.target.value)}
+          onFocus={onFocus}
+          autoComplete="off"
+          style={{
+            width: '100%', boxSizing: 'border-box',
+            background: 'rgba(255,255,255,0.06)',
+            border: `1px solid ${labelColor}44`,
+            borderRadius: 10, color: '#F2F2F2',
+            padding: '9px 14px', fontSize: 14, outline: 'none', direction: 'rtl',
+          }}
+        />
+        {loading && (
+          <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1, repeat: Infinity }}
+            style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: '#555' }}>
+            {tMap('searching')}
+          </motion.div>
+        )}
+      </div>
     </div>
-    <div style={{ position: 'relative' }}>
-      <input
-        ref={ref}
-        type="text"
-        placeholder={placeholder}
-        value={query}
-        onChange={e => onChange(e.target.value)}
-        onFocus={onFocus}
-        autoComplete="off"
-        style={{
-          width: '100%', boxSizing: 'border-box',
-          background: 'rgba(255,255,255,0.06)',
-          border: `1px solid ${labelColor}44`,
-          borderRadius: 10, color: '#F2F2F2',
-          padding: '9px 14px', fontSize: 14, outline: 'none', direction: 'rtl',
-        }}
-      />
-      {loading && (
-        <motion.div animate={{ opacity: [1, 0.4, 1] }} transition={{ duration: 1, repeat: Infinity }}
-          style={{ position: 'absolute', left: 12, top: '50%', transform: 'translateY(-50%)', fontSize: 11, color: '#555' }}>
-          מחפש...
-        </motion.div>
-      )}
-    </div>
-  </div>
-))
+  )
+})
 SearchField.displayName = 'SearchField'

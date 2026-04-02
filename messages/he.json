@@ -318,5 +318,42 @@
   },
   "langSwitcher": {
     "label": "🌐"
+  },
+  "vehicles": {
+    "taxi": "מונית",
+    "van": "ואן",
+    "vanLarge": "ואן גדול",
+    "minibus": "מיניבוס",
+    "minibusLarge": "מיניבוס גדול",
+    "minibusXL": "מיניבוס XL",
+    "range04": "1–4 נוסעים",
+    "range56": "5–6 נוסעים",
+    "range78": "7–8 נוסעים",
+    "range910": "9–10 נוסעים",
+    "range1114": "11–14 נוסעים",
+    "range15plus": "15+ נוסעים",
+    "intercityTaxi": "מונית רגילה",
+    "intercityMinibus": "מיניבוס",
+    "intercityMinibusLarge": "מיניבוס גדול",
+    "intercityVanMinibus": "ואן / מיניבוס",
+    "intercitySmallBus": "אוטובוס קטן",
+    "intercityBus": "אוטובוס"
+  },
+  "mapSelector": {
+    "clickToSelect": "לחץ לבחירת כתובת",
+    "searching": "מחפש...",
+    "clickToChange": "לחץ לשינוי",
+    "houseNumber": "מספר בית:",
+    "intercityTitle": "בחר מסלול בין עירוני",
+    "intercitySubtitle": "לחץ לבחירת כתובות איסוף ויעד",
+    "pickupConfirmed": "איסוף — לחץ לשינוי",
+    "pickupLabel": "כתובת איסוף",
+    "pickupPlaceholder": "הקלד כתובת: רחוב ומספר, עיר...",
+    "destLabel": "כתובת יעד",
+    "destPlaceholder": "הקלד כתובת יעד...",
+    "pickupPin": "📍 איסוף",
+    "destPin": "🎯 יעד",
+    "housePickup": "מספר בית (איסוף):",
+    "houseDest": "מספר בית (יעד):"
   }
 }

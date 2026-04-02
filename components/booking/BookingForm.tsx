@@ -101,6 +101,7 @@ const initialForm: FormData = {
 export default function BookingForm() {
   const t = useTranslations('booking')
   const tCommon = useTranslations('common')
+  const tV = useTranslations('vehicles')
   const STEPS = [
     { label: t('steps.details'), icon: '👤' },
     { label: t('steps.trip'), icon: '✈️' },
@@ -128,7 +129,10 @@ export default function BookingForm() {
   // Price calculation
   useEffect(() => {
     const idx = getTierIndex(form.passengers)
-    const { vehicle, range } = TIER_LABELS[idx]
+    const vehicleKeys = ['taxi', 'van', 'vanLarge', 'minibus', 'minibusLarge', 'minibusXL'] as const
+    const rangeKeys = ['range04', 'range56', 'range78', 'range910', 'range1114', 'range15plus'] as const
+    const vehicle = tV(vehicleKeys[idx])
+    const range = tV(rangeKeys[idx])
 
     if (form.trip_type === 'intercity') {
       if (!form.pickup_city || !form.destination_city) { setPrice(null); return }
@@ -142,7 +146,10 @@ export default function BookingForm() {
       const basePrice = getIntercityPrice(form.pickup_city, form.destination_city, form.passengers, isNight)
       if (!basePrice) { setPrice(null); return }
       const tierIdx = getIntercityTierIndex(form.passengers)
+      const intercityVehicleKeys = ['intercityTaxi', 'intercityMinibus', 'intercityMinibusLarge', 'intercityVanMinibus', 'intercitySmallBus', 'intercityBus'] as const
       const tier = INTERCITY_VEHICLE_TIERS[tierIdx]
+      const intercityVehicle = tV(intercityVehicleKeys[tierIdx])
+      const intercityRange = tier.passengers
       let total = basePrice
       if (form.travel_date && form.travel_time) {
         const dateTime = new Date(`${form.travel_date}T${form.travel_time}`)
@@ -156,7 +163,7 @@ export default function BookingForm() {
       if (form.extras.ski_equipment) total += 20
       if (form.extras.bike_rack) total += 50
       if (form.payment_method === 'bit') total += 10
-      setPrice({ total, tierBase: basePrice, vehicle: tier.label, range: tier.passengers, inTable: true })
+      setPrice({ total, tierBase: basePrice, vehicle: intercityVehicle, range: intercityRange, inTable: true })
       return
     }
 
@@ -175,7 +182,7 @@ export default function BookingForm() {
     })
     const total = calcTotal + (form.airport_direction === 'from_airport' ? 10 : 0)
     setPrice({ total, tierBase, vehicle, range, inTable })
-  }, [form.trip_type, form.pickup_city, form.destination_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
+  }, [form.trip_type, form.pickup_city, form.destination_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method, tV])
 
   // Return trip price calculation
   useEffect(() => {

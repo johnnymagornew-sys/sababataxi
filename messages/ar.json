@@ -318,5 +318,42 @@
   },
   "langSwitcher": {
     "label": "🌐"
+  },
+  "vehicles": {
+    "taxi": "تاكسي",
+    "van": "فان",
+    "vanLarge": "فان كبير",
+    "minibus": "ميني باص",
+    "minibusLarge": "ميني باص كبير",
+    "minibusXL": "ميني باص XL",
+    "range04": "1–4 ركاب",
+    "range56": "5–6 ركاب",
+    "range78": "7–8 ركاب",
+    "range910": "9–10 ركاب",
+    "range1114": "11–14 ركاب",
+    "range15plus": "15+ ركاب",
+    "intercityTaxi": "تاكسي عادي",
+    "intercityMinibus": "ميني باص",
+    "intercityMinibusLarge": "ميني باص كبير",
+    "intercityVanMinibus": "فان / ميني باص",
+    "intercitySmallBus": "باص صغير",
+    "intercityBus": "باص"
+  },
+  "mapSelector": {
+    "clickToSelect": "انقر لاختيار العنوان",
+    "searching": "جاري البحث...",
+    "clickToChange": "انقر للتغيير",
+    "houseNumber": "رقم البيت:",
+    "intercityTitle": "اختر مسار بين المدن",
+    "intercitySubtitle": "انقر لاختيار عناوين الاستلام والوجهة",
+    "pickupConfirmed": "الاستلام — انقر للتغيير",
+    "pickupLabel": "عنوان الاستلام",
+    "pickupPlaceholder": "أدخل العنوان: شارع ورقم، مدينة...",
+    "destLabel": "عنوان الوجهة",
+    "destPlaceholder": "أدخل عنوان الوجهة...",
+    "pickupPin": "📍 الاستلام",
+    "destPin": "🎯 الوجهة",
+    "housePickup": "رقم البيت (الاستلام):",
+    "houseDest": "رقم البيت (الوجهة):"
   }
 }

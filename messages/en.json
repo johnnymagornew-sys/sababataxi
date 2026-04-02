@@ -318,5 +318,42 @@
   },
   "langSwitcher": {
     "label": "🌐"
+  },
+  "vehicles": {
+    "taxi": "Taxi",
+    "van": "Van",
+    "vanLarge": "Large Van",
+    "minibus": "Minibus",
+    "minibusLarge": "Large Minibus",
+    "minibusXL": "Minibus XL",
+    "range04": "1–4 pax",
+    "range56": "5–6 pax",
+    "range78": "7–8 pax",
+    "range910": "9–10 pax",
+    "range1114": "11–14 pax",
+    "range15plus": "15+ pax",
+    "intercityTaxi": "Regular Taxi",
+    "intercityMinibus": "Minibus",
+    "intercityMinibusLarge": "Large Minibus",
+    "intercityVanMinibus": "Van / Minibus",
+    "intercitySmallBus": "Small Bus",
+    "intercityBus": "Bus"
+  },
+  "mapSelector": {
+    "clickToSelect": "Click to select address",
+    "searching": "Searching...",
+    "clickToChange": "Click to change",
+    "houseNumber": "House #:",
+    "intercityTitle": "Select Intercity Route",
+    "intercitySubtitle": "Click to select pickup & destination",
+    "pickupConfirmed": "Pickup — click to change",
+    "pickupLabel": "Pickup Address",
+    "pickupPlaceholder": "Enter address: street and number, city...",
+    "destLabel": "Destination Address",
+    "destPlaceholder": "Enter destination address...",
+    "pickupPin": "📍 Pickup",
+    "destPin": "🎯 Destination",
+    "housePickup": "House # (pickup):",
+    "houseDest": "House # (dest):"
   }
 }

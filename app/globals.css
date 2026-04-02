@@ -22,7 +22,6 @@
 }
 
 html {
-  direction: rtl;
   background: var(--bg);
   color: var(--txt);
   scroll-behavior: smooth;
@@ -46,7 +45,6 @@ input, select, textarea {
   font-size: 15px;
   outline: none;
   transition: border-color 0.15s;
-  direction: rtl;
 }
 
 input:focus, select:focus, textarea:focus {

@@ -3,7 +3,6 @@
 import { useState, useRef, useCallback, useEffect } from 'react'
 import { motion, AnimatePresence, useMotionValue, useTransform, useSpring } from 'framer-motion'
 import { createPortal } from 'react-dom'
-import MapPickerModal from './MapPickerModal'
 
 interface NominatimResult {
   place_id: number
@@ -54,9 +53,6 @@ export default function IntercityMapSelector({
   const [loading, setLoading] = useState(false)
   const [dropRect, setDropRect] = useState<{ top: number; left: number; width: number } | null>(null)
   const [hovered, setHovered] = useState(false)
-  const [mapModal, setMapModal] = useState<'pickup' | 'destination' | null>(null)
-  const [pickupCoords, setPickupCoords] = useState<{ lat: number; lng: number } | null>(null)
-  const [destCoords, setDestCoords] = useState<{ lat: number; lng: number } | null>(null)
   const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const dropdownRef = useRef<HTMLDivElement>(null)
@@ -370,24 +366,16 @@ export default function IntercityMapSelector({
                     <span style={{ fontSize: 13, color: 'rgba(255,255,255,0.3)', flexShrink: 0 }}>✏️</span>
                   </motion.div>
                 ) : phase === 'pickup' ? (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                    <div style={{ flex: 1 }}>
-                      <SearchField
-                        ref={inputRef}
-                        label="כתובת איסוף"
-                        labelColor="#FFD100"
-                        placeholder="הקלד כתובת: רחוב ומספר, עיר..."
-                        query={query}
-                        loading={loading}
-                        onChange={handleChange}
-                        onFocus={updateDropRect}
-                      />
-                    </div>
-                    <button type="button" onClick={() => setMapModal('pickup')}
-                      style={{ flexShrink: 0, background: 'rgba(255,209,0,0.12)', border: '1px solid rgba(255,209,0,0.3)', borderRadius: 10, padding: '8px 10px', cursor: 'pointer', fontSize: 16 }}>
-                      🗺️
-                    </button>
-                  </div>
+                  <SearchField
+                    ref={inputRef}
+                    label="כתובת איסוף"
+                    labelColor="#FFD100"
+                    placeholder="הקלד כתובת: רחוב ומספר, עיר..."
+                    query={query}
+                    loading={loading}
+                    onChange={handleChange}
+                    onFocus={updateDropRect}
+                  />
                 ) : null}
 
                 {/* Divider with arrow */}
@@ -404,24 +392,16 @@ export default function IntercityMapSelector({
 
                 {/* Destination input */}
                 {phase === 'destination' && (
-                  <div style={{ display: 'flex', gap: 8, alignItems: 'flex-end' }}>
-                    <div style={{ flex: 1 }}>
-                      <SearchField
-                        ref={inputRef}
-                        label="כתובת יעד"
-                        labelColor="#3B82F6"
-                        placeholder="הקלד כתובת יעד..."
-                        query={query}
-                        loading={loading}
-                        onChange={handleChange}
-                        onFocus={updateDropRect}
-                      />
-                    </div>
-                    <button type="button" onClick={() => setMapModal('destination')}
-                      style={{ flexShrink: 0, background: 'rgba(59,130,246,0.12)', border: '1px solid rgba(59,130,246,0.3)', borderRadius: 10, padding: '8px 10px', cursor: 'pointer', fontSize: 16 }}>
-                      🗺️
-                    </button>
-                  </div>
+                  <SearchField
+                    ref={inputRef}
+                    label="כתובת יעד"
+                    labelColor="#3B82F6"
+                    placeholder="הקלד כתובת יעד..."
+                    query={query}
+                    loading={loading}
+                    onChange={handleChange}
+                    onFocus={updateDropRect}
+                  />
                 )}
 
                 {/* Close */}
@@ -547,35 +527,6 @@ export default function IntercityMapSelector({
       </div>
 
       {dropdown}
-
-      {/* Map modals */}
-      <MapPickerModal
-        open={mapModal === 'pickup'}
-        initialLat={pickupCoords?.lat}
-        initialLng={pickupCoords?.lng}
-        pinColor="#FFD100"
-        label="כתובת איסוף"
-        onConfirm={(parsed, lat, lng) => {
-          setPickupCoords({ lat, lng })
-          onPickupSelect(parsed)
-          setMapModal(null)
-          setTimeout(() => setMapModal(null), 100)
-        }}
-        onClose={() => setMapModal(null)}
-      />
-      <MapPickerModal
-        open={mapModal === 'destination'}
-        initialLat={destCoords?.lat}
-        initialLng={destCoords?.lng}
-        pinColor="#3B82F6"
-        label="כתובת יעד"
-        onConfirm={(parsed, lat, lng) => {
-          setDestCoords({ lat, lng })
-          onDestinationSelect(parsed)
-          setMapModal(null)
-        }}
-        onClose={() => setMapModal(null)}
-      />
 
       {/* House number fields */}
       <AnimatePresence>

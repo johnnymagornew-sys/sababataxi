@@ -1,6 +1,7 @@
 'use client'
 
 import { useState, useEffect, useRef, useCallback } from 'react'
+
 interface NominatimResult {
   place_id: number
   display_name: string
@@ -19,10 +20,13 @@ interface NominatimResult {
     leisure?: string
     shop?: string
     building?: string
-    mall?: string
     historic?: string
     office?: string
   }
+}
+
+function getPoiName(a: NominatimResult['address']): string {
+  return a.amenity || a.tourism || a.leisure || a.shop || a.building || a.historic || a.office || ''
 }
 
 // Strip Hebrew geresh (׳) and gershayim (״) so "תרמב" matches "תרמ״ב"
@@ -35,10 +39,6 @@ function addGershayim(q: string): string {
   return q.split(/\s+/).map(word =>
     /^[\u05D0-\u05EA]{2,6}$/.test(word) ? word.slice(0, -1) + '״' + word.slice(-1) : word
   ).join(' ')
-}
-
-function getPoiName(a: NominatimResult['address']): string {
-  return a.amenity || a.tourism || a.leisure || a.shop || a.building || a.mall || a.historic || a.office || ''
 }
 
 export interface ParsedAddress {
@@ -54,12 +54,21 @@ interface Props {
   onClear: () => void
 }
 
+const NOM_BASE = 'https://nominatim.openstreetmap.org/search'
+
+async function fetchNominatim(q: string): Promise<NominatimResult[]> {
+  const params = `format=json&addressdetails=1&countrycodes=il&limit=6&accept-language=he`
+  const res = await fetch(`${NOM_BASE}?q=${encodeURIComponent(q)}&${params}`, {
+    headers: { 'Accept-Language': 'he' },
+  })
+  return res.json()
+}
+
 export default function AddressAutocomplete({ value, onSelect, onClear }: Props) {
   const [query, setQuery] = useState(value)
   const [results, setResults] = useState<NominatimResult[]>([])
   const [loading, setLoading] = useState(false)
   const [open, setOpen] = useState(false)
-  const inputRef = useRef<HTMLInputElement>(null)
   const containerRef = useRef<HTMLDivElement>(null)
   const timerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const selectedRef = useRef(false)
@@ -83,12 +92,21 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
   useEffect(() => { setQuery(value) }, [value])
 
   const search = useCallback(async (q: string) => {
-    if (q.length < 2) { setResults([]); setOpen(false); return }
+    if (q.length < 3) { setResults([]); setOpen(false); return }
     setLoading(true)
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
-      const data: NominatimResult[] = await res.json()
-      const arr = Array.isArray(data) ? data : []
+      const normalized = normalizeQuery(q)
+      const withGershayim = addGershayim(q)
+      const [r1, r2] = await Promise.all([
+        fetchNominatim(normalized),
+        normalized !== withGershayim ? fetchNominatim(withGershayim) : Promise.resolve([]),
+      ])
+      const seen = new Set<number>()
+      const merged: NominatimResult[] = []
+      for (const r of [...r1, ...r2]) {
+        if (!seen.has(r.place_id)) { seen.add(r.place_id); merged.push(r) }
+      }
+      const arr = merged.slice(0, 6)
       setResults(arr)
       if (arr.length > 0) setOpen(true)
     } catch {
@@ -104,9 +122,7 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
     if (query.length < 2) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
-      const data: NominatimResult[] = await res.json()
-      const arr = Array.isArray(data) ? data : []
+      const arr = await fetchNominatim(query)
       if (arr.length > 0) handleSelect(arr[0])
     } catch {} finally { setLoading(false) }
   }, [query, results]) // eslint-disable-line react-hooks/exhaustive-deps
@@ -143,6 +159,7 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
         top: '100%',
         left: 0,
         right: 0,
+        marginTop: 4,
         background: 'var(--card2)',
         border: '1px solid var(--border)',
         borderRadius: 10,
@@ -150,7 +167,6 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
         boxShadow: '0 12px 40px rgba(0,0,0,0.7)',
         maxHeight: 280,
         overflowY: 'auto',
-        marginTop: 4,
       }}
     >
       {results.map(r => {
@@ -184,7 +200,6 @@ export default function AddressAutocomplete({ value, onSelect, onClear }: Props)
   return (
     <div ref={containerRef} style={{ position: 'relative' }}>
       <input
-        ref={inputRef}
         type="text"
         placeholder="הקלד כתובת: רחוב ומספר, עיר..."
         value={query}

@@ -94,9 +94,22 @@ export default function PickupMapSelector({
     if (q.length < 2) { setResults([]); return }
     setLoading(true)
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(q)}`)
-      const data: NominatimResult[] = await res.json()
-      setResults(Array.isArray(data) ? data : [])
+      const normalized = q.replace(/[׳״]/g, '')
+      const withG = normalized.split(/\s+/).map((w: string) =>
+        /^[\u05D0-\u05EA]{2,6}$/.test(w) ? w.slice(0, -1) + '״' + w.slice(-1) : w
+      ).join(' ')
+      const base = 'https://nominatim.openstreetmap.org/search'
+      const params = 'format=json&addressdetails=1&countrycodes=il&limit=6&accept-language=he'
+      const [r1, r2] = await Promise.all([
+        fetch(`${base}?q=${encodeURIComponent(normalized)}&${params}`, { headers: { 'Accept-Language': 'he' } }).then(r => r.json()),
+        normalized !== withG ? fetch(`${base}?q=${encodeURIComponent(withG)}&${params}`, { headers: { 'Accept-Language': 'he' } }).then(r => r.json()) : Promise.resolve([]),
+      ])
+      const seen = new Set<number>()
+      const merged: NominatimResult[] = []
+      for (const r of [...r1, ...r2]) {
+        if (!seen.has(r.place_id)) { seen.add(r.place_id); merged.push(r) }
+      }
+      setResults(merged.slice(0, 6))
     } catch { setResults([]) }
     finally { setLoading(false) }
   }, [])
@@ -129,10 +142,10 @@ export default function PickupMapSelector({
     if (query.length < 2) return
     setLoading(true)
     try {
-      const res = await fetch(`/api/geocode?q=${encodeURIComponent(query)}`)
-      const data: NominatimResult[] = await res.json()
-      const arr = Array.isArray(data) ? data : []
-      if (arr.length > 0) handleSelect(arr[0])
+      const base = 'https://nominatim.openstreetmap.org/search'
+      const params = 'format=json&addressdetails=1&countrycodes=il&limit=6&accept-language=he'
+      const data: NominatimResult[] = await fetch(`${base}?q=${encodeURIComponent(query)}&${params}`, { headers: { 'Accept-Language': 'he' } }).then(r => r.json())
+      if (data.length > 0) handleSelect(data[0])
     } catch {} finally { setLoading(false) }
   }, [query, results]) // eslint-disable-line react-hooks/exhaustive-deps
 

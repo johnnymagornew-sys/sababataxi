@@ -31,7 +31,7 @@ export default async function HomePage() {
       <header style={{
         background: 'var(--black)',
         borderBottom: '1px solid var(--border)',
-        position: 'sticky', top: 0, zIndex: 50,
+        position: 'sticky', top: 0, zIndex: 200,
       }}>
         <div style={{
           maxWidth: 1100, margin: '0 auto',

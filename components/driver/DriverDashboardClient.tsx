@@ -33,7 +33,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
   ]
 
   const [driver, setDriver] = useState<Driver>(initialDriver)
-  const [tab, setTab] = useState<'available' | 'mine' | 'history' | 'arrivals'>('available')
+  const [tab, setTab] = useState<'available' | 'mine' | 'history'>('available')
   const [availableRides, setAvailableRides] = useState<Booking[]>([])
   const [myRides, setMyRides] = useState<Booking[]>([])
   const [claiming, setClaiming] = useState<string | null>(null)
@@ -207,6 +207,20 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         </button>
         <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
           <LanguageSwitcher current={locale} />
+          <a
+            href="https://www.iaa.gov.il/airports/ben-gurion/flight-board/"
+            target="_blank"
+            rel="noopener noreferrer"
+            title="לוח נחיתות נתב״ג"
+            style={{
+              display: 'flex', alignItems: 'center', justifyContent: 'center',
+              width: 36, height: 36, borderRadius: 10,
+              background: 'var(--card)', border: '1px solid var(--border)',
+              fontSize: 18, textDecoration: 'none',
+            }}
+          >
+            🛬
+          </a>
           <button
             onClick={handleLogout}
             style={{ background: 'none', border: 'none', color: 'var(--txt2)', cursor: 'pointer', fontSize: 14 }}
@@ -300,7 +314,6 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
             ['available', t('tabs.available'), availableRides.length],
             ['mine',      t('tabs.mine'),      activeMyRides.length],
             ['history',   t('tabs.history'),   historyRides.length],
-            ['arrivals',  '🛬 נחיתות',         0],
           ] as const).map(([key, label, count]) => (
             <button
               key={key}
@@ -409,30 +422,6 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
           </div>
         )}
 
-        {tab === 'arrivals' && (
-          <div>
-            <a
-              href="https://www.iaa.gov.il/airports/ben-gurion/flight-board/"
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', alignItems: 'center', justifyContent: 'space-between',
-                background: 'var(--card)', border: '1px solid var(--border)',
-                borderRadius: 14, padding: '20px 18px', textDecoration: 'none',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 16, fontWeight: 700, color: 'var(--txt)', marginBottom: 4 }}>
-                  🛬 לוח נחיתות נתב״ג
-                </div>
-                <div style={{ fontSize: 13, color: 'var(--txt2)' }}>
-                  לוח רשמי של רשות שדות התעופה — עדכון בזמן אמת
-                </div>
-              </div>
-              <span style={{ fontSize: 22, color: 'var(--txt3)' }}>←</span>
-            </a>
-          </div>
-        )}
       </div>
     </div>
   )

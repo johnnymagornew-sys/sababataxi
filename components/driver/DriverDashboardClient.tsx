@@ -6,13 +6,15 @@ import type { Booking, Driver } from '@/types/database'
 import { useRouter } from 'next/navigation'
 import Image from 'next/image'
 import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { useTranslations, useLocale } from 'next-intl'
+import LanguageSwitcher from '@/components/LanguageSwitcher'
 
 type RideStatus = 'en_route' | 'arrived' | 'onboard' | 'done' | null
 
 export default function DriverDashboardClient({ driver: initialDriver }: { driver: Driver }) {
   const t = useTranslations('driver')
   const tCommon = useTranslations('common')
+  const locale = useLocale()
 
   const STATUS_LABELS: Record<string, string> = {
     pending: t('statusLabels.pending'),
@@ -203,12 +205,15 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
         <button onClick={() => { loadRides(); refreshDriver(); router.refresh() }} style={{ background: 'none', border: 'none', cursor: 'pointer', padding: 0, height: 60, overflow: 'hidden', display: 'flex', alignItems: 'center' }}>
           <Image src="/sababa_logo.png" alt="מוניות סבבה" width={200} height={200} style={{ height: 140, width: 'auto', marginTop: -40, marginBottom: -40 }} />
         </button>
-        <button
-          onClick={handleLogout}
-          style={{ background: 'none', border: 'none', color: 'var(--txt2)', cursor: 'pointer', fontSize: 14 }}
-        >
-          {tCommon('logout')}
-        </button>
+        <div style={{ display: 'flex', alignItems: 'center', gap: 10 }}>
+          <LanguageSwitcher current={locale} />
+          <button
+            onClick={handleLogout}
+            style={{ background: 'none', border: 'none', color: 'var(--txt2)', cursor: 'pointer', fontSize: 14 }}
+          >
+            {tCommon('logout')}
+          </button>
+        </div>
       </div>
 
       <div style={{ padding: '16px 16px 80px' }}>

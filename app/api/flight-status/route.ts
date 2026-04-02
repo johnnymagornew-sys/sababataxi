@@ -1,5 +1,7 @@
 import { NextResponse } from 'next/server'
 
+export const maxDuration = 15 // allow up to 15s for external API calls
+
 interface FlightStatus {
   flight: string
   status: string          // scheduled | en-route | landed | cancelled | diverted | unknown
@@ -43,35 +45,38 @@ function haversineKm(lat1: number, lon1: number, lat2: number, lon2: number): nu
   return R * 2 * Math.asin(Math.sqrt(a))
 }
 
-// OpenSky: wider bounding box covers Mediterranean approach corridor to Israel
-async function lookupOpenSky(flight: string): Promise<FlightStatus | null> {
+// airplanes.live: free ADS-B API, works from any server (Cloudflare-fronted)
+async function lookupADSB(flight: string): Promise<FlightStatus | null> {
   const callsign = iataToCallsign(flight)
   if (!callsign) return null
 
   try {
+    const controller = new AbortController()
+    const timeout = setTimeout(() => controller.abort(), 8000)
     const res = await fetch(
-      'https://opensky-network.org/api/states/all?lamin=28&lomin=25&lamax=36&lomax=42',
-      { next: { revalidate: 0 } }
+      `https://api.airplanes.live/v2/callsign/${encodeURIComponent(callsign)}`,
+      { signal: controller.signal, cache: 'no-store' }
     )
+    clearTimeout(timeout)
     if (!res.ok) return null
     const json = await res.json()
-    const states: unknown[][] = json.states ?? []
+    const ac: Record<string, unknown>[] = json.ac ?? []
+    if (!ac.length) return null
 
-    // Find by callsign (OpenSky pads to 8 chars with spaces)
-    const match = states.find(s => typeof s[1] === 'string' && s[1].trim() === callsign)
-    if (!match) return null
+    const plane = ac[0]
+    const lat       = typeof plane.lat === 'number' ? plane.lat : null
+    const lon       = typeof plane.lon === 'number' ? plane.lon : null
+    const gs        = typeof plane.gs  === 'number' ? plane.gs  : null  // ground speed in knots
+    const altBaro   = plane.alt_baro
+    const onGround  = altBaro === 'ground'
 
-    const lon      = match[5] as number | null
-    const lat      = match[6] as number | null
-    const onGround = match[8] === true
-    const velocity = match[9] as number | null  // m/s
-
-    // Calculate ETA to LLBG from current position + speed
+    // Calculate ETA to LLBG from current position + ground speed
     let arr_estimated: string | null = null
-    if (!onGround && lat != null && lon != null && velocity && velocity > 10) {
-      const distKm = haversineKm(lat, lon, LLBG_LAT, LLBG_LON)
-      const etaMs = Date.now() + (distKm / (velocity * 3.6)) * 3600 * 1000
-      arr_estimated = new Date(etaMs).toISOString()
+    if (!onGround && lat != null && lon != null && gs && gs > 50) {
+      const distKm   = haversineKm(lat, lon, LLBG_LAT, LLBG_LON)
+      const speedKmh = gs * 1.852  // knots → km/h
+      const etaMs    = Date.now() + (distKm / speedKmh) * 3600 * 1000
+      arr_estimated  = new Date(etaMs).toISOString()
     }
 
     return {
@@ -149,8 +154,8 @@ export async function GET(req: Request) {
       return NextResponse.json(data)
     }
 
-    // 3. OpenSky fallback — covers carriers AirLabs doesn't know (e.g. Israir 6H)
-    const osData = await lookupOpenSky(flight)
+    // 3. ADS-B fallback via airplanes.live — covers carriers AirLabs doesn't know (e.g. Israir 6H)
+    const osData = await lookupADSB(flight)
     if (osData) {
       cache.set(flight, { data: osData, fetchedAt: Date.now() })
       return NextResponse.json(osData)

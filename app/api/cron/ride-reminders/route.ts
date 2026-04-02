@@ -34,7 +34,7 @@ export async function GET(req: Request) {
   const now = Date.now()
 
   for (const booking of bookings ?? []) {
-    const driver = booking.drivers as { full_name: string; phone: string } | null
+    const driver = booking.drivers as unknown as { full_name: string; phone: string } | null
     if (!driver?.phone) continue
 
     // Parse ride time in Israel timezone (UTC+3 summer / UTC+2 winter)

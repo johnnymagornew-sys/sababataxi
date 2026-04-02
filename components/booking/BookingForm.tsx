@@ -108,6 +108,7 @@ export default function BookingForm() {
   const [selectedDestination, setSelectedDestination] = useState<ParsedAddress | null>(null)
   const [returnAddressDisplay, setReturnAddressDisplay] = useState('')
   const [price, setPrice] = useState<{ total: number; tierBase: number; vehicle: string; range: string; inTable: boolean } | null>(null)
+  const [returnPrice, setReturnPrice] = useState<{ total: number; diffCity: boolean } | null>(null)
   const [submitting, setSubmitting] = useState(false)
   const [submitted, setSubmitted] = useState(false)
   const [error, setError] = useState('')
@@ -168,6 +169,57 @@ export default function BookingForm() {
     })
     setPrice({ total, tierBase, vehicle, range, inTable })
   }, [form.trip_type, form.pickup_city, form.destination_city, form.passengers, form.travel_date, form.travel_time, form.extras, form.payment_method])
+
+  // Return trip price calculation
+  useEffect(() => {
+    if (!form.return_trip || !price) { setReturnPrice(null); return }
+
+    const RETURN_FEE = 10
+    const returnCity = form.return_city || form.pickup_city
+
+    if (form.trip_type === 'airport') {
+      const diffCity = !!form.return_city && form.return_city !== form.pickup_city
+      if (!diffCity) {
+        // Same city — return = outbound base + surcharges for return date/time + 10₪
+        setReturnPrice({ total: price.total + RETURN_FEE, diffCity: false })
+        return
+      }
+      // Different return city — calculate its own price
+      const returnBase = CITY_PRICES[returnCity]
+      if (!returnBase) { setReturnPrice({ total: price.total + RETURN_FEE, diffCity: true }); return }
+      let returnTotal = getTierBasePrice(returnCity, form.passengers, returnBase)
+      if (form.return_date && form.return_time) {
+        const { total: withSurcharges } = calculatePrice({
+          city: returnCity, basePrice: returnBase, passengers: form.passengers,
+          travelDate: form.return_date, travelTime: form.return_time,
+          extras: {}, paymentMethod: form.payment_method,
+        })
+        returnTotal = withSurcharges
+      }
+      setReturnPrice({ total: returnTotal + RETURN_FEE, diffCity: true })
+    } else {
+      // Intercity: return trip goes from destination → pickup (or return_city → pickup)
+      const fromCity = form.return_city || form.destination_city
+      const toCity = form.pickup_city
+      if (!fromCity || !toCity) { setReturnPrice(null); return }
+      const diffCity = !!form.return_city && form.return_city !== form.destination_city
+      let returnTotal: number
+      const intercityBase = getIntercityPrice(fromCity, toCity, form.passengers)
+      if (intercityBase) {
+        returnTotal = intercityBase
+        if (form.return_date && form.return_time) {
+          const dateTime = new Date(`${form.return_date}T${form.return_time}`)
+          const s = getTimeSurcharges(dateTime)
+          if (s.peak) returnTotal += 20
+        }
+      } else {
+        returnTotal = price.total
+      }
+      setReturnPrice({ total: returnTotal + RETURN_FEE, diffCity })
+    }
+  }, [form.return_trip, form.return_city, form.return_date, form.return_time,
+      form.pickup_city, form.destination_city, form.trip_type, form.passengers,
+      form.payment_method, price])
 
   // Flash animation when price changes
   useEffect(() => {
@@ -275,7 +327,12 @@ export default function BookingForm() {
     try {
       const res = await fetch('/api/bookings', {
         method: 'POST', headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({ ...form, price: price?.total ?? 0 }),
+        body: JSON.stringify({
+          ...form,
+          price: (price?.total ?? 0) + (returnPrice?.total ?? 0),
+          price_outbound: price?.total ?? 0,
+          price_return: returnPrice?.total ?? 0,
+        }),
       })
       const data = await res.json()
       if (!res.ok) throw new Error(data.error || 'שגיאה בשליחה')
@@ -390,31 +447,51 @@ export default function BookingForm() {
               boxShadow: '0 0 8px rgba(255,209,0,0.5)',
             }} />
           </div>
-          {/* Price bar — inside same sticky block, shown on steps 0-2 when price exists */}
+          {/* Price bar — shown on steps 0-2 when price exists */}
           {price && step < 3 && (
-            <div
-              className={priceFlash ? 'price-flash' : ''}
-              style={{
-                background: 'var(--y)', borderRadius: 14, margin: '10px 0 10px',
-                padding: '10px 16px', display: 'flex', alignItems: 'center',
-                justifyContent: 'space-between',
-                boxShadow: '0 4px 20px rgba(255,209,0,0.25)',
-              }}
-            >
-              <div>
-                <div style={{ fontSize: 10, fontWeight: 700, color: 'rgba(0,0,0,0.55)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>מחיר משוער</div>
-                <div style={{ fontSize: 26, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
+            <div style={{ margin: '10px 0 10px', display: 'grid', gap: 6, gridTemplateColumns: returnPrice ? '1fr 1fr' : '1fr' }}>
+              {/* Outbound */}
+              <div className={priceFlash ? 'price-flash' : ''}
+                style={{
+                  background: 'var(--y)', borderRadius: 14,
+                  padding: '10px 14px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'space-between',
+                  boxShadow: '0 4px 20px rgba(255,209,0,0.25)',
+                }}>
+                <div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{returnPrice ? 'הלוך' : 'מחיר משוער'}</div>
+                  <div style={{ fontSize: returnPrice ? 22 : 26, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
+                </div>
+                <div style={{ textAlign: 'left', fontSize: 11, color: 'rgba(0,0,0,0.6)' }}>
+                  {form.pickup_city && (
+                    <div style={{ fontWeight: 600, fontSize: 10 }}>
+                      {form.pickup_city} ←{' '}{form.trip_type === 'intercity' ? (form.destination_city || '?') : 'נתב״ג'}
+                    </div>
+                  )}
+                  <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
+                </div>
               </div>
-              <div style={{ textAlign: 'left', fontSize: 12, color: 'rgba(0,0,0,0.6)' }}>
-                {form.pickup_city && (
-                  <div style={{ fontWeight: 600 }}>
-                    {form.pickup_city} ←{' '}
-                    {form.trip_type === 'intercity' ? (form.destination_city || '?') : 'בן גוריון'}
+              {/* Return */}
+              {returnPrice && (
+                <div style={{
+                  background: 'rgba(255,209,0,0.15)', borderRadius: 14,
+                  padding: '10px 14px', display: 'flex', alignItems: 'center',
+                  justifyContent: 'space-between',
+                  border: '1px solid rgba(255,209,0,0.4)',
+                }}>
+                  <div>
+                    <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--y)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>חזור</div>
+                    <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--y)', lineHeight: 1 }}>₪{returnPrice.total}</div>
+                    <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>כולל +10₪ עמלה</div>
                   </div>
-                )}
-                <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
-                <div style={{ fontSize: 10, opacity: 0.7 }}>{price.range}</div>
-              </div>
+                  <div style={{ textAlign: 'left', fontSize: 10, color: 'var(--txt3)' }}>
+                    {returnPrice.diffCity
+                      ? <div style={{ fontWeight: 600 }}>{form.return_city} ← נתב״ג</div>
+                      : <div>אותו מסלול</div>}
+                    <div style={{ fontWeight: 800, color: 'var(--y)', fontSize: 13, marginTop: 4 }}>סה״כ: ₪{price.total + returnPrice.total}</div>
+                  </div>
+                </div>
+              )}
             </div>
           )}
         </div>
@@ -814,15 +891,22 @@ export default function BookingForm() {
 
                   {/* Return trip */}
                   {form.return_trip && (
-                    <div style={{ background: 'rgba(255,209,0,0.06)', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(255,209,0,0.15)' }}>
-                      <div style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', textTransform: 'uppercase', letterSpacing: '0.8px', marginBottom: 8 }}>🔄 נסיעת חזרה</div>
+                    <div style={{ background: 'rgba(255,209,0,0.06)', borderRadius: 12, padding: '12px 14px', border: '1px solid rgba(255,209,0,0.2)' }}>
+                      <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: '#FFD700', textTransform: 'uppercase', letterSpacing: '0.8px' }}>🔄 נסיעת חזרה</div>
+                        {returnPrice && (
+                          <div style={{ fontSize: 16, fontWeight: 900, color: 'var(--y)' }}>₪{returnPrice.total}
+                            <span style={{ fontSize: 9, color: 'var(--txt3)', fontWeight: 500, marginRight: 4 }}>כולל +10₪</span>
+                          </div>
+                        )}
+                      </div>
                       <div style={{ fontSize: 13, fontWeight: 600, color: 'var(--txt)', marginBottom: 4 }}>
                         {form.return_city
                           ? `${form.return_street ? form.return_street + ' ' + form.return_house_number + ', ' : ''}${form.return_city}`
-                          : '—'}
+                          : form.pickup_city}
                       </div>
                       <div style={{ display: 'flex', gap: 12, fontSize: 12, color: 'var(--txt3)' }}>
-                        {form.return_date && <span>📅 {new Date(form.return_date).toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}</span>}
+                        {form.return_date && <span>📅 {new Date(form.return_date + 'T12:00').toLocaleDateString('he-IL', { day: 'numeric', month: 'long' })}</span>}
                         {form.return_time && <span>🕐 {form.return_time.slice(0, 5)}</span>}
                         {form.return_flight_number && <span>✈️ {form.return_flight_number}</span>}
                       </div>
@@ -853,13 +937,29 @@ export default function BookingForm() {
                   <span>✏️</span> עריכה
                 </button>
                 <div style={{ textAlign: 'left' }}>
-                  <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 2 }}>מחיר נסיעה</div>
-                  <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                    <span style={{ fontSize: 52, fontWeight: 900, color: '#FFD700', letterSpacing: '-2px', lineHeight: 1 }}>
-                      ₪{price?.total ?? '—'}
-                    </span>
-                    <span style={{ fontSize: 13, color: 'var(--txt3)', fontWeight: 500 }}>כולל מע״מ</span>
-                  </div>
+                  {returnPrice ? (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 4 }}>מחיר כולל (הלוך+חזור)</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                        <span style={{ fontSize: 48, fontWeight: 900, color: '#FFD700', letterSpacing: '-2px', lineHeight: 1 }}>
+                          ₪{(price?.total ?? 0) + returnPrice.total}
+                        </span>
+                      </div>
+                      <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 3 }}>
+                        הלוך ₪{price?.total} · חזור ₪{returnPrice.total}
+                      </div>
+                    </>
+                  ) : (
+                    <>
+                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 2 }}>מחיר נסיעה</div>
+                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
+                        <span style={{ fontSize: 52, fontWeight: 900, color: '#FFD700', letterSpacing: '-2px', lineHeight: 1 }}>
+                          ₪{price?.total ?? '—'}
+                        </span>
+                        <span style={{ fontSize: 13, color: 'var(--txt3)', fontWeight: 500 }}>כולל מע״מ</span>
+                      </div>
+                    </>
+                  )}
                 </div>
               </div>
 

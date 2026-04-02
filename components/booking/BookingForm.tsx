@@ -419,6 +419,33 @@ export default function BookingForm() {
           box-shadow:0 1px 4px rgba(0,0,0,0.3);
         }
         .toggle-track.on .toggle-thumb { transform:translateX(-20px); }
+        /* Native date/time inputs styled for dark theme */
+        input[type="date"].dt-pick, input[type="time"].dt-pick {
+          background: var(--card2);
+          border: 1px solid var(--border);
+          border-radius: 12px;
+          color: var(--txt3);
+          cursor: pointer;
+          height: 44px;
+          width: 100%;
+          padding: 0 12px;
+          font-size: 14px;
+          font-weight: 600;
+          font-family: inherit;
+          color-scheme: dark;
+          transition: border-color 0.15s, background 0.15s;
+        }
+        input[type="date"].dt-pick::-webkit-calendar-picker-indicator,
+        input[type="time"].dt-pick::-webkit-calendar-picker-indicator {
+          filter: invert(0.6);
+          cursor: pointer;
+        }
+        input[type="date"].dt-pick.has-value,
+        input[type="time"].dt-pick.has-value {
+          background: rgba(255,209,0,0.06);
+          border-color: rgba(255,209,0,0.3);
+          color: var(--txt);
+        }
       `}</style>
 
       <div ref={formTopRef} style={{ scrollMarginTop: 72 }} />
@@ -721,45 +748,15 @@ export default function BookingForm() {
                   {/* Date */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.dateLabel')}</div>
-                    <div style={{ position: 'relative' }}>
-                      <input type="date" min={new Date().toISOString().split('T')[0]}
-                        value={form.travel_date} onChange={e => setField('travel_date', e.target.value)}
-                        style={{ opacity: 0, cursor: 'pointer', width: '100%', height: 44, display: 'block' }} />
-                      <div style={{
-                        position: 'absolute', inset: 0, pointerEvents: 'none',
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        background: form.travel_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
-                        border: `1px solid ${form.travel_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
-                        borderRadius: 12, padding: '10px 12px',
-                      }}>
-                        <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {form.travel_date
-                            ? new Date(form.travel_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                            : t('step1.datePlaceholder')}
-                        </span>
-                      </div>
-                    </div>
+                    <input type="date" className={`dt-pick${form.travel_date ? ' has-value' : ''}`}
+                      min={new Date().toISOString().split('T')[0]}
+                      value={form.travel_date} onChange={e => setField('travel_date', e.target.value)} />
                   </div>
                   {/* Time */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.timeLabel')}</div>
-                    <div style={{ position: 'relative' }}>
-                      <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
-                        style={{ opacity: 0, cursor: 'pointer', width: '100%', height: 44, display: 'block' }} />
-                      <div style={{
-                        position: 'absolute', inset: 0, pointerEvents: 'none',
-                        display: 'flex', alignItems: 'center', gap: 8,
-                        background: form.travel_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
-                        border: `1px solid ${form.travel_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
-                        borderRadius: 12, padding: '10px 12px',
-                      }}>
-                        <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_time ? 'var(--txt)' : 'var(--txt3)' }}>
-                          {form.travel_time || t('step1.timePlaceholder')}
-                        </span>
-                      </div>
-                    </div>
+                    <input type="time" className={`dt-pick${form.travel_time ? ' has-value' : ''}`}
+                      value={form.travel_time} onChange={e => setField('travel_time', e.target.value)} />
                   </div>
                 </div>
 
@@ -817,29 +814,13 @@ export default function BookingForm() {
                       <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.returnDate')}</div>
-                          <div style={{ position: 'relative' }}>
-                            <input type="date" value={form.return_date} onChange={e => setField('return_date', e.target.value)}
-                              style={{ opacity: 0, cursor: 'pointer', width: '100%', height: 44, display: 'block' }} />
-                            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 8, background: form.return_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px' }}>
-                              <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
-                              <span style={{ fontSize: 14, fontWeight: 600, color: form.return_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {form.return_date ? new Date(form.return_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : t('step1.datePlaceholder')}
-                              </span>
-                            </div>
-                          </div>
+                          <input type="date" className={`dt-pick${form.return_date ? ' has-value' : ''}`}
+                            value={form.return_date} onChange={e => setField('return_date', e.target.value)} />
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.returnTime')}</div>
-                          <div style={{ position: 'relative' }}>
-                            <input type="time" value={form.return_time} onChange={e => setField('return_time', e.target.value)}
-                              style={{ opacity: 0, cursor: 'pointer', width: '100%', height: 44, display: 'block' }} />
-                            <div style={{ position: 'absolute', inset: 0, pointerEvents: 'none', display: 'flex', alignItems: 'center', gap: 8, background: form.return_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px' }}>
-                              <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
-                              <span style={{ fontSize: 14, fontWeight: 600, color: form.return_time ? 'var(--txt)' : 'var(--txt3)' }}>
-                                {form.return_time || t('step1.timePlaceholder')}
-                              </span>
-                            </div>
-                          </div>
+                          <input type="time" className={`dt-pick${form.return_time ? ' has-value' : ''}`}
+                            value={form.return_time} onChange={e => setField('return_time', e.target.value)} />
                         </div>
                       </div>
                     </div>

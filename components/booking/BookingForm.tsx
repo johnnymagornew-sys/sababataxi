@@ -951,24 +951,26 @@ export default function BookingForm() {
                 </button>
                 <div style={{ textAlign: 'left' }}>
                   {returnPrice ? (
-                    <>
-                      <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 4 }}>מחיר כולל (הלוך+חזור)</div>
-                      <div style={{ display: 'flex', alignItems: 'baseline', gap: 4 }}>
-                        <span style={{ fontSize: 48, fontWeight: 900, color: '#FFD700', letterSpacing: '-2px', lineHeight: 1 }}>
-                          ₪{(price?.total ?? 0) + returnPrice.total}
-                        </span>
+                    <div style={{ display: 'flex', flexDirection: 'column', gap: 6, alignItems: 'flex-end' }}>
+                      {/* Outbound */}
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>נסיעה הלוך</div>
+                        <span style={{ fontSize: 38, fontWeight: 900, color: '#FFD700', letterSpacing: '-1px', lineHeight: 1 }}>₪{price?.total}</span>
                       </div>
-                      {returnPrice.diffCity ? (
-                        <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 3 }}>
-                          הלוך ₪{price?.total} · חזור ₪{returnPrice.total}
-                        </div>
-                      ) : (
-                        <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 3, lineHeight: 1.4 }}>
-                          הלוך ₪{price?.total} + חזור ₪{returnPrice.total}<br/>
-                          <span style={{ fontSize: 10 }}>*נסיעת חזור עולה 10₪ יותר עקב עמלות שדה תעופה</span>
-                        </div>
-                      )}
-                    </>
+                      {/* Return */}
+                      <div>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>נסיעה חזור</div>
+                        <span style={{ fontSize: 38, fontWeight: 900, color: '#FFD700', letterSpacing: '-1px', lineHeight: 1 }}>₪{returnPrice.total}</span>
+                        {!returnPrice.diffCity && (
+                          <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>*+10₪ עמלות שדה תעופה</div>
+                        )}
+                      </div>
+                      {/* Total */}
+                      <div style={{ borderTop: '1px solid var(--border)', paddingTop: 6, marginTop: 2 }}>
+                        <div style={{ fontSize: 10, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 1 }}>סה״כ</div>
+                        <span style={{ fontSize: 28, fontWeight: 900, color: '#FFD700', letterSpacing: '-1px', lineHeight: 1 }}>₪{(price?.total ?? 0) + returnPrice.total}</span>
+                      </div>
+                    </div>
                   ) : (
                     <>
                       <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--txt3)', textTransform: 'uppercase', letterSpacing: '0.7px', marginBottom: 2 }}>מחיר נסיעה</div>

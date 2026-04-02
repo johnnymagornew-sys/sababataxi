@@ -1,6 +1,7 @@
 import type { Metadata } from 'next'
 import { Heebo } from 'next/font/google'
 import './globals.css'
+import 'leaflet/dist/leaflet.css'
 
 const heebo = Heebo({
   subsets: ['hebrew', 'latin'],

@@ -597,20 +597,38 @@ export default function BookingForm() {
               <div className="card field-enter">
                 <StepTitle icon="🧳" title="נוסעים ומטען" />
                 <div style={{ display: 'grid', gap: 12, gridTemplateColumns: 'repeat(3,1fr)' }}>
-                  <Stepper label="נוסעים" value={form.passengers} min={1} onChange={d => stepChange('passengers', d)} />
-                  <Stepper label="מזוודות" value={form.large_luggage} min={0} onChange={d => stepChange('large_luggage', d)} />
-                  <Stepper label="טרולי" value={form.trolley} min={0} onChange={d => stepChange('trolley', d)} />
+                  <Stepper label="נוסעים" value={form.passengers} min={1} onChange={d => stepChange('passengers', d)} icon="👥" />
+                  <Stepper label="מזוודה" value={form.large_luggage} min={0} onChange={d => stepChange('large_luggage', d)} icon="🧳" sub="עד 20 ק״ג" />
+                  <Stepper label="טרולי" value={form.trolley} min={0} onChange={d => stepChange('trolley', d)} icon="🛄" sub="עד 8 ק״ג" />
                 </div>
               </div>
               <div className="card field-enter" style={{ animationDelay: '0.08s' }}>
                 <StepTitle icon="⭐" title="תוספות שירות" />
-                <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(auto-fit,minmax(200px,1fr))' }}>
-                  <ExtraCheck label="נקודה נוספת באותו ישוב" sub="+₪20" checked={!!form.extras.additional_stop} onChange={v => setExtra('additional_stop', v)} />
-                  <ExtraCheck label="נקודה נוספת בישוב סמוך" sub="+₪40" checked={!!form.extras.nearby_city_stop} onChange={v => setExtra('nearby_city_stop', v)} />
-                  <ExtraCheck label="ילד עד גיל 4" sub="+₪10" checked={!!form.extras.child_under4} onChange={v => setExtra('child_under4', v)} />
-                  <ExtraCheck label="כיסא בטיחות" sub="+₪40–70" checked={!!form.extras.safety_seat} onChange={v => setExtra('safety_seat', v)} />
-                  <ExtraCheck label="ציוד סקי / גלישה" sub="+₪20" checked={!!form.extras.ski_equipment} onChange={v => setExtra('ski_equipment', v)} />
-                  <ExtraCheck label="ארגז אופניים" sub="+₪50" checked={!!form.extras.bike_rack} onChange={v => setExtra('bike_rack', v)} />
+                <div style={{ display: 'grid', gap: 10, gridTemplateColumns: 'repeat(3,1fr)' }}>
+                  <ExtraIcon
+                    icon="📍" label="עצירה נוספת" price="+₪20"
+                    note="באותו ישוב · 20₪/3 ק״מ"
+                    checked={!!form.extras.additional_stop} onChange={v => setExtra('additional_stop', v)} />
+                  <ExtraIcon
+                    icon="🗺️" label="ישוב סמוך" price="+₪40"
+                    note="עד 6 ק״מ · +20₪/3 ק״מ"
+                    checked={!!form.extras.nearby_city_stop} onChange={v => setExtra('nearby_city_stop', v)} />
+                  <ExtraIcon
+                    icon="👶" label="ילד עד גיל 4" price="+₪10"
+                    note="מותר ע״פ חוק במוניות"
+                    checked={!!form.extras.child_under4} onChange={v => setExtra('child_under4', v)} />
+                  <ExtraIcon
+                    icon="🪑" label="כיסא בטיחות" price="+₪40–70"
+                    note="לא חובה במונית · מומלץ לתאם מראש"
+                    checked={!!form.extras.safety_seat} onChange={v => setExtra('safety_seat', v)} />
+                  <ExtraIcon
+                    icon="⛷️" label="ציוד סקי / גלישה" price="+₪20"
+                    note="עד 3 קייסים · 2.2 מ׳ · מעבר — יש לחייג"
+                    checked={!!form.extras.ski_equipment} onChange={v => setExtra('ski_equipment', v)} />
+                  <ExtraIcon
+                    icon="🚲" label="ארגז אופניים" price="+₪50"
+                    note="חובה להתקשר למוקד"
+                    checked={!!form.extras.bike_rack} onChange={v => setExtra('bike_rack', v)} />
                 </div>
               </div>
             </div>
@@ -973,36 +991,61 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
   return <div><label>{label}</label>{children}</div>
 }
 
-function Stepper({ label, value, min, onChange }: { label: string; value: number; min: number; onChange: (d: number) => void }) {
+function Stepper({ label, value, min, onChange, icon, sub }: { label: string; value: number; min: number; onChange: (d: number) => void; icon?: string; sub?: string }) {
   return (
-    <div style={{ background: 'var(--card2)', border: '1px solid var(--border)', borderRadius: 8, padding: '10px 8px' }}>
-      <div style={{ fontSize: 11, color: 'var(--txt2)', marginBottom: 8, fontWeight: 500, textAlign: 'center', whiteSpace: 'nowrap', overflow: 'hidden', textOverflow: 'ellipsis' }}>{label}</div>
+    <div style={{
+      background: value > min ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
+      border: `1px solid ${value > min ? 'rgba(255,209,0,0.25)' : 'var(--border)'}`,
+      borderRadius: 12, padding: '12px 10px',
+      transition: 'all 0.2s ease',
+    }}>
+      {icon && <div style={{ fontSize: 28, textAlign: 'center', marginBottom: 4, lineHeight: 1 }}>{icon}</div>}
+      <div style={{ fontSize: 11, color: value > min ? 'var(--y)' : 'var(--txt2)', marginBottom: 2, fontWeight: 600, textAlign: 'center' }}>{label}</div>
+      {sub && <div style={{ fontSize: 10, color: 'var(--txt3)', textAlign: 'center', marginBottom: 8 }}>{sub}</div>}
+      {!sub && <div style={{ marginBottom: 8 }} />}
       <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', gap: 4 }}>
         <button type="button" onClick={() => onChange(-1)} disabled={value <= min}
-          style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', color: 'var(--txt)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>−</button>
-        <span style={{ fontWeight: 700, fontSize: 18, color: 'var(--txt)', minWidth: 20, textAlign: 'center' }}>{value}</span>
+          style={{ background: 'var(--card)', border: '1px solid var(--border)', borderRadius: 6, width: 32, height: 32, cursor: value <= min ? 'not-allowed' : 'pointer', color: value <= min ? 'var(--txt3)' : 'var(--txt)', fontSize: 18, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, opacity: value <= min ? 0.4 : 1, transition: 'all 0.15s' }}>−</button>
+        <span style={{ fontWeight: 800, fontSize: 20, color: value > min ? 'var(--y)' : 'var(--txt)', minWidth: 24, textAlign: 'center', transition: 'all 0.15s' }}>{value}</span>
         <button type="button" onClick={() => onChange(1)}
-          style={{ background: 'var(--y)', border: 'none', borderRadius: 6, width: 30, height: 30, cursor: 'pointer', color: '#000', fontSize: 18, fontWeight: 700, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0 }}>+</button>
+          style={{ background: 'var(--y)', border: 'none', borderRadius: 6, width: 32, height: 32, cursor: 'pointer', color: '#000', fontSize: 18, fontWeight: 800, display: 'flex', alignItems: 'center', justifyContent: 'center', flexShrink: 0, transition: 'all 0.15s' }}>+</button>
       </div>
     </div>
   )
 }
 
-function ExtraCheck({ label, sub, checked, onChange }: { label: string; sub: string; checked: boolean; onChange: (v: boolean) => void }) {
+function ExtraIcon({ icon, label, price, note, checked, onChange }: {
+  icon: string; label: string; price: string; note?: string; checked: boolean; onChange: (v: boolean) => void
+}) {
   return (
-    <label style={{
-      display: 'flex', alignItems: 'center', gap: 10, cursor: 'pointer',
-      background: checked ? 'var(--y-dim)' : 'var(--card2)',
-      border: `1px solid ${checked ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
-      borderRadius: 8, padding: '10px 12px', transition: 'all 0.15s', userSelect: 'none',
+    <button type="button" onClick={() => onChange(!checked)} style={{
+      display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 6,
+      cursor: 'pointer', userSelect: 'none', border: 'none', background: 'transparent', padding: 0,
     }}>
-      <input type="checkbox" checked={checked} onChange={e => onChange(e.target.checked)}
-        style={{ width: 'auto', accentColor: 'var(--y)', flexShrink: 0 }} />
-      <div>
-        <div style={{ fontSize: 14, fontWeight: 600, color: 'var(--txt)' }}>{label}</div>
-        <div style={{ fontSize: 12, color: 'var(--y)' }}>{sub}</div>
+      <div style={{
+        width: '100%', borderRadius: 14, padding: '14px 10px 10px',
+        background: checked ? 'rgba(255,209,0,0.12)' : 'var(--card2)',
+        border: `2px solid ${checked ? 'var(--y)' : 'var(--border)'}`,
+        display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+        transition: 'all 0.18s cubic-bezier(.4,0,.2,1)',
+        transform: checked ? 'scale(1.03)' : 'scale(1)',
+        boxShadow: checked ? '0 0 18px rgba(255,209,0,0.18)' : 'none',
+        position: 'relative',
+      }}>
+        {checked && (
+          <div style={{
+            position: 'absolute', top: 6, left: 8, width: 18, height: 18,
+            background: 'var(--y)', borderRadius: '50%',
+            display: 'flex', alignItems: 'center', justifyContent: 'center',
+            fontSize: 11, fontWeight: 900, color: '#000',
+          }}>✓</div>
+        )}
+        <div style={{ fontSize: 34, lineHeight: 1, filter: checked ? 'none' : 'grayscale(0.3)', transition: 'filter 0.18s' }}>{icon}</div>
+        <div style={{ fontSize: 12, fontWeight: 700, color: checked ? 'var(--y)' : 'var(--txt)', textAlign: 'center', lineHeight: 1.3, transition: 'color 0.18s' }}>{label}</div>
+        <div style={{ fontSize: 12, fontWeight: 800, color: 'var(--y)', marginTop: 2 }}>{price}</div>
+        {note && <div style={{ fontSize: 10, color: 'var(--txt3)', textAlign: 'center', lineHeight: 1.3, marginTop: 2 }}>{note}</div>}
       </div>
-    </label>
+    </button>
   )
 }
 

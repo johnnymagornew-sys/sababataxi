@@ -561,8 +561,8 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
         </div>
       )}
 
-      {/* Flight number + live status — from airport trips */}
-      {isClaimed && ride.pickup_city === 'נמל תעופה בן גוריון' && ride.return_flight_number && (
+      {/* Flight number + live status */}
+      {isClaimed && ride.return_flight_number && (
         <FlightStatusBox flightNumber={ride.return_flight_number} />
       )}
 

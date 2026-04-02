@@ -469,49 +469,51 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
           {ride.customer_email && (
             <div style={{ fontSize: 13, color: 'var(--txt2)' }}>{ride.customer_email}</div>
           )}
-          {/* Action buttons */}
-          {!hideActions && <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10 }}>
-            <a
-              href={`tel:${ride.customer_phone.replace(/\s/g, '')}`}
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                background: 'rgba(39,174,96,0.12)', border: '1px solid rgba(39,174,96,0.3)',
-                borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
-                color: 'var(--green)', fontSize: 11, fontWeight: 700,
-              }}
-            >
-              <span style={{ fontSize: 22 }}>📞</span>
-              התקשר
-            </a>
-            <a
-              href={`https://wa.me/${toWhatsAppNumber(ride.customer_phone)}`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.3)',
-                borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
-                color: '#25D366', fontSize: 11, fontWeight: 700,
-              }}
-            >
-              <span style={{ fontSize: 22 }}>💬</span>
-              וואטסאפ
-            </a>
-            <a
-              href={`https://waze.com/ul?q=${encodeURIComponent(buildWazeAddress(ride))}&navigate=yes`}
-              target="_blank"
-              rel="noopener noreferrer"
-              style={{
-                display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
-                background: 'rgba(0,165,255,0.12)', border: '1px solid rgba(0,165,255,0.3)',
-                borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
-                color: '#00A5FF', fontSize: 11, fontWeight: 700,
-              }}
-            >
-              <span style={{ fontSize: 22 }}>🗺️</span>
-              וויז
-            </a>
-          </div>}
+          {/* Action buttons — hidden in history */}
+          {hideActions ? null : (
+            <div style={{ display: 'grid', gridTemplateColumns: '1fr 1fr 1fr', gap: 8, marginTop: 10 }}>
+              <a
+                href={`tel:${ride.customer_phone.replace(/\s/g, '')}`}
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  background: 'rgba(39,174,96,0.12)', border: '1px solid rgba(39,174,96,0.3)',
+                  borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
+                  color: 'var(--green)', fontSize: 11, fontWeight: 700,
+                }}
+              >
+                <span style={{ fontSize: 22 }}>📞</span>
+                התקשר
+              </a>
+              <a
+                href={`https://wa.me/${toWhatsAppNumber(ride.customer_phone)}`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  background: 'rgba(37,211,102,0.12)', border: '1px solid rgba(37,211,102,0.3)',
+                  borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
+                  color: '#25D366', fontSize: 11, fontWeight: 700,
+                }}
+              >
+                <span style={{ fontSize: 22 }}>💬</span>
+                וואטסאפ
+              </a>
+              <a
+                href={`https://waze.com/ul?q=${encodeURIComponent(buildWazeAddress(ride))}&navigate=yes`}
+                target="_blank"
+                rel="noopener noreferrer"
+                style={{
+                  display: 'flex', flexDirection: 'column', alignItems: 'center', gap: 4,
+                  background: 'rgba(0,165,255,0.12)', border: '1px solid rgba(0,165,255,0.3)',
+                  borderRadius: 10, padding: '10px 6px', textDecoration: 'none',
+                  color: '#00A5FF', fontSize: 11, fontWeight: 700,
+                }}
+              >
+                <span style={{ fontSize: 22 }}>🗺️</span>
+                וויז
+              </a>
+            </div>
+          )}
         </div>
       )}
 

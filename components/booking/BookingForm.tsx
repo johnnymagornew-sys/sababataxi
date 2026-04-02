@@ -664,7 +664,7 @@ export default function BookingForm() {
                     note="מותר ע״פ חוק במוניות"
                     checked={!!form.extras.child_under4} onChange={v => setExtra('child_under4', v)} />
                   <ExtraIcon
-                    icon="🪑" label="כיסא בטיחות" price="+₪40–70"
+                    iconSrc="/baby_sit.png" label="כיסא בטיחות" price="+₪40–70"
                     note="לא חובה במונית · מומלץ לתאם מראש"
                     checked={!!form.extras.safety_seat} onChange={v => setExtra('safety_seat', v)} />
                   <ExtraIcon
@@ -1060,8 +1060,8 @@ function Stepper({ label, value, min, onChange, icon, sub }: { label: string; va
   )
 }
 
-function ExtraIcon({ icon, label, price, note, checked, onChange }: {
-  icon: string; label: string; price: string; note?: string; checked: boolean; onChange: (v: boolean) => void
+function ExtraIcon({ icon, iconSrc, label, price, note, checked, onChange }: {
+  icon?: string; iconSrc?: string; label: string; price: string; note?: string; checked: boolean; onChange: (v: boolean) => void
 }) {
   return (
     <button type="button" onClick={() => onChange(!checked)} style={{
@@ -1087,7 +1087,10 @@ function ExtraIcon({ icon, label, price, note, checked, onChange }: {
             fontSize: 9, fontWeight: 900, color: '#000',
           }}>✓</div>
         )}
-        <div style={{ fontSize: 28, lineHeight: 1 }}>{icon}</div>
+        {iconSrc
+          ? <img src={iconSrc} alt={label} style={{ width: 32, height: 32, objectFit: 'contain', filter: checked ? 'none' : 'grayscale(0.2)' }} />
+          : <div style={{ fontSize: 28, lineHeight: 1 }}>{icon}</div>
+        }
         <div style={{ fontSize: 11, fontWeight: 700, color: checked ? 'var(--y)' : 'var(--txt)', textAlign: 'center', lineHeight: 1.25, width: '100%', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>{label}</div>
         <div style={{ fontSize: 11, fontWeight: 800, color: 'var(--y)' }}>{price}</div>
         {note && <div style={{ fontSize: 9, color: 'var(--txt3)', textAlign: 'center', lineHeight: 1.3, width: '100%', overflow: 'hidden', display: '-webkit-box', WebkitLineClamp: 2, WebkitBoxOrient: 'vertical' }}>{note}</div>}

@@ -15,19 +15,29 @@ interface FlightStatus {
 const cache = new Map<string, { data: FlightStatus; fetchedAt: number }>()
 const CACHE_MS = 2 * 60 * 1000
 
-// IATA airline code → ICAO 3-letter code (for OpenSky callsign lookup)
+// IATA airline code → ICAO 3-letter code (for ADS-B callsign lookup)
 const IATA_TO_ICAO: Record<string, string> = {
+  // Israeli carriers
   LY: 'ELY', '6H': 'ISR', IZ: 'AIZ',
-  FR: 'RYR', U2: 'EZY', W6: 'WZZ',
-  TK: 'THY', LH: 'DLH', BA: 'BAW',
-  AF: 'AFR', KL: 'KLM', OS: 'AUA',
-  EK: 'UAE', QR: 'QTR', ET: 'ETH',
-  AY: 'FIN', SK: 'SAS', IB: 'IBE',
-  VY: 'VLG', PS: 'AUI', RO: 'ROT',
+  // European low-cost
+  FR: 'RYR', U2: 'EZY', W6: 'WZZ', PC: 'PGT', VY: 'VLG', V7: 'BRQ',
+  TO: 'FPO', BY: 'TOM', X3: 'TUI', HV: 'TRA', SN: 'BEL', TU: 'TAR',
+  // Middle East & Gulf
+  EK: 'UAE', QR: 'QTR', ET: 'ETH', FZ: 'FDB', G9: 'ABY', WY: 'OMA',
+  XY: 'NAS', SV: 'SVA', GF: 'GFA', ME: 'MEA', RJ: 'RJA', MS: 'MSR',
+  // European legacy
+  TK: 'THY', LH: 'DLH', BA: 'BAW', AF: 'AFR', KL: 'KLM', OS: 'AUA',
+  AY: 'FIN', SK: 'SAS', IB: 'IBE', LO: 'LOT', OK: 'CSA', AZ: 'ITY',
+  PS: 'AUI', JU: 'ASL', RO: 'ROT', A3: 'AEE', OA: 'OAL', FB: 'LZB',
+  // Asian / African
+  AI: 'AIC', UL: 'ALK', ET: 'ETH', KQ: 'KQA', WB: 'RWD',
+  // Charter / leisure
+  XQ: 'SXS', HH: 'HHN',
 }
 
 function iataToCallsign(flight: string): string | null {
-  const m = flight.match(/^([A-Z0-9]{2})(\d+[A-Z]?)$/)
+  // Allow trailing letters like TK8DT, U23NZ etc.
+  const m = flight.match(/^([A-Z0-9]{2})(\d+[A-Z]*)$/)
   if (!m) return null
   const icao = IATA_TO_ICAO[m[1]]
   return icao ? icao + m[2] : null

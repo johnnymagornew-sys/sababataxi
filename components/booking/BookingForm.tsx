@@ -127,6 +127,15 @@ export default function BookingForm() {
   const [priceFlash, setPriceFlash] = useState(false)
   const [phoneValid, setPhoneValid] = useState(false)
   const formTopRef = useRef<HTMLDivElement>(null)
+  const dateInputRef = useRef<HTMLInputElement>(null)
+  const timeInputRef = useRef<HTMLInputElement>(null)
+  const returnDateInputRef = useRef<HTMLInputElement>(null)
+  const returnTimeInputRef = useRef<HTMLInputElement>(null)
+  function openPicker(el: HTMLInputElement | null) {
+    if (!el) return
+    if ('showPicker' in el) { try { (el as HTMLInputElement & { showPicker(): void }).showPicker() } catch { (el as HTMLElement).click() } }
+    else (el as HTMLElement).click()
+  }
   // Price calculation
   useEffect(() => {
     const idx = getTierIndex(form.passengers)
@@ -721,44 +730,42 @@ export default function BookingForm() {
                   {/* Date */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.dateLabel')}</div>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{
+                    <div
+                      onClick={() => openPicker(dateInputRef.current)}
+                      style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         background: form.travel_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
                         border: `1px solid ${form.travel_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
-                        borderRadius: 12, padding: '10px 12px',
-                        pointerEvents: 'none',
+                        borderRadius: 12, padding: '10px 12px', cursor: 'pointer',
                       }}>
-                        <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                          {form.travel_date
-                            ? new Date(form.travel_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
-                            : t('step1.datePlaceholder')}
-                        </span>
-                      </div>
-                      <input type="date" min={new Date().toISOString().split('T')[0]}
+                      <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                        {form.travel_date
+                          ? new Date(form.travel_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' })
+                          : t('step1.datePlaceholder')}
+                      </span>
+                      <input ref={dateInputRef} type="date" min={new Date().toISOString().split('T')[0]}
                         value={form.travel_date} onChange={e => setField('travel_date', e.target.value)}
-                        style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
                     </div>
                   </div>
                   {/* Time */}
                   <div style={{ minWidth: 0 }}>
                     <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.timeLabel')}</div>
-                    <div style={{ position: 'relative' }}>
-                      <div style={{
+                    <div
+                      onClick={() => openPicker(timeInputRef.current)}
+                      style={{
                         display: 'flex', alignItems: 'center', gap: 8,
                         background: form.travel_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)',
                         border: `1px solid ${form.travel_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`,
-                        borderRadius: 12, padding: '10px 12px',
-                        pointerEvents: 'none',
+                        borderRadius: 12, padding: '10px 12px', cursor: 'pointer',
                       }}>
-                        <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
-                        <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_time ? 'var(--txt)' : 'var(--txt3)' }}>
-                          {form.travel_time || t('step1.timePlaceholder')}
-                        </span>
-                      </div>
-                      <input type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
-                        style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                      <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
+                      <span style={{ fontSize: 14, fontWeight: 600, color: form.travel_time ? 'var(--txt)' : 'var(--txt3)' }}>
+                        {form.travel_time || t('step1.timePlaceholder')}
+                      </span>
+                      <input ref={timeInputRef} type="time" value={form.travel_time} onChange={e => setField('travel_time', e.target.value)}
+                        style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
                     </div>
                   </div>
                 </div>
@@ -817,28 +824,28 @@ export default function BookingForm() {
                       <div style={{ display: 'grid', gap: 10, gridTemplateColumns: '1fr 1fr' }}>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.returnDate')}</div>
-                          <div style={{ position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', pointerEvents: 'none' }}>
-                              <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
-                              <span style={{ fontSize: 14, fontWeight: 600, color: form.return_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
-                                {form.return_date ? new Date(form.return_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : t('step1.datePlaceholder')}
-                              </span>
-                            </div>
-                            <input type="date" value={form.return_date} onChange={e => setField('return_date', e.target.value)}
-                              style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                          <div
+                            onClick={() => openPicker(returnDateInputRef.current)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_date ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_date ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', cursor: 'pointer' }}>
+                            <span style={{ fontSize: 18, flexShrink: 0 }}>📅</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: form.return_date ? 'var(--txt)' : 'var(--txt3)', overflow: 'hidden', textOverflow: 'ellipsis', whiteSpace: 'nowrap' }}>
+                              {form.return_date ? new Date(form.return_date + 'T12:00').toLocaleDateString('he-IL', { day: '2-digit', month: '2-digit', year: 'numeric' }) : t('step1.datePlaceholder')}
+                            </span>
+                            <input ref={returnDateInputRef} type="date" value={form.return_date} onChange={e => setField('return_date', e.target.value)}
+                              style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
                           </div>
                         </div>
                         <div style={{ minWidth: 0 }}>
                           <div style={{ fontSize: 11, fontWeight: 700, color: 'var(--y)', marginBottom: 6, textAlign: 'center' }}>{t('step1.returnTime')}</div>
-                          <div style={{ position: 'relative' }}>
-                            <div style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', pointerEvents: 'none' }}>
-                              <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
-                              <span style={{ fontSize: 14, fontWeight: 600, color: form.return_time ? 'var(--txt)' : 'var(--txt3)' }}>
-                                {form.return_time || t('step1.timePlaceholder')}
-                              </span>
-                            </div>
-                            <input type="time" value={form.return_time} onChange={e => setField('return_time', e.target.value)}
-                              style={{ position: 'absolute', inset: 0, opacity: 0, width: '100%', height: '100%', cursor: 'pointer', zIndex: 1 }} />
+                          <div
+                            onClick={() => openPicker(returnTimeInputRef.current)}
+                            style={{ display: 'flex', alignItems: 'center', gap: 8, background: form.return_time ? 'rgba(255,209,0,0.06)' : 'var(--card2)', border: `1px solid ${form.return_time ? 'rgba(255,209,0,0.3)' : 'var(--border)'}`, borderRadius: 12, padding: '10px 12px', cursor: 'pointer' }}>
+                            <span style={{ fontSize: 18, flexShrink: 0 }}>🕐</span>
+                            <span style={{ fontSize: 14, fontWeight: 600, color: form.return_time ? 'var(--txt)' : 'var(--txt3)' }}>
+                              {form.return_time || t('step1.timePlaceholder')}
+                            </span>
+                            <input ref={returnTimeInputRef} type="time" value={form.return_time} onChange={e => setField('return_time', e.target.value)}
+                              style={{ position: 'absolute', opacity: 0, pointerEvents: 'none', width: 0, height: 0 }} />
                           </div>
                         </div>
                       </div>

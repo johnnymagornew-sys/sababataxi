@@ -299,6 +299,7 @@ export default function BookingForm() {
       if (form.trip_type === 'intercity' && !form.destination_city) return 'נא לבחור עיר יעד'
       if (!form.travel_date) return 'נא לבחור תאריך נסיעה'
       if (!form.travel_time) return 'נא להזין שעת נסיעה'
+      if (form.return_trip && form.trip_type === 'airport' && !form.return_flight_number.trim()) return 'נא להזין מספר טיסה לחזרה'
     }
     return null
   }
@@ -687,7 +688,7 @@ export default function BookingForm() {
                     )}
                     <div className="field-enter" style={{ display: 'grid', gap: 12 }}>
                       {form.trip_type === 'airport' && <div>
-                        <label>מספר טיסה</label>
+                        <label>מספר טיסה *</label>
                         <input type="text" placeholder="LY123" value={form.return_flight_number}
                           onChange={e => setField('return_flight_number', e.target.value)}
                           dir="ltr" style={{ textAlign: 'right', fontSize: 16, height: 48 }} />

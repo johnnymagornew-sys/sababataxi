@@ -13,6 +13,56 @@ interface FlightStatus {
 const cache = new Map<string, { data: FlightStatus; fetchedAt: number }>()
 const CACHE_MS = 15 * 60 * 1000
 
+// IATA airline code → ICAO 3-letter code (for OpenSky callsign lookup)
+const IATA_TO_ICAO: Record<string, string> = {
+  LY: 'ELY', '6H': 'ISR', IZ: 'AIZ',
+  FR: 'RYR', U2: 'EZY', W6: 'WZZ',
+  TK: 'THY', LH: 'DLH', BA: 'BAW',
+  AF: 'AFR', KL: 'KLM', OS: 'AUA',
+  EK: 'UAE', QR: 'QTR', ET: 'ETH',
+  AY: 'FIN', SK: 'SAS', IB: 'IBE',
+  VY: 'VLG', PS: 'AUI', RO: 'ROT',
+}
+
+function iataToCallsign(flight: string): string | null {
+  const m = flight.match(/^([A-Z0-9]{2})(\d+[A-Z]?)$/)
+  if (!m) return null
+  const icao = IATA_TO_ICAO[m[1]]
+  return icao ? icao + m[2] : null
+}
+
+// OpenSky: fetch flights in Israeli airspace (bounding box ≈ 63 results)
+async function lookupOpenSky(flight: string): Promise<FlightStatus | null> {
+  const callsign = iataToCallsign(flight)
+  if (!callsign) return null
+
+  try {
+    const res = await fetch(
+      'https://opensky-network.org/api/states/all?lamin=28&lomin=28&lamax=36&lomax=42',
+      { next: { revalidate: 0 } }
+    )
+    if (!res.ok) return null
+    const json = await res.json()
+    const states: unknown[][] = json.states ?? []
+
+    // Find by callsign (OpenSky pads to 8 chars with spaces)
+    const match = states.find(s => typeof s[1] === 'string' && s[1].trim() === callsign)
+    if (!match) return null
+
+    const onGround = match[8] === true
+    return {
+      flight,
+      status: onGround ? 'landed' : 'en-route',
+      arr_time: null,
+      arr_actual: null,
+      arr_estimated: null,
+      delayed: null,
+    }
+  } catch {
+    return null
+  }
+}
+
 export async function GET(req: Request) {
   const { searchParams } = new URL(req.url)
   const flight = searchParams.get('flight')?.toUpperCase().replace(/\s/g, '')
@@ -27,35 +77,34 @@ export async function GET(req: Request) {
   if (!key) return NextResponse.json({ error: 'no api key' }, { status: 500 })
 
   try {
-    // Try /schedules first (works for future & recent flights arriving at TLV)
+    // 1. AirLabs /schedules — works for upcoming & recent flights
     const schedRes = await fetch(
       `https://airlabs.co/api/v9/schedules?flight_iata=${encodeURIComponent(flight)}&arr_iata=TLV&api_key=${key}`,
       { next: { revalidate: 0 } }
     )
     const schedJson = await schedRes.json()
     const schedFlights: Record<string, string>[] = schedJson.response ?? []
-    // Pick the closest upcoming (or most recent) flight
-    const f = schedFlights.sort((a, b) => {
-      const ta = new Date(a.arr_time_utc ?? a.dep_time_utc ?? '').getTime()
-      const tb = new Date(b.arr_time_utc ?? b.dep_time_utc ?? '').getTime()
+    const sf = schedFlights.sort((a, b) => {
+      const ta = new Date(a.arr_time_utc ?? '').getTime()
+      const tb = new Date(b.arr_time_utc ?? '').getTime()
       const now = Date.now()
       return Math.abs(ta - now) - Math.abs(tb - now)
     })[0]
 
-    if (f) {
+    if (sf) {
       const data: FlightStatus = {
         flight,
-        status: f.status ?? 'scheduled',
-        arr_time: f.arr_time_utc ?? null,
-        arr_actual: f.arr_time_real ?? null,
-        arr_estimated: f.arr_estimated_utc ?? null,
-        delayed: f.delayed ? Number(f.delayed) : null,
+        status: sf.status ?? 'scheduled',
+        arr_time: sf.arr_time_utc ?? null,
+        arr_actual: sf.arr_time_real ?? null,
+        arr_estimated: sf.arr_estimated_utc ?? null,
+        delayed: sf.delayed ? Number(sf.delayed) : null,
       }
       cache.set(flight, { data, fetchedAt: Date.now() })
       return NextResponse.json(data)
     }
 
-    // Fallback: /flight for currently airborne flights
+    // 2. AirLabs /flight — for currently airborne flights
     const liveRes = await fetch(
       `https://airlabs.co/api/v9/flight?flight_iata=${encodeURIComponent(flight)}&api_key=${key}`,
       { next: { revalidate: 0 } }
@@ -63,19 +112,27 @@ export async function GET(req: Request) {
     const liveJson = await liveRes.json()
     const lf = liveJson.response
 
-    if (!lf) return NextResponse.json({ error: 'flight not found' }, { status: 404 })
-
-    const data: FlightStatus = {
-      flight,
-      status: lf.status ?? 'unknown',
-      arr_time: lf.arr_time ?? null,
-      arr_actual: lf.arr_actual ?? null,
-      arr_estimated: lf.arr_estimated ?? null,
-      delayed: lf.delayed ?? null,
+    if (lf) {
+      const data: FlightStatus = {
+        flight,
+        status: lf.status ?? 'unknown',
+        arr_time: lf.arr_time ?? null,
+        arr_actual: lf.arr_actual ?? null,
+        arr_estimated: lf.arr_estimated ?? null,
+        delayed: lf.delayed ?? null,
+      }
+      cache.set(flight, { data, fetchedAt: Date.now() })
+      return NextResponse.json(data)
     }
 
-    cache.set(flight, { data, fetchedAt: Date.now() })
-    return NextResponse.json(data)
+    // 3. OpenSky fallback — covers carriers AirLabs doesn't know (e.g. Israir 6H)
+    const osData = await lookupOpenSky(flight)
+    if (osData) {
+      cache.set(flight, { data: osData, fetchedAt: Date.now() })
+      return NextResponse.json(osData)
+    }
+
+    return NextResponse.json({ error: 'flight not found' }, { status: 404 })
   } catch {
     return NextResponse.json({ error: 'fetch failed' }, { status: 500 })
   }

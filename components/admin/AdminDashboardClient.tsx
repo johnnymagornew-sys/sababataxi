@@ -63,6 +63,7 @@ export default function AdminDashboardClient({
   const [expandedBooking, setExpandedBooking] = useState<string | null>(null)
   const [leads, setLeads] = useState<Lead[]>(initialLeads)
   const [reviews] = useState<Review[]>(initialReviews)
+  const [showMoreMenu, setShowMoreMenu] = useState(false)
   const [revenue, setRevenue] = useState<{ subscriptions: number; credits: number; rides: number } | null>(null)
   const [loadingRevenue, setLoadingRevenue] = useState(false)
   const supabase = createClient()
@@ -1118,27 +1119,73 @@ export default function AdminDashboardClient({
 
         {/* Bottom nav — mobile only */}
         <nav className="bottom-nav">
+          {/* More menu popup */}
+          {showMoreMenu && (
+            <>
+              <div
+                onClick={() => setShowMoreMenu(false)}
+                style={{ position: 'fixed', inset: 0, zIndex: 198 }}
+              />
+              <div style={{
+                position: 'absolute', bottom: '100%', right: 0, left: 0,
+                background: '#1a1a1a', borderTop: '1px solid #333',
+                zIndex: 199, padding: '8px 0',
+              }}>
+                {([
+                  ['revenue',   '📈',  'רווחים',    0],
+                  ['history',   '📋',  'היסטוריה',  0],
+                  ['leads',     '🎯',  'לידים',     leads.length],
+                  ['reviews',   '⭐',  'חוות דעת',  reviews.length],
+                ] as const).map(([key, icon, label, badge]) => (
+                  <button
+                    key={key}
+                    onClick={() => { setTab(key); setShowMoreMenu(false) }}
+                    style={{
+                      display: 'flex', alignItems: 'center', gap: 14,
+                      width: '100%', padding: '13px 24px',
+                      background: tab === key ? 'rgba(255,209,0,0.08)' : 'none',
+                      border: 'none', cursor: 'pointer',
+                      color: tab === key ? '#FFD100' : '#ccc',
+                      fontSize: 15, fontWeight: 600,
+                    }}>
+                    <span style={{ fontSize: 20 }}>{icon}</span>
+                    <span>{label}</span>
+                    {badge > 0 && (
+                      <span style={{ marginRight: 'auto', background: '#FFD100', color: '#0E0E0E', borderRadius: 10, padding: '1px 7px', fontSize: 11, fontWeight: 700 }}>{badge}</span>
+                    )}
+                  </button>
+                ))}
+              </div>
+            </>
+          )}
           <div className="bottom-nav-inner">
             {([
               ['dashboard', '📊', 'דשבורד', 0],
               ['bookings',  '🗂',  'הזמנות', pendingCount],
               ['drivers',   '👥',  'נהגים',  0],
               ['credits',   '💳',  'קרדיט',  0],
-              ['revenue',   '📈',  'רווחים', 0],
-              ['history',   '📋',  'היסטוריה', 0],
-              ['leads',     '🎯',  'לידים',    leads.length],
-              ['reviews',   '⭐',  'חוות דעת', reviews.length],
             ] as const).map(([key, icon, label, badge]) => (
               <button
                 key={key}
                 className={`bottom-nav-btn${tab === key ? ' active' : ''}`}
-                onClick={() => setTab(key)}
+                onClick={() => { setTab(key); setShowMoreMenu(false) }}
               >
                 <span className="nav-icon">{icon}</span>
                 <span className="nav-label">{label}</span>
                 {badge > 0 && <span className="nav-badge">{badge}</span>}
               </button>
             ))}
+            {/* More button */}
+            <button
+              className={`bottom-nav-btn${['revenue','history','leads','reviews'].includes(tab) ? ' active' : ''}`}
+              onClick={() => setShowMoreMenu(v => !v)}
+            >
+              <span className="nav-icon">⋯</span>
+              <span className="nav-label">עוד</span>
+              {(leads.length + reviews.length) > 0 && !['revenue','history','leads','reviews'].includes(tab) && (
+                <span className="nav-badge">{leads.length + reviews.length}</span>
+              )}
+            </button>
           </div>
         </nav>
       </div>

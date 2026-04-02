@@ -210,7 +210,10 @@ export default function AdminDashboardClient({
     router.push('/login')
   }
 
-  const filteredBookings = statusFilter === 'all' ? bookings : bookings.filter(b => b.status === statusFilter)
+  const filteredBookings = bookings.filter(b => {
+    if (statusFilter === 'all') return b.status !== 'completed'
+    return b.status === statusFilter
+  })
 
   const sidebarItems: { key: AdminTab; icon: string; label: string; badge?: number }[] = [
     { key: 'dashboard', icon: '📊', label: t('tabs.dashboard') },
@@ -583,7 +586,7 @@ export default function AdminDashboardClient({
               <>
                 <div className="admin-page-title">הזמנות</div>
                 <div className="filter-row">
-                  {[['all','הכל'],['pending','ממתינים'],['approved','מאושרים'],['claimed','שורינו'],['completed','הושלמו'],['rejected','נדחו']].map(([val, label]) => (
+                  {[['all','הכל'],['pending','ממתינים'],['approved','מאושרים'],['claimed','שורינו'],['rejected','נדחו']].map(([val, label]) => (
                     <button key={val} className={`filter-btn${statusFilter === val ? ' active' : ''}`} onClick={() => setStatusFilter(val)}>
                       {label}
                     </button>

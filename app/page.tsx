@@ -1,13 +1,25 @@
+import { redirect } from 'next/navigation'
+import { createClient } from '@/lib/supabase/server'
 import BookingForm from '@/components/booking/BookingForm'
 import OnboardingModal from '@/components/OnboardingModal'
-import AutoRedirect from '@/components/AutoRedirect'
 import Link from 'next/link'
 import LogoRefreshButton from '@/components/LogoRefreshButton'
 
-export default function HomePage() {
+export default async function HomePage() {
+  const supabase = await createClient()
+  const { data: { session } } = await supabase.auth.getSession()
+
+  if (session) {
+    const userId = session.user.id
+    const { data: adminRow } = await supabase.from('admins').select('id').eq('user_id', userId).single()
+    if (adminRow) redirect('/admin')
+
+    const { data: driverRow } = await supabase.from('drivers').select('id').eq('user_id', userId).single()
+    if (driverRow) redirect('/driver/dashboard')
+  }
+
   return (
     <div style={{ minHeight: '100vh', background: 'var(--bg)' }}>
-      <AutoRedirect />
       <OnboardingModal />
       {/* Header */}
       <header style={{

@@ -449,7 +449,7 @@ export default function BookingForm() {
           </div>
           {/* Price bar — shown on steps 0-2 when price exists */}
           {price && step < 3 && (
-            <div style={{ margin: '10px 0 10px', display: 'grid', gap: 6, gridTemplateColumns: returnPrice ? '1fr 1fr' : '1fr' }}>
+            <div style={{ margin: '10px 0 10px', display: 'grid', gap: 6, gridTemplateColumns: returnPrice?.diffCity ? '1fr 1fr' : '1fr' }}>
               {/* Outbound */}
               <div className={priceFlash ? 'price-flash' : ''}
                 style={{
@@ -459,8 +459,8 @@ export default function BookingForm() {
                   boxShadow: '0 4px 20px rgba(255,209,0,0.25)',
                 }}>
                 <div>
-                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{returnPrice ? 'הלוך' : 'מחיר משוער'}</div>
-                  <div style={{ fontSize: returnPrice ? 22 : 26, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
+                  <div style={{ fontSize: 9, fontWeight: 700, color: 'rgba(0,0,0,0.5)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>{returnPrice?.diffCity ? 'הלוך' : 'מחיר משוער'}</div>
+                  <div style={{ fontSize: returnPrice?.diffCity ? 22 : 26, fontWeight: 900, color: '#000', lineHeight: 1 }}>₪{price.total}</div>
                 </div>
                 <div style={{ textAlign: 'left', fontSize: 11, color: 'rgba(0,0,0,0.6)' }}>
                   {form.pickup_city && (
@@ -469,10 +469,15 @@ export default function BookingForm() {
                     </div>
                   )}
                   <div style={{ fontWeight: 700, marginTop: 2 }}>🚗 {price.vehicle}</div>
+                  {returnPrice && !returnPrice.diffCity && (
+                    <div style={{ fontSize: 9, color: 'rgba(0,0,0,0.45)', marginTop: 3, lineHeight: 1.3 }}>
+                      *נסיעת חזור +10₪<br/>עקב עמלות שדה תעופה
+                    </div>
+                  )}
                 </div>
               </div>
-              {/* Return */}
-              {returnPrice && (
+              {/* Return — only when different city */}
+              {returnPrice?.diffCity && (
                 <div style={{
                   background: 'rgba(255,209,0,0.15)', borderRadius: 14,
                   padding: '10px 14px', display: 'flex', alignItems: 'center',
@@ -482,12 +487,10 @@ export default function BookingForm() {
                   <div>
                     <div style={{ fontSize: 9, fontWeight: 700, color: 'var(--y)', textTransform: 'uppercase', letterSpacing: '0.5px' }}>חזור</div>
                     <div style={{ fontSize: 22, fontWeight: 900, color: 'var(--y)', lineHeight: 1 }}>₪{returnPrice.total}</div>
-                    <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>כולל +10₪ עמלה</div>
+                    <div style={{ fontSize: 9, color: 'var(--txt3)', marginTop: 2 }}>*כולל עמלות שדה תעופה</div>
                   </div>
                   <div style={{ textAlign: 'left', fontSize: 10, color: 'var(--txt3)' }}>
-                    {returnPrice.diffCity
-                      ? <div style={{ fontWeight: 600 }}>{form.return_city} ← נתב״ג</div>
-                      : <div>אותו מסלול</div>}
+                    <div style={{ fontWeight: 600 }}>{form.return_city} ← נתב״ג</div>
                     <div style={{ fontWeight: 800, color: 'var(--y)', fontSize: 13, marginTop: 4 }}>סה״כ: ₪{price.total + returnPrice.total}</div>
                   </div>
                 </div>
@@ -643,7 +646,17 @@ export default function BookingForm() {
                 {/* Return trip toggle */}
                 <div className="field-enter">
                   <div
-                    onClick={() => setField('return_trip', !form.return_trip)}
+                    onClick={() => {
+                      const newVal = !form.return_trip
+                      if (newVal) {
+                        // Pre-fill return address with pickup address
+                        setReturnAddressDisplay(addressDisplay)
+                        setForm(prev => ({ ...prev, return_trip: true, return_city: form.pickup_city, return_street: form.pickup_street, return_house_number: form.pickup_house_number }))
+                      } else {
+                        setReturnAddressDisplay('')
+                        setForm(prev => ({ ...prev, return_trip: false, return_city: '', return_street: '', return_house_number: '' }))
+                      }
+                    }}
                     style={{
                       display: 'flex', alignItems: 'center', justifyContent: 'space-between',
                       background: form.return_trip ? 'var(--y-dim)' : 'var(--card2)',
@@ -945,9 +958,16 @@ export default function BookingForm() {
                           ₪{(price?.total ?? 0) + returnPrice.total}
                         </span>
                       </div>
-                      <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 3 }}>
-                        הלוך ₪{price?.total} · חזור ₪{returnPrice.total}
-                      </div>
+                      {returnPrice.diffCity ? (
+                        <div style={{ fontSize: 12, color: 'var(--txt3)', marginTop: 3 }}>
+                          הלוך ₪{price?.total} · חזור ₪{returnPrice.total}
+                        </div>
+                      ) : (
+                        <div style={{ fontSize: 11, color: 'var(--txt3)', marginTop: 3, lineHeight: 1.4 }}>
+                          הלוך ₪{price?.total} + חזור ₪{returnPrice.total}<br/>
+                          <span style={{ fontSize: 10 }}>*נסיעת חזור עולה 10₪ יותר עקב עמלות שדה תעופה</span>
+                        </div>
+                      )}
                     </>
                   ) : (
                     <>

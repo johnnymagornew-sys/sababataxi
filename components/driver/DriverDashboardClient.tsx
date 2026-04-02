@@ -33,7 +33,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
   ]
 
   const [driver, setDriver] = useState<Driver>(initialDriver)
-  const [tab, setTab] = useState<'available' | 'mine' | 'history'>('available')
+  const [tab, setTab] = useState<'available' | 'mine' | 'history' | 'arrivals'>('available')
   const [availableRides, setAvailableRides] = useState<Booking[]>([])
   const [myRides, setMyRides] = useState<Booking[]>([])
   const [claiming, setClaiming] = useState<string | null>(null)
@@ -300,6 +300,7 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
             ['available', t('tabs.available'), availableRides.length],
             ['mine',      t('tabs.mine'),      activeMyRides.length],
             ['history',   t('tabs.history'),   historyRides.length],
+            ['arrivals',  '🛬 נחיתות',         0],
           ] as const).map(([key, label, count]) => (
             <button
               key={key}
@@ -405,6 +406,34 @@ export default function DriverDashboardClient({ driver: initialDriver }: { drive
                 />
               ))
             )}
+          </div>
+        )}
+
+        {tab === 'arrivals' && (
+          <div>
+            <div style={{ marginBottom: 12, fontSize: 13, color: 'var(--txt2)', textAlign: 'center' }}>
+              לוח נחיתות בן גוריון — עדכון בזמן אמת
+            </div>
+            <div style={{ borderRadius: 12, overflow: 'hidden', border: '1px solid var(--border)', background: 'var(--card)' }}>
+              <iframe
+                src="https://www.iaa.gov.il/airports/ben-gurion/flight-board/"
+                style={{ width: '100%', height: 600, border: 'none', display: 'block' }}
+                title="לוח נחיתות נתב״ג"
+              />
+            </div>
+            <a
+              href="https://www.iaa.gov.il/airports/ben-gurion/flight-board/"
+              target="_blank"
+              rel="noopener noreferrer"
+              style={{
+                display: 'block', marginTop: 10, textAlign: 'center',
+                padding: '12px', background: 'var(--card)',
+                border: '1px solid var(--border)', borderRadius: 10,
+                color: 'var(--txt2)', fontSize: 13, textDecoration: 'none',
+              }}
+            >
+              🔗 פתח לוח נחיתות באתר נתב״ג
+            </a>
           </div>
         )}
       </div>
@@ -543,6 +572,32 @@ function RideCard({ ride, driverId, driverCredits, isSubscribed, claiming, onCla
               </a>
             </div>
           )}
+        </div>
+      )}
+
+      {/* Flight number — from airport trips */}
+      {isClaimed && ride.pickup_city === 'נמל תעופה בן גוריון' && ride.return_flight_number && (
+        <div style={{
+          display: 'flex', alignItems: 'center', gap: 10,
+          background: 'rgba(59,130,246,0.08)', border: '1px solid rgba(59,130,246,0.25)',
+          borderRadius: 10, padding: '10px 14px', marginBottom: 12,
+        }}>
+          <span style={{ fontSize: 20 }}>✈️</span>
+          <span style={{ fontWeight: 800, fontSize: 16, color: 'var(--txt)', letterSpacing: 1 }}>
+            {ride.return_flight_number}
+          </span>
+          <a
+            href={`https://www.flightradar24.com/${ride.return_flight_number.replace(/\s/g, '')}`}
+            target="_blank" rel="noopener noreferrer"
+            style={{
+              marginRight: 'auto', background: 'rgba(59,130,246,0.15)',
+              color: '#60a5fa', border: '1px solid rgba(59,130,246,0.3)',
+              borderRadius: 7, padding: '5px 12px',
+              fontSize: 13, fontWeight: 600, textDecoration: 'none',
+            }}
+          >
+            מעקב טיסה →
+          </a>
         </div>
       )}
 

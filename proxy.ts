@@ -69,7 +69,10 @@ export async function proxy(request: NextRequest) {
     })
   }
 
-  // 4. Supabase session + auth redirect
+  // 4. Supabase auth — only for protected routes (skip on public pages for speed)
+  const isProtected = pathname.startsWith('/driver') || pathname.startsWith('/admin')
+  if (!isProtected) return NextResponse.next({ request })
+
   let supabaseResponse = NextResponse.next({ request })
   const supabase = createServerClient(
     process.env.NEXT_PUBLIC_SUPABASE_URL!,
@@ -87,9 +90,7 @@ export async function proxy(request: NextRequest) {
   )
 
   const { data: { user } } = await supabase.auth.getUser()
-  if ((pathname.startsWith('/driver') || pathname.startsWith('/admin')) && !user) {
-    return NextResponse.redirect(new URL('/login', request.url))
-  }
+  if (!user) return NextResponse.redirect(new URL('/login', request.url))
 
   return supabaseResponse
 }
